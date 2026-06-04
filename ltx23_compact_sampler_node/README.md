@@ -36,6 +36,12 @@ LTXV/compact -> LTX2.3 Compact AV Sampler
 
 `manual_sigmas` is used by default. If a `SIGMAS` input is connected to the optional `sigmas` socket, the node uses that injected sigma schedule instead.
 
+## LTXVCropGuides behavior
+
+The node always runs `LTXVCropGuides` after `LTXVSeparateAVLatent`.
+
+In LTX guide/keyframe workflows, guide frames are appended to the video latent and tracked through conditioning. `LTXVCropGuides` removes those guide frames and clears the keyframe indices before the latent continues to the next stage. If there are no guide keyframes, ComfyUI's `LTXVCropGuides` passes the latent and conditioning through unchanged.
+
 ## Outputs
 
 - `positive`
