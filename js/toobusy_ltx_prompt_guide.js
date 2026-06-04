@@ -70,7 +70,7 @@ function estimateDuration(node) {
         speechSeconds = count / 2.4;
     }
 
-    return Math.max(fallbackDuration, Math.round((speechSeconds + 1.0) * 10) / 10);
+    return Math.round((speechSeconds + 1.0) * 10) / 10;
 }
 
 function ltxLength(durationSeconds, frameRate) {
@@ -78,15 +78,17 @@ function ltxLength(durationSeconds, frameRate) {
 }
 
 function updateRecommendationDisplay(node, durationSeconds, length, frameRate) {
+    node.toobusyRecommendationCount = (node.toobusyRecommendationCount ?? 0) + 1;
     node.toobusyRecommendedDuration = Number(durationSeconds);
     node.toobusyRecommendedLength = Number(length);
 
     const displayWidget = findWidget(node, "toobusy_recommended");
     if (displayWidget) {
-        displayWidget.value = `Recommended: ${Number(durationSeconds).toFixed(1)}s | length ${length} @ ${Number(frameRate).toFixed(2)}fps`;
+        displayWidget.value = `#${node.toobusyRecommendationCount} Recommended: ${Number(durationSeconds).toFixed(1)}s | length ${length} @ ${Number(frameRate).toFixed(2)}fps`;
     }
 
-    node.setDirtyCanvas(true, true);
+    node.setDirtyCanvas?.(true, true);
+    app.graph?.setDirtyCanvas?.(true, true);
 }
 
 function refreshRecommendation(node) {
@@ -109,6 +111,7 @@ app.registerExtension({
 
             this.toobusyRecommendedDuration = null;
             this.toobusyRecommendedLength = null;
+            this.toobusyRecommendationCount = 0;
 
             this.addWidget(
                 "text",
