@@ -53,6 +53,21 @@ def _to_ideogram_bbox(value):
     return [y_min, x_min, y_max, x_max]
 
 
+def _is_placeholder_element(text, desc, bbox):
+    width = bbox[2] - bbox[0]
+    height = bbox[3] - bbox[1]
+    is_tiny_corner = bbox[0] == 0 and bbox[1] == 0 and width <= MIN_BOX_SIZE and height <= MIN_BOX_SIZE
+    return not text and desc.lower() in {"", "new layout element", "layout element"} and is_tiny_corner
+
+
+def _build_desc(text, desc):
+    if text and desc:
+        return desc if text.lower() in desc.lower() else f"{desc} Text reads '{text}'."
+    if text:
+        return f"bold editorial magazine typography, text reads '{text}', clean readable lettering inside the specified layout box"
+    return desc or "layout element"
+
+
 def _load_elements(elements_json):
     if not elements_json.strip():
         return []
@@ -166,18 +181,17 @@ class IdeogramLayoutBuilder:
         for item in _load_elements(elements_json):
             if not isinstance(item, dict):
                 continue
+            bbox = _normalize_bbox(item.get("bbox"))
             text = str(item.get("text", "")).strip()
             desc = str(item.get("desc", "")).strip()
-            if text and text.lower() not in desc.lower():
-                desc = f"{desc} Text reads '{text}'.".strip()
-            if not desc:
-                desc = f"text reading '{text}'" if text else "layout element"
+            if _is_placeholder_element(text, desc, bbox):
+                continue
 
             elements.append(
                 {
                     "type": "obj",
-                    "bbox": _to_ideogram_bbox(item.get("bbox")),
-                    "desc": desc,
+                    "bbox": _to_ideogram_bbox(bbox),
+                    "desc": _build_desc(text, desc),
                     "color_palette": _parse_palette(item.get("color_palette"), ["#FFFFFF", "#111111"]),
                 }
             )
