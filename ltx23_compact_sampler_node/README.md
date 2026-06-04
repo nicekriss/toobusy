@@ -2,7 +2,7 @@
 
 This ComfyUI custom node folds the common LTX2.3 AV sampling block into one node:
 
-`CFGGuider -> KSamplerSelect -> ManualSigmas -> SamplerCustomAdvanced -> LTXVSeparateAVLatent -> LTXVCropGuides`
+`LTXVConcatAVLatent -> CFGGuider -> KSamplerSelect -> ManualSigmas -> SamplerCustomAdvanced -> LTXVSeparateAVLatent -> LTXVCropGuides`
 
 ## Install
 
@@ -27,7 +27,8 @@ LTXV/compact -> LTX2.3 Compact AV Sampler
 - `model`
 - `positive`
 - `negative`
-- `latent_image`
+- `video_latent`
+- `audio_latent`
 - `seed`
 - `cfg`
 - `sampler_name`
