@@ -24,14 +24,17 @@ LTXV/compact -> LTX2.3 Compact AV Sampler
 
 ## Inputs
 
-- `noise`
 - `model`
 - `positive`
 - `negative`
 - `latent_image`
+- `seed`
 - `cfg`
 - `sampler_name`
-- `sigmas`
+- `manual_sigmas`
+- optional `sigmas`
+
+`manual_sigmas` is used by default. If a `SIGMAS` input is connected to the optional `sigmas` socket, the node uses that injected sigma schedule instead.
 
 ## Outputs
 
