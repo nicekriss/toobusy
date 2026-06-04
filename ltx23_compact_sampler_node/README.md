@@ -72,9 +72,8 @@ Outputs:
 - `frame_rate_int`
 - `frame_rate_float`
 - `length`
-- `recommended_duration_seconds`
 
-`length` is calculated from `duration_seconds * frame_rate + 1` so it can be connected directly to `toobusy LTX2.3 Empty AV Latents.length`. `language` is used for dialogue-duration estimation. If the prompt contains quoted dialogue, the node estimates a recommended minimum duration from the dialogue length. `Auto` switches between Korean and English heuristics based on the quoted text.
+`length` is calculated from `duration_seconds * frame_rate + 1` so it can be connected directly to `toobusy LTX2.3 Empty AV Latents.length`. `language` is used for dialogue-duration estimation. If the prompt contains quoted dialogue, the node displays a recommended minimum duration from the dialogue length. `Auto` switches between Korean and English heuristics based on the quoted text.
 
 ## toobusy LTX2.3 Compact AV Sampler
 
