@@ -1,4 +1,4 @@
-import { app } from "../../scripts/app.js";
+import { app } from "/scripts/app.js";
 
 const NODE_CLASS = "IdeogramLayoutBuilder";
 const CANVAS_SIZE = 1000;
