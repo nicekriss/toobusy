@@ -222,6 +222,9 @@ class LTX23PromptGuide:
 
         return {
             "ui": {
+                "recommended_duration_seconds": [recommended_duration_seconds],
+                "length": [length],
+                "frame_rate_float": [frame_rate_float],
                 "text": [
                     f"Recommended duration: {recommended_duration_seconds:.1f}s",
                     f"Length: {length} frames @ {frame_rate_float:g} fps",
