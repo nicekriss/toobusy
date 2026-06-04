@@ -62,7 +62,8 @@ class LTX23CompactAVSampler:
                 "model": ("MODEL",),
                 "positive": ("CONDITIONING",),
                 "negative": ("CONDITIONING",),
-                "latent_image": ("LATENT",),
+                "video_latent": ("LATENT",),
+                "audio_latent": ("LATENT",),
                 "seed": (
                     "INT",
                     {
@@ -97,7 +98,8 @@ class LTX23CompactAVSampler:
         model,
         positive,
         negative,
-        latent_image,
+        video_latent,
+        audio_latent,
         seed,
         cfg,
         sampler_name,
@@ -105,6 +107,11 @@ class LTX23CompactAVSampler:
         sigmas=None,
     ):
         noise = _call_node("RandomNoise", noise_seed=seed)[0]
+        av_latent = _call_node(
+            "LTXVConcatAVLatent",
+            video_latent=video_latent,
+            audio_latent=audio_latent,
+        )[0]
 
         guider = _call_node(
             "CFGGuider",
@@ -123,7 +130,7 @@ class LTX23CompactAVSampler:
             guider=guider,
             sampler=sampler,
             sigmas=sigma_schedule,
-            latent_image=latent_image,
+            latent_image=av_latent,
         )[0]
 
         video_latent, audio_latent = _call_node(
