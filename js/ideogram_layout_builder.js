@@ -3,6 +3,18 @@ import { app } from "../../scripts/app.js";
 const NODE_CLASS = "IdeogramLayoutBuilder";
 const CANVAS_SIZE = 1000;
 
+const RESOLUTION_PRESETS = [
+    ["square_1024", "Square 1:1", 1024, 1024],
+    ["portrait_9_16", "Portrait 9:16", 1024, 1792],
+    ["portrait_3_4", "Portrait 3:4", 1024, 1365],
+    ["portrait_2_3", "Portrait 2:3", 1024, 1536],
+    ["landscape_16_9", "Landscape 16:9", 1792, 1024],
+    ["landscape_4_3", "Landscape 4:3", 1365, 1024],
+    ["landscape_3_2", "Landscape 3:2", 1536, 1024],
+    ["wide_21_9", "Wide 21:9", 2048, 878],
+    ["custom", "Custom", 1024, 1024],
+];
+
 const SCENE_FIELDS = [
     ["high_level_description", "Scene", "textarea"],
     ["aesthetics", "Aesthetics", "textarea"],
@@ -73,6 +85,17 @@ function makeField(labelText, value, multiline, onInput) {
     return label;
 }
 
+function makeNumberInput(value, onInput) {
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = "256";
+    input.max = "2048";
+    input.step = "1";
+    input.value = String(value);
+    input.addEventListener("input", () => onInput(clamp(input.value, 256, 2048)));
+    return input;
+}
+
 function installEditor(node) {
     if (node.__drawingsIdeogramInstalled) return;
     node.__drawingsIdeogramInstalled = true;
@@ -85,6 +108,13 @@ function installEditor(node) {
     let elements = parseElements(jsonWidget.value).map(normalizeElement);
     let selectedIndex = elements.length ? 0 : -1;
     let drag = null;
+    node.properties = node.properties || {};
+    const storedResolution = node.properties.ideogram_layout_resolution || {};
+    let resolution = {
+        preset: storedResolution.preset || "square_1024",
+        width: clamp(storedResolution.width || 1024, 256, 2048),
+        height: clamp(storedResolution.height || 1024, 256, 2048),
+    };
 
     const root = document.createElement("div");
     root.className = "drawings-ideogram";
@@ -110,6 +140,13 @@ function installEditor(node) {
                 grid-template-columns: minmax(360px, 1fr) 230px;
                 gap: 10px;
             }
+            .drawings-ideogram .resolution {
+                display: grid;
+                grid-template-columns: 190px 90px 90px minmax(0, 1fr);
+                gap: 7px;
+                align-items: end;
+                margin-bottom: 8px;
+            }
             .drawings-ideogram .toolbar {
                 display: flex;
                 gap: 6px;
@@ -132,6 +169,7 @@ function installEditor(node) {
                 min-width: 0;
             }
             .drawings-ideogram input,
+            .drawings-ideogram select,
             .drawings-ideogram textarea {
                 width: 100%;
                 border: 1px solid #4d5662;
@@ -162,8 +200,15 @@ function installEditor(node) {
                 min-height: 18px;
                 overflow-wrap: anywhere;
             }
+            .drawings-ideogram .resolution-readout {
+                color: #cbd5df;
+                min-height: 27px;
+                display: flex;
+                align-items: center;
+            }
         </style>
         <div class="scene"></div>
+        <div class="resolution"></div>
         <div class="toolbar"></div>
         <div class="workspace">
             <canvas width="1000" height="1000"></canvas>
@@ -172,11 +217,14 @@ function installEditor(node) {
     `;
 
     const scene = root.querySelector(".scene");
+    const resolutionBar = root.querySelector(".resolution");
     const toolbar = root.querySelector(".toolbar");
     const canvas = root.querySelector("canvas");
     const elementPanel = root.querySelector(".element");
     const bboxReadout = document.createElement("div");
     bboxReadout.className = "bbox";
+    const resolutionReadout = document.createElement("div");
+    resolutionReadout.className = "resolution-readout";
 
     function syncElements() {
         jsonWidget.value = JSON.stringify(elements, null, 2);
@@ -194,6 +242,18 @@ function installEditor(node) {
 
     function selected() {
         return selectedIndex >= 0 ? elements[selectedIndex] : null;
+    }
+
+    function persistResolution() {
+        node.properties.ideogram_layout_resolution = { ...resolution };
+        node.setDirtyCanvas(true, true);
+    }
+
+    function applyResolution() {
+        canvas.style.aspectRatio = `${resolution.width} / ${resolution.height}`;
+        resolutionReadout.textContent = `${resolution.width} x ${resolution.height}`;
+        persistResolution();
+        draw();
     }
 
     function point(event) {
@@ -312,6 +372,51 @@ function installEditor(node) {
         scene.appendChild(makeField(label, item?.value, type === "textarea", (value) => syncScene(name, value)));
     }
 
+    const presetLabel = document.createElement("label");
+    const presetTitle = document.createElement("span");
+    const presetSelect = document.createElement("select");
+    presetTitle.textContent = "Canvas preset";
+    for (const [id, label] of RESOLUTION_PRESETS) {
+        const option = document.createElement("option");
+        option.value = id;
+        option.textContent = label;
+        presetSelect.appendChild(option);
+    }
+    presetSelect.value = resolution.preset;
+    presetLabel.append(presetTitle, presetSelect);
+
+    const widthLabel = document.createElement("label");
+    const widthTitle = document.createElement("span");
+    const widthInput = makeNumberInput(resolution.width, (value) => {
+        resolution = { ...resolution, preset: "custom", width: value };
+        presetSelect.value = "custom";
+        applyResolution();
+    });
+    widthTitle.textContent = "Width";
+    widthLabel.append(widthTitle, widthInput);
+
+    const heightLabel = document.createElement("label");
+    const heightTitle = document.createElement("span");
+    const heightInput = makeNumberInput(resolution.height, (value) => {
+        resolution = { ...resolution, preset: "custom", height: value };
+        presetSelect.value = "custom";
+        applyResolution();
+    });
+    heightTitle.textContent = "Height";
+    heightLabel.append(heightTitle, heightInput);
+
+    presetSelect.addEventListener("change", () => {
+        const preset = RESOLUTION_PRESETS.find(([id]) => id === presetSelect.value);
+        if (!preset) return;
+        const [id, , width, height] = preset;
+        resolution = { preset: id, width, height };
+        widthInput.value = String(width);
+        heightInput.value = String(height);
+        applyResolution();
+    });
+
+    resolutionBar.append(presetLabel, widthLabel, heightLabel, resolutionReadout);
+
     toolbar.append(
         makeButton("+ Element", "Add element", addElement),
         makeButton("Duplicate", "Duplicate selected element", duplicateElement),
@@ -363,6 +468,7 @@ function installEditor(node) {
     if (!elements.length) addElement();
     syncElements();
     renderElementPanel();
+    applyResolution();
 
     const domWidget = node.addDOMWidget("layout_editor", "drawings_ideogram_layout", root, {
         getMinHeight: () => 760,
