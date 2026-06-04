@@ -1,8 +1,6 @@
 # LTX2.3 Compact AV Sampler
 
-This ComfyUI custom node folds the common LTX2.3 AV sampling block into one node:
-
-`LTXVConcatAVLatent -> CFGGuider -> KSamplerSelect -> ManualSigmas -> SamplerCustomAdvanced -> LTXVSeparateAVLatent -> LTXVCropGuides`
+This ComfyUI custom node package folds common LTX2.3 workflow blocks into compact nodes.
 
 ## Install
 
@@ -14,15 +12,69 @@ ComfyUI/custom_nodes/ltx23_compact_sampler_node
 
 Then restart ComfyUI.
 
-## Node
+## Nodes
 
-The node appears under:
+The nodes appear under:
 
 ```text
-LTXV/compact -> LTX2.3 Compact AV Sampler
+LTXV/compact
 ```
 
-## Inputs
+## LTX2.3 Empty AV Latents
+
+Folds `EmptyLTXVLatentVideo` and `LTXVEmptyLatentAudio` into one node.
+
+Inputs:
+
+- `audio_vae`
+- `width`
+- `height`
+- `duration_seconds`
+- `frame_rate`
+- `batch_size`
+- `add_terminal_frame`
+
+Outputs:
+
+- `video_latent`
+- `audio_latent`
+- `frame_count`
+- `latent_frame_count`
+- `frame_rate_int`
+- `frame_rate_float`
+
+`frame_count` is `duration_seconds * frame_rate`. `latent_frame_count` adds one terminal frame by default to match the common LTX setup.
+
+## LTX2.3 Prompt Guide
+
+Folds prompt/negative encoding and LTX frame-rate conditioning into one node.
+
+Inputs:
+
+- `clip`
+- `prompt`
+- `negative_prompt`
+- `frame_rate`
+- `duration_seconds`
+- `add_terminal_frame`
+- `language`
+
+Outputs:
+
+- `positive`
+- `negative`
+- `frame_rate_int`
+- `frame_rate_float`
+- `frame_count`
+- `latent_frame_count`
+
+## LTX2.3 Compact AV Sampler
+
+Folds the common AV sampling block into one node:
+
+`LTXVConcatAVLatent -> CFGGuider -> KSamplerSelect -> ManualSigmas -> SamplerCustomAdvanced -> LTXVSeparateAVLatent -> LTXVCropGuides`
+
+Inputs:
 
 - `model`
 - `positive`
@@ -37,17 +89,11 @@ LTXV/compact -> LTX2.3 Compact AV Sampler
 
 `manual_sigmas` is used by default. If a `SIGMAS` input is connected to the optional `sigmas` socket, the node uses that injected sigma schedule instead.
 
-## LTXVCropGuides behavior
-
-The node always runs `LTXVCropGuides` after `LTXVSeparateAVLatent`.
-
-In LTX guide/keyframe workflows, guide frames are appended to the video latent and tracked through conditioning. `LTXVCropGuides` removes those guide frames and clears the keyframe indices before the latent continues to the next stage. If there are no guide keyframes, ComfyUI's `LTXVCropGuides` passes the latent and conditioning through unchanged.
-
-## Outputs
+Outputs:
 
 - `positive`
 - `negative`
 - `video_latent`
 - `audio_latent`
 
-The output layout matches the compacted block shown in the screenshot: crop-guided positive/negative/video latent outputs plus the separated audio latent.
+The output `video_latent` is the latent returned from `LTXVCropGuides`.
