@@ -7,7 +7,7 @@ ComfyUI 커스텀 노드 저장소입니다.
 `ComfyUI/custom_nodes` 경로에 이 저장소를 `toobusy` 폴더명으로 클론한 뒤 ComfyUI를 재시작하세요.
 
 ```bash
-git clone https://github.com/nicekriss/drawings.git toobusy
+git clone https://github.com/nicekriss/toobusy.git toobusy
 ```
 
 > 이 저장소는 ComfyUI가 `custom_nodes/toobusy/__init__.py`를 직접 import 하는 구조를 사용합니다.
