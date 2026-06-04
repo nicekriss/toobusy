@@ -116,7 +116,7 @@ function normalizeElement(element = {}, index = 0) {
         type: "obj",
         bbox,
         text: element.text || "",
-        desc: element.desc || "new layout element",
+        desc: element.desc || "",
         color_palette: Array.isArray(element.color_palette) ? element.color_palette : ["#8AB4F8", "#FFFFFF"],
     };
 }
