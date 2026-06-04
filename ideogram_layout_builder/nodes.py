@@ -113,11 +113,29 @@ class IdeogramLayoutBuilder:
                         "default": "[]",
                     },
                 ),
+                "width": (
+                    "INT",
+                    {
+                        "default": 1024,
+                        "min": 256,
+                        "max": 2048,
+                        "step": 1,
+                    },
+                ),
+                "height": (
+                    "INT",
+                    {
+                        "default": 1024,
+                        "min": 256,
+                        "max": 2048,
+                        "step": 1,
+                    },
+                ),
             }
         }
 
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("ideogram_json",)
+    RETURN_TYPES = ("STRING", "INT", "INT")
+    RETURN_NAMES = ("ideogram_json", "width", "height")
     FUNCTION = "build"
     CATEGORY = "drawings/ideogram"
 
@@ -131,6 +149,8 @@ class IdeogramLayoutBuilder:
         global_palette,
         background,
         elements_json,
+        width,
+        height,
     ):
         elements = []
         for item in _load_elements(elements_json):
@@ -177,7 +197,7 @@ class IdeogramLayoutBuilder:
             },
         }
 
-        return (json.dumps(payload, ensure_ascii=False, indent=2),)
+        return (json.dumps(payload, ensure_ascii=False, indent=2), int(width), int(height))
 
 
 NODE_CLASS_MAPPINGS = {
