@@ -117,16 +117,13 @@ class LTX23CompactAVSampler:
             av_latent=sampled_av_latent,
         )[:2]
 
-        try:
-            cropped_positive, cropped_negative, cropped_video_latent = _call_node(
-                "LTXVCropGuides",
-                positive=positive,
-                negative=negative,
-                latent=video_latent,
-            )[:3]
-            return (cropped_positive, cropped_negative, cropped_video_latent, audio_latent)
-        except RuntimeError:
-            return (positive, negative, video_latent, audio_latent)
+        cropped_positive, cropped_negative, cropped_video_latent = _call_node(
+            "LTXVCropGuides",
+            positive=positive,
+            negative=negative,
+            latent=video_latent,
+        )[:3]
+        return (cropped_positive, cropped_negative, cropped_video_latent, audio_latent)
 
 
 NODE_CLASS_MAPPINGS = {
