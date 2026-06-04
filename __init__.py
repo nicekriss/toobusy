@@ -1,7 +1,7 @@
 """ComfyUI custom node package entrypoint.
 
 This repository is intended to be cloned into ComfyUI's `custom_nodes` folder
-(e.g. `custom_nodes/drawings`). ComfyUI imports that folder as a Python package,
+(e.g. `custom_nodes/toobusy`). ComfyUI imports that folder as a Python package,
 so this top-level `__init__.py` must expose node mappings.
 """
 
