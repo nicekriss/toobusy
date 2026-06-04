@@ -17,10 +17,10 @@ Then restart ComfyUI.
 The nodes appear under:
 
 ```text
-LTXV/compact
+toobusy/LTXV
 ```
 
-## LTX2.3 Empty AV Latents
+## toobusy LTX2.3 Empty AV Latents
 
 Folds `EmptyLTXVLatentVideo` and `LTXVEmptyLatentAudio` into one node.
 
@@ -52,34 +52,13 @@ When `use_custom_audio` is on, connect an `audio` input and the node uses:
 
 `LTXVAudioVAEEncode -> SolidMask(0) -> SetLatentNoiseMask`
 
-## LTX2.3 Prompt Guide
+## toobusy LTX2.3 Prompt Guide
 
 Folds prompt/negative encoding and LTX frame-rate conditioning into one node.
 
-Inputs:
+Outputs both integer and float frame rates, plus `frame_count` and `latent_frame_count`.
 
-- `clip`
-- `prompt`
-- `negative_prompt`
-- `frame_rate`
-- `duration_seconds`
-- `add_terminal_frame`
-- `language`
-
-Outputs:
-
-- `positive`
-- `negative`
-- `frame_rate_int`
-- `frame_rate_float`
-- `frame_count`
-- `latent_frame_count`
-
-## LTX2.3 Compact AV Sampler
-
-Folds the common AV sampling block into one node:
-
-`LTXVConcatAVLatent -> CFGGuider -> KSamplerSelect -> ManualSigmas -> SamplerCustomAdvanced -> LTXVSeparateAVLatent -> LTXVCropGuides`
+## toobusy LTX2.3 Compact AV Sampler
 
 Inputs:
 
@@ -96,11 +75,17 @@ Inputs:
 
 `manual_sigmas` is used by default. If a `SIGMAS` input is connected to the optional `sigmas` socket, the node uses that injected sigma schedule instead.
 
-Outputs:
+## LTXVCropGuides behavior
+
+The node always runs `LTXVCropGuides` after `LTXVSeparateAVLatent`.
+
+In LTX guide/keyframe workflows, guide frames are appended to the video latent and tracked through conditioning. `LTXVCropGuides` removes those guide frames and clears the keyframe indices before the latent continues to the next stage. If there are no guide keyframes, ComfyUI's `LTXVCropGuides` passes the latent and conditioning through unchanged.
+
+## Outputs
 
 - `positive`
 - `negative`
 - `video_latent`
 - `audio_latent`
 
-The output `video_latent` is the latent returned from `LTXVCropGuides`.
+The output layout matches the compacted block shown in the screenshot: crop-guided positive/negative/video latent outputs plus the separated audio latent.
