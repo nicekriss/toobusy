@@ -4,6 +4,7 @@ import re
 
 HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 MIN_BOX_SIZE = 40
+PLACEHOLDER_DESCS = {"", "new layout element", "layout element", "duplicated layout element"}
 
 
 def _parse_palette(value, fallback=None):
@@ -57,15 +58,26 @@ def _is_placeholder_element(text, desc, bbox):
     width = bbox[2] - bbox[0]
     height = bbox[3] - bbox[1]
     is_tiny_corner = bbox[0] == 0 and bbox[1] == 0 and width <= MIN_BOX_SIZE and height <= MIN_BOX_SIZE
-    return not text and desc.lower() in {"", "new layout element", "layout element"} and is_tiny_corner
+    return not text and desc.lower() in PLACEHOLDER_DESCS and is_tiny_corner
 
 
 def _build_desc(text, desc):
+    if desc.lower() in PLACEHOLDER_DESCS:
+        desc = ""
     if text and desc:
         return desc if text.lower() in desc.lower() else f"{desc} Text reads '{text}'."
     if text:
-        return f"bold editorial magazine typography, text reads '{text}', clean readable lettering inside the specified layout box"
+        return (
+            "transparent magazine cover text overlay printed directly over the continuous full-bleed photo, "
+            f"text reads '{text}', no separate background box, no label panel, no paper card"
+        )
     return desc or "layout element"
+
+
+def _element_type(text, desc):
+    if text and desc.lower() in PLACEHOLDER_DESCS:
+        return "text"
+    return "obj"
 
 
 def _load_elements(elements_json):
@@ -189,7 +201,7 @@ class IdeogramLayoutBuilder:
 
             elements.append(
                 {
-                    "type": "obj",
+                    "type": _element_type(text, desc),
                     "bbox": _to_ideogram_bbox(bbox),
                     "desc": _build_desc(text, desc),
                     "color_palette": _parse_palette(item.get("color_palette"), ["#FFFFFF", "#111111"]),
