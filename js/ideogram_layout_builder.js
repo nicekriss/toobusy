@@ -2,6 +2,7 @@ import { app } from "../../scripts/app.js";
 
 const NODE_CLASS = "IdeogramLayoutBuilder";
 const CANVAS_SIZE = 1000;
+const MIN_BOX_SIZE = 40;
 
 const RESOLUTION_PRESETS = [
     ["square_1024", "Square 1:1", 1024, 1024],
@@ -107,8 +108,10 @@ function parseElements(value) {
 function normalizeElement(element = {}, index = 0) {
     const fallback = [130 + index * 30, 130 + index * 30, 560 + index * 30, 380 + index * 30];
     const bbox = Array.isArray(element.bbox) && element.bbox.length === 4 ? element.bbox.map(clamp) : fallback;
-    if (bbox[2] <= bbox[0]) bbox[2] = Math.min(CANVAS_SIZE, bbox[0] + 20);
-    if (bbox[3] <= bbox[1]) bbox[3] = Math.min(CANVAS_SIZE, bbox[1] + 20);
+    if (bbox[2] - bbox[0] < MIN_BOX_SIZE) bbox[2] = Math.min(CANVAS_SIZE, bbox[0] + MIN_BOX_SIZE);
+    if (bbox[3] - bbox[1] < MIN_BOX_SIZE) bbox[3] = Math.min(CANVAS_SIZE, bbox[1] + MIN_BOX_SIZE);
+    if (bbox[2] - bbox[0] < MIN_BOX_SIZE) bbox[0] = Math.max(0, bbox[2] - MIN_BOX_SIZE);
+    if (bbox[3] - bbox[1] < MIN_BOX_SIZE) bbox[1] = Math.max(0, bbox[3] - MIN_BOX_SIZE);
     return {
         type: "obj",
         bbox,
@@ -455,6 +458,20 @@ function installEditor(node) {
         return { index: -1, mode: "none" };
     }
 
+    function drawLabel(ctx, label, x, y, width) {
+        const displayScale = Math.max(0.1, canvas.getBoundingClientRect().width / CANVAS_SIZE);
+        let fontSize = Math.round(13 / displayScale);
+        fontSize = Math.max(28, Math.min(64, fontSize));
+        ctx.font = `${fontSize}px system-ui, sans-serif`;
+
+        let text = label || "";
+        while (text.length > 1 && ctx.measureText(text).width > width - 24) {
+            text = text.slice(0, -2);
+        }
+        if (text !== label && text.length > 1) text = `${text}...`;
+        ctx.fillText(text, x + 12, y + fontSize + 10);
+    }
+
     function draw() {
         const ctx = canvas.getContext("2d");
         ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
@@ -482,8 +499,7 @@ function installEditor(node) {
             ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
             ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
             ctx.fillStyle = "#FFFFFF";
-            ctx.font = "24px system-ui, sans-serif";
-            ctx.fillText((element.text || element.desc || `Element ${index + 1}`).slice(0, 28), x1 + 12, y1 + 34);
+            drawLabel(ctx, element.text || element.desc || `Element ${index + 1}`, x1, y1, x2 - x1);
             if (active) ctx.fillRect(x2 - 18, y2 - 18, 18, 18);
         }
     }
