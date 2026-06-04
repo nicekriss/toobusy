@@ -48,6 +48,11 @@ def _normalize_bbox(value):
     return [x_min, y_min, x_max, y_max]
 
 
+def _to_ideogram_bbox(value):
+    x_min, y_min, x_max, y_max = _normalize_bbox(value)
+    return [y_min, x_min, y_max, x_max]
+
+
 def _load_elements(elements_json):
     if not elements_json.strip():
         return []
@@ -171,7 +176,7 @@ class IdeogramLayoutBuilder:
             elements.append(
                 {
                     "type": "obj",
-                    "bbox": _normalize_bbox(item.get("bbox")),
+                    "bbox": _to_ideogram_bbox(item.get("bbox")),
                     "desc": desc,
                     "color_palette": _parse_palette(item.get("color_palette"), ["#FFFFFF", "#111111"]),
                 }
