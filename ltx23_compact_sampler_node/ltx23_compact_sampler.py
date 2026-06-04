@@ -22,6 +22,9 @@ def _call_node(class_name, **kwargs):
 
     fn = getattr(node, fn_name)
     signature = inspect.signature(fn)
+    if any(param.kind == inspect.Parameter.VAR_KEYWORD for param in signature.parameters.values()):
+        return fn(**kwargs)
+
     filtered = {key: value for key, value in kwargs.items() if key in signature.parameters}
     return fn(**filtered)
 
