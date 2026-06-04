@@ -414,6 +414,15 @@ function installEditor(node) {
         return selectedIndex >= 0 ? elements[selectedIndex] : null;
     }
 
+    function selectedOrLast() {
+        if (selectedIndex >= 0 && selectedIndex < elements.length) return elements[selectedIndex];
+        if (elements.length) {
+            selectedIndex = elements.length - 1;
+            return elements[selectedIndex];
+        }
+        return null;
+    }
+
     function persistResolution() {
         node.properties.ideogram_layout_resolution = { ...resolution };
         if (widthWidget) {
@@ -552,15 +561,15 @@ function installEditor(node) {
     }
 
     function duplicateElement() {
-        const element = selected();
+        const element = selectedOrLast();
         if (!element) {
             addElement();
             return;
         }
         const copy = JSON.parse(JSON.stringify(element));
         const [x1, y1, x2, y2] = copy.bbox;
-        const width = x2 - x1;
-        const height = y2 - y1;
+        const width = Math.max(MIN_BOX_SIZE, x2 - x1);
+        const height = Math.max(MIN_BOX_SIZE, y2 - y1);
         const offset = 90;
         let nextX = x1 + offset;
         let nextY = y1 + offset;
@@ -568,17 +577,20 @@ function installEditor(node) {
         if (nextX + width > CANVAS_SIZE) nextX = Math.max(0, x1 - offset);
         if (nextY + height > CANVAS_SIZE) nextY = Math.max(0, y1 - offset);
 
+        const clampedX = clamp(nextX, 0, Math.max(0, CANVAS_SIZE - width));
+        const clampedY = clamp(nextY, 0, Math.max(0, CANVAS_SIZE - height));
         copy.bbox = [
-            clamp(nextX, 0, CANVAS_SIZE - width),
-            clamp(nextY, 0, CANVAS_SIZE - height),
-            clamp(nextX, 0, CANVAS_SIZE - width) + width,
-            clamp(nextY, 0, CANVAS_SIZE - height) + height,
+            clampedX,
+            clampedY,
+            Math.min(CANVAS_SIZE, clampedX + width),
+            Math.min(CANVAS_SIZE, clampedY + height),
         ];
         copy.desc = copy.desc || "duplicated layout element";
         elements.push(normalizeElement(copy, elements.length));
         selectedIndex = elements.length - 1;
         syncElements();
         renderElementPanel();
+        applyResolution();
         draw();
     }
 
