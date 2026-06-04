@@ -1,6 +1,33 @@
 from .ltx23_compact_sampler import _call_node
 
 
+RATIO_PRESETS = {
+    "1:1": (1, 1),
+    "16:9": (16, 9),
+    "9:16": (9, 16),
+    "4:3": (4, 3),
+    "3:4": (3, 4),
+    "3:2": (3, 2),
+    "2:3": (2, 3),
+    "21:9": (21, 9),
+    "9:21": (9, 21),
+}
+
+
+def _round_to_multiple(value, multiple):
+    multiple = max(1, int(multiple))
+    return max(multiple, int(round(value / multiple)) * multiple)
+
+
+def _resolution_from_ratio_megapixels(ratio_preset, megapixels, divisible_by):
+    ratio_width, ratio_height = RATIO_PRESETS[ratio_preset]
+    aspect = ratio_width / ratio_height
+    area = max(0.01, float(megapixels)) * 1_000_000
+    width = _round_to_multiple((area * aspect) ** 0.5, divisible_by)
+    height = _round_to_multiple((area / aspect) ** 0.5, divisible_by)
+    return width, height
+
+
 def _contains_hangul(text):
     return any("\uac00" <= char <= "\ud7a3" for char in text)
 
@@ -55,8 +82,9 @@ class LTX23EmptyAVLatents:
         return {
             "required": {
                 "audio_vae": ("VAE",),
-                "width": ("INT", {"default": 768, "min": 16, "max": 8192, "step": 16}),
-                "height": ("INT", {"default": 512, "min": 16, "max": 8192, "step": 16}),
+                "ratio_preset": (list(RATIO_PRESETS.keys()), {"default": "16:9"}),
+                "megapixels": ("FLOAT", {"default": 1.0, "min": 0.01, "max": 16.0, "step": 0.01}),
+                "divisible_by": ("INT", {"default": 32, "min": 1, "max": 256}),
                 "length": ("INT", {"default": 97, "min": 1, "max": 16384}),
                 "frame_rate": ("INT", {"default": 24, "min": 1, "max": 120}),
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 4096}),
@@ -67,13 +95,15 @@ class LTX23EmptyAVLatents:
             },
         }
 
-    RETURN_TYPES = ("LATENT", "LATENT", "INT", "INT", "FLOAT")
+    RETURN_TYPES = ("LATENT", "LATENT", "INT", "INT", "FLOAT", "INT", "INT")
     RETURN_NAMES = (
         "video_latent",
         "audio_latent",
         "length",
         "frame_rate_int",
         "frame_rate_float",
+        "width",
+        "height",
     )
     FUNCTION = "create"
     CATEGORY = "toobusy/LTXV"
@@ -81,8 +111,9 @@ class LTX23EmptyAVLatents:
     def create(
         self,
         audio_vae,
-        width,
-        height,
+        ratio_preset,
+        megapixels,
+        divisible_by,
         length,
         frame_rate,
         batch_size,
@@ -91,6 +122,7 @@ class LTX23EmptyAVLatents:
     ):
         frame_rate_int = int(round(frame_rate))
         frame_rate_float = float(frame_rate)
+        width, height = _resolution_from_ratio_megapixels(ratio_preset, megapixels, divisible_by)
 
         video_latent = _call_node(
             "EmptyLTXVLatentVideo",
@@ -134,6 +166,8 @@ class LTX23EmptyAVLatents:
             length,
             frame_rate_int,
             frame_rate_float,
+            width,
+            height,
         )
 
 
