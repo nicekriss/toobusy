@@ -45,10 +45,8 @@ def _recommended_duration_seconds(prompt, language, fallback_duration):
     return max(float(fallback_duration), round(speech_seconds + 1.0, 1))
 
 
-def _frame_counts(duration_seconds, frame_rate, add_terminal_frame=True):
-    frame_count = max(1, int(round(float(duration_seconds) * float(frame_rate))))
-    latent_frame_count = frame_count + 1 if add_terminal_frame else frame_count
-    return frame_count, latent_frame_count
+def _ltx_length(duration_seconds, frame_rate):
+    return max(1, int(round(float(duration_seconds) * float(frame_rate))) + 1)
 
 
 class LTX23EmptyAVLatents:
@@ -59,10 +57,9 @@ class LTX23EmptyAVLatents:
                 "audio_vae": ("VAE",),
                 "width": ("INT", {"default": 768, "min": 16, "max": 8192, "step": 16}),
                 "height": ("INT", {"default": 512, "min": 16, "max": 8192, "step": 16}),
-                "duration_seconds": ("FLOAT", {"default": 4.0, "min": 0.1, "max": 600.0, "step": 0.1}),
-                "frame_rate": ("FLOAT", {"default": 24.0, "min": 1.0, "max": 120.0, "step": 0.01}),
+                "length": ("INT", {"default": 97, "min": 1, "max": 16384}),
+                "frame_rate": ("INT", {"default": 24, "min": 1, "max": 120}),
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 4096}),
-                "add_terminal_frame": ("BOOLEAN", {"default": True}),
                 "use_custom_audio": ("BOOLEAN", {"default": False}),
             },
             "optional": {
@@ -70,12 +67,11 @@ class LTX23EmptyAVLatents:
             },
         }
 
-    RETURN_TYPES = ("LATENT", "LATENT", "INT", "INT", "INT", "FLOAT")
+    RETURN_TYPES = ("LATENT", "LATENT", "INT", "INT", "FLOAT")
     RETURN_NAMES = (
         "video_latent",
         "audio_latent",
-        "frame_count",
-        "latent_frame_count",
+        "length",
         "frame_rate_int",
         "frame_rate_float",
     )
@@ -87,29 +83,27 @@ class LTX23EmptyAVLatents:
         audio_vae,
         width,
         height,
-        duration_seconds,
+        length,
         frame_rate,
         batch_size,
-        add_terminal_frame,
         use_custom_audio,
         audio=None,
     ):
         frame_rate_int = int(round(frame_rate))
         frame_rate_float = float(frame_rate)
-        frame_count, latent_frame_count = _frame_counts(duration_seconds, frame_rate_float, add_terminal_frame)
 
         video_latent = _call_node(
             "EmptyLTXVLatentVideo",
             width=width,
             height=height,
-            length=latent_frame_count,
+            length=length,
             batch_size=batch_size,
         )[0]
 
         audio_latent = _call_node(
             "LTXVEmptyLatentAudio",
             audio_vae=audio_vae,
-            frames_number=latent_frame_count,
+            frames_number=length,
             frame_rate=frame_rate_int,
         )[0]
 
@@ -137,8 +131,7 @@ class LTX23EmptyAVLatents:
         return (
             video_latent,
             audio_latent,
-            frame_count,
-            latent_frame_count,
+            length,
             frame_rate_int,
             frame_rate_float,
         )
@@ -165,14 +158,7 @@ class LTX23PromptGuide:
         }
 
     RETURN_TYPES = ("CONDITIONING", "CONDITIONING", "INT", "FLOAT", "INT", "FLOAT")
-    RETURN_NAMES = (
-        "positive",
-        "negative",
-        "frame_rate_int",
-        "frame_rate_float",
-        "frame_count",
-        "recommended_duration_seconds",
-    )
+    RETURN_NAMES = ("positive", "negative", "frame_rate_int", "frame_rate_float", "length", "recommended_duration_seconds")
     FUNCTION = "encode"
     CATEGORY = "toobusy/LTXV"
 
@@ -187,7 +173,7 @@ class LTX23PromptGuide:
     ):
         frame_rate_int = int(round(frame_rate))
         frame_rate_float = float(frame_rate)
-        frame_count, _ = _frame_counts(duration_seconds, frame_rate_float, False)
+        length = _ltx_length(duration_seconds, frame_rate_float)
         recommended_duration_seconds = _recommended_duration_seconds(prompt, language, duration_seconds)
 
         positive = _call_node("CLIPTextEncode", text=prompt, clip=clip)[0]
@@ -205,7 +191,7 @@ class LTX23PromptGuide:
             negative,
             frame_rate_int,
             frame_rate_float,
-            frame_count,
+            length,
             recommended_duration_seconds,
         )
 
