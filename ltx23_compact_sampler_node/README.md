@@ -31,10 +31,9 @@ Inputs:
 - `audio_vae`
 - `width`
 - `height`
-- `duration_seconds`
+- `length`
 - `frame_rate`
 - `batch_size`
-- `add_terminal_frame`
 - `use_custom_audio`
 - optional `audio`
 
@@ -42,12 +41,11 @@ Outputs:
 
 - `video_latent`
 - `audio_latent`
-- `frame_count`
-- `latent_frame_count`
+- `length`
 - `frame_rate_int`
 - `frame_rate_float`
 
-`frame_count` is `duration_seconds * frame_rate`. `latent_frame_count` adds one terminal frame by default to match the common LTX setup.
+`length` is passed to both `EmptyLTXVLatentVideo.length` and `LTXVEmptyLatentAudio.frames_number`.
 
 When `use_custom_audio` is off, the node uses `LTXVEmptyLatentAudio`.
 When `use_custom_audio` is on, connect an `audio` input and the node uses:
@@ -73,10 +71,10 @@ Outputs:
 - `negative`
 - `frame_rate_int`
 - `frame_rate_float`
-- `frame_count`
+- `length`
 - `recommended_duration_seconds`
 
-`language` is used for dialogue-duration estimation. If the prompt contains quoted dialogue, the node estimates a recommended minimum duration from the dialogue length. `Auto` switches between Korean and English heuristics based on the quoted text.
+`length` is calculated from `duration_seconds * frame_rate + 1` so it can be connected directly to `toobusy LTX2.3 Empty AV Latents.length`. `language` is used for dialogue-duration estimation. If the prompt contains quoted dialogue, the node estimates a recommended minimum duration from the dialogue length. `Auto` switches between Korean and English heuristics based on the quoted text.
 
 ## toobusy LTX2.3 Compact AV Sampler
 
