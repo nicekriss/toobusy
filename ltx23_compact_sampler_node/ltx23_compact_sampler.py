@@ -91,7 +91,7 @@ class LTX23CompactAVSampler:
     RETURN_TYPES = ("CONDITIONING", "CONDITIONING", "LATENT", "LATENT")
     RETURN_NAMES = ("positive", "negative", "video_latent", "audio_latent")
     FUNCTION = "sample"
-    CATEGORY = "LTXV/compact"
+    CATEGORY = "toobusy/LTXV"
 
     def sample(
         self,
@@ -152,7 +152,7 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "LTX23CompactAVSampler": "LTX2.3 Compact AV Sampler",
+    "LTX23CompactAVSampler": "toobusy LTX2.3 Compact AV Sampler",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
