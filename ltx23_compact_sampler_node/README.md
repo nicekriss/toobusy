@@ -33,6 +33,8 @@ Inputs:
 - `frame_rate`
 - `batch_size`
 - `add_terminal_frame`
+- `use_custom_audio`
+- optional `audio`
 
 Outputs:
 
@@ -44,6 +46,11 @@ Outputs:
 - `frame_rate_float`
 
 `frame_count` is `duration_seconds * frame_rate`. `latent_frame_count` adds one terminal frame by default to match the common LTX setup.
+
+When `use_custom_audio` is off, the node uses `LTXVEmptyLatentAudio`.
+When `use_custom_audio` is on, connect an `audio` input and the node uses:
+
+`LTXVAudioVAEEncode -> SolidMask(0) -> SetLatentNoiseMask`
 
 ## LTX2.3 Prompt Guide
 
