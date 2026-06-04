@@ -36,7 +36,7 @@ class LTX23EmptyAVLatents:
         "frame_rate_float",
     )
     FUNCTION = "create"
-    CATEGORY = "LTXV/compact"
+    CATEGORY = "toobusy/LTXV"
 
     def create(
         self,
@@ -131,7 +131,7 @@ class LTX23PromptGuide:
         "latent_frame_count",
     )
     FUNCTION = "encode"
-    CATEGORY = "LTXV/compact"
+    CATEGORY = "toobusy/LTXV"
 
     def encode(
         self,
@@ -175,6 +175,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "LTX23EmptyAVLatents": "LTX2.3 Empty AV Latents",
-    "LTX23PromptGuide": "LTX2.3 Prompt Guide",
+    "LTX23EmptyAVLatents": "toobusy LTX2.3 Empty AV Latents",
+    "LTX23PromptGuide": "toobusy LTX2.3 Prompt Guide",
 }
