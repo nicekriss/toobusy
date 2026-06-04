@@ -1,6 +1,8 @@
 # LTX2.3 Compact AV Sampler
 
-This ComfyUI custom node package folds common LTX2.3 workflow blocks into compact nodes.
+This ComfyUI custom node folds the common LTX2.3 AV sampling block into one node:
+
+`LTXVConcatAVLatent -> CFGGuider -> KSamplerSelect -> ManualSigmas -> SamplerCustomAdvanced -> LTXVSeparateAVLatent -> LTXVCropGuides`
 
 ## Install
 
@@ -12,7 +14,7 @@ ComfyUI/custom_nodes/ltx23_compact_sampler_node
 
 Then restart ComfyUI.
 
-## Nodes
+## Node
 
 The nodes appear under:
 
@@ -56,7 +58,25 @@ When `use_custom_audio` is on, connect an `audio` input and the node uses:
 
 Folds prompt/negative encoding and LTX frame-rate conditioning into one node.
 
-Outputs both integer and float frame rates, plus `frame_count` and `latent_frame_count`.
+Inputs:
+
+- `clip`
+- `prompt`
+- `negative_prompt`
+- `frame_rate`
+- `duration_seconds`
+- `language`
+
+Outputs:
+
+- `positive`
+- `negative`
+- `frame_rate_int`
+- `frame_rate_float`
+- `frame_count`
+- `recommended_duration_seconds`
+
+`language` is used for dialogue-duration estimation. If the prompt contains quoted dialogue, the node estimates a recommended minimum duration from the dialogue length. `Auto` switches between Korean and English heuristics based on the quoted text.
 
 ## toobusy LTX2.3 Compact AV Sampler
 
