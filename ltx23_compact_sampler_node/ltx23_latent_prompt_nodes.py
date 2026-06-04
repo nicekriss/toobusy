@@ -157,8 +157,8 @@ class LTX23PromptGuide:
             },
         }
 
-    RETURN_TYPES = ("CONDITIONING", "CONDITIONING", "INT", "FLOAT", "INT", "FLOAT")
-    RETURN_NAMES = ("positive", "negative", "frame_rate_int", "frame_rate_float", "length", "recommended_duration_seconds")
+    RETURN_TYPES = ("CONDITIONING", "CONDITIONING", "INT", "FLOAT", "INT")
+    RETURN_NAMES = ("positive", "negative", "frame_rate_int", "frame_rate_float", "length")
     FUNCTION = "encode"
     CATEGORY = "toobusy/LTXV"
 
@@ -186,14 +186,21 @@ class LTX23PromptGuide:
             frame_rate=frame_rate_float,
         )[:2]
 
-        return (
-            positive,
-            negative,
-            frame_rate_int,
-            frame_rate_float,
-            length,
-            recommended_duration_seconds,
-        )
+        return {
+            "ui": {
+                "text": [
+                    f"Recommended duration: {recommended_duration_seconds:.1f}s",
+                    f"Length: {length} frames @ {frame_rate_float:g} fps",
+                ]
+            },
+            "result": (
+                positive,
+                negative,
+                frame_rate_int,
+                frame_rate_float,
+                length,
+            ),
+        }
 
 
 NODE_CLASS_MAPPINGS = {
