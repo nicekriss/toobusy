@@ -1,6 +1,50 @@
 from .ltx23_compact_sampler import _call_node
 
 
+def _contains_hangul(text):
+    return any("\uac00" <= char <= "\ud7a3" for char in text)
+
+
+def _quoted_dialogue(text):
+    quote_pairs = [("'", "'"), ('"', '"'), ("“", "”"), ("‘", "’"), ("「", "」"), ("『", "』")]
+    parts = []
+
+    for open_quote, close_quote in quote_pairs:
+        start = 0
+        while True:
+            left = text.find(open_quote, start)
+            if left < 0:
+                break
+            right = text.find(close_quote, left + len(open_quote))
+            if right < 0:
+                break
+            value = text[left + len(open_quote) : right].strip()
+            if value:
+                parts.append(value)
+            start = right + len(close_quote)
+
+    return "\n".join(parts)
+
+
+def _recommended_duration_seconds(prompt, language, fallback_duration):
+    dialogue = _quoted_dialogue(prompt)
+    if not dialogue:
+        return float(fallback_duration)
+
+    mode = language
+    if mode == "Auto":
+        mode = "Korean" if _contains_hangul(dialogue) else "English"
+
+    if mode == "Korean":
+        count = len([char for char in dialogue if not char.isspace()])
+        speech_seconds = count / 5.5
+    else:
+        count = len(dialogue.split())
+        speech_seconds = count / 2.4
+
+    return max(float(fallback_duration), round(speech_seconds + 1.0, 1))
+
+
 def _frame_counts(duration_seconds, frame_rate, add_terminal_frame=True):
     frame_count = max(1, int(round(float(duration_seconds) * float(frame_rate))))
     latent_frame_count = frame_count + 1 if add_terminal_frame else frame_count
@@ -116,19 +160,18 @@ class LTX23PromptGuide:
                 ),
                 "frame_rate": ("FLOAT", {"default": 24.0, "min": 1.0, "max": 120.0, "step": 0.01}),
                 "duration_seconds": ("FLOAT", {"default": 4.0, "min": 0.1, "max": 600.0, "step": 0.1}),
-                "add_terminal_frame": ("BOOLEAN", {"default": True}),
                 "language": (["Auto", "Korean", "English"], {"default": "Auto"}),
             },
         }
 
-    RETURN_TYPES = ("CONDITIONING", "CONDITIONING", "INT", "FLOAT", "INT", "INT")
+    RETURN_TYPES = ("CONDITIONING", "CONDITIONING", "INT", "FLOAT", "INT", "FLOAT")
     RETURN_NAMES = (
         "positive",
         "negative",
         "frame_rate_int",
         "frame_rate_float",
         "frame_count",
-        "latent_frame_count",
+        "recommended_duration_seconds",
     )
     FUNCTION = "encode"
     CATEGORY = "toobusy/LTXV"
@@ -140,14 +183,12 @@ class LTX23PromptGuide:
         negative_prompt,
         frame_rate,
         duration_seconds,
-        add_terminal_frame,
         language="Auto",
     ):
-        del language
-
         frame_rate_int = int(round(frame_rate))
         frame_rate_float = float(frame_rate)
-        frame_count, latent_frame_count = _frame_counts(duration_seconds, frame_rate_float, add_terminal_frame)
+        frame_count, _ = _frame_counts(duration_seconds, frame_rate_float, False)
+        recommended_duration_seconds = _recommended_duration_seconds(prompt, language, duration_seconds)
 
         positive = _call_node("CLIPTextEncode", text=prompt, clip=clip)[0]
         negative = _call_node("CLIPTextEncode", text=negative_prompt, clip=clip)[0]
@@ -165,7 +206,7 @@ class LTX23PromptGuide:
             frame_rate_int,
             frame_rate_float,
             frame_count,
-            latent_frame_count,
+            recommended_duration_seconds,
         )
 
 
