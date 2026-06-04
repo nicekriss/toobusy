@@ -29,8 +29,9 @@ Folds `EmptyLTXVLatentVideo` and `LTXVEmptyLatentAudio` into one node.
 Inputs:
 
 - `audio_vae`
-- `width`
-- `height`
+- `ratio_preset`
+- `megapixels`
+- `divisible_by`
 - `length`
 - `frame_rate`
 - `batch_size`
@@ -44,8 +45,10 @@ Outputs:
 - `length`
 - `frame_rate_int`
 - `frame_rate_float`
+- `width`
+- `height`
 
-`length` is passed to both `EmptyLTXVLatentVideo.length` and `LTXVEmptyLatentAudio.frames_number`.
+The node calculates `width` and `height` from `ratio_preset * megapixels`, rounded to `divisible_by`. `length` is passed to both `EmptyLTXVLatentVideo.length` and `LTXVEmptyLatentAudio.frames_number`.
 
 When `use_custom_audio` is off, the node uses `LTXVEmptyLatentAudio`.
 When `use_custom_audio` is on, connect an `audio` input and the node uses:
