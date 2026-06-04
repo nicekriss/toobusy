@@ -29,31 +29,48 @@ def _call_node(class_name, **kwargs):
 def _sampler_names():
     try:
         input_types = _node_class("KSamplerSelect").INPUT_TYPES()
-        return input_types["required"]["sampler_name"][0]
+        names = list(input_types["required"]["sampler_name"][0])
+        return names or ["euler"]
     except Exception:
-        return ["res_2s"]
+        return ["euler"]
+
+
+def _default_sampler_name(sampler_names):
+    return "res_2s" if "res_2s" in sampler_names else sampler_names[0]
 
 
 class LTX23CompactAVSampler:
     @classmethod
     def INPUT_TYPES(cls):
+        sampler_names = _sampler_names()
         return {
             "required": {
-                "noise": ("NOISE",),
                 "model": ("MODEL",),
                 "positive": ("CONDITIONING",),
                 "negative": ("CONDITIONING",),
                 "latent_image": ("LATENT",),
+                "seed": (
+                    "INT",
+                    {
+                        "default": 42,
+                        "min": 0,
+                        "max": 0xffffffffffffffff,
+                        "control_after_generate": True,
+                    },
+                ),
                 "cfg": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 30.0, "step": 0.1}),
-                "sampler_name": (_sampler_names(), {"default": "res_2s"}),
-                "sigmas": (
+                "sampler_name": (sampler_names, {"default": _default_sampler_name(sampler_names)}),
+                "manual_sigmas": (
                     "STRING",
                     {
                         "default": "1.0, 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0",
                         "multiline": False,
                     },
                 ),
-            }
+            },
+            "optional": {
+                "sigmas": ("SIGMAS",),
+            },
         }
 
     RETURN_TYPES = ("CONDITIONING", "CONDITIONING", "LATENT", "LATENT")
@@ -61,7 +78,20 @@ class LTX23CompactAVSampler:
     FUNCTION = "sample"
     CATEGORY = "LTXV/compact"
 
-    def sample(self, noise, model, positive, negative, latent_image, cfg, sampler_name, sigmas):
+    def sample(
+        self,
+        model,
+        positive,
+        negative,
+        latent_image,
+        seed,
+        cfg,
+        sampler_name,
+        manual_sigmas,
+        sigmas=None,
+    ):
+        noise = _call_node("RandomNoise", noise_seed=seed)[0]
+
         guider = _call_node(
             "CFGGuider",
             model=model,
@@ -71,7 +101,7 @@ class LTX23CompactAVSampler:
         )[0]
 
         sampler = _call_node("KSamplerSelect", sampler_name=sampler_name)[0]
-        sigma_schedule = _call_node("ManualSigmas", sigmas=sigmas)[0]
+        sigma_schedule = sigmas if sigmas is not None else _call_node("ManualSigmas", sigmas=manual_sigmas)[0]
 
         sampled_av_latent = _call_node(
             "SamplerCustomAdvanced",
