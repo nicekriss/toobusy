@@ -3,6 +3,7 @@ import re
 
 
 HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
+MIN_BOX_SIZE = 40
 
 
 def _parse_palette(value, fallback=None):
@@ -36,10 +37,14 @@ def _normalize_bbox(value):
     if not isinstance(value, list) or len(value) != 4:
         return [100, 100, 900, 900]
     x_min, y_min, x_max, y_max = [_clamp_int(item) for item in value]
-    if x_max <= x_min:
-        x_max = min(1000, x_min + 1)
-    if y_max <= y_min:
-        y_max = min(1000, y_min + 1)
+    if x_max - x_min < MIN_BOX_SIZE:
+        x_max = min(1000, x_min + MIN_BOX_SIZE)
+    if y_max - y_min < MIN_BOX_SIZE:
+        y_max = min(1000, y_min + MIN_BOX_SIZE)
+    if x_max - x_min < MIN_BOX_SIZE:
+        x_min = max(0, x_max - MIN_BOX_SIZE)
+    if y_max - y_min < MIN_BOX_SIZE:
+        y_min = max(0, y_max - MIN_BOX_SIZE)
     return [x_min, y_min, x_max, y_max]
 
 
