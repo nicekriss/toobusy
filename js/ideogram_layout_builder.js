@@ -60,6 +60,25 @@ const PALETTE_PRESETS = [
     ["High contrast", ["#000000", "#FFFFFF", "#FF3B30", "#FFD60A", "#0A84FF"]],
 ];
 
+const COLOR_CHOICES = [
+    "#000000",
+    "#111111",
+    "#FFFFFF",
+    "#F7F1DF",
+    "#D8C7A3",
+    "#8A8F98",
+    "#4A5562",
+    "#07111F",
+    "#0A84FF",
+    "#46A3FF",
+    "#7DE2D1",
+    "#FF3B30",
+    "#FFD60A",
+    "#C96F3D",
+    "#6D1F2A",
+    "#F8C7D8",
+];
+
 function widget(node, name) {
     return node.widgets?.find((item) => item.name === name);
 }
@@ -172,25 +191,34 @@ function makePaletteEditor(labelText, colors, onInput, count = 5) {
     const root = document.createElement("label");
     const title = document.createElement("span");
     const row = document.createElement("div");
-    const inputs = [];
+    const swatches = [];
     title.textContent = labelText;
     row.className = "palette-row";
 
     function emit() {
-        onInput(inputs.map((input) => input.value.toUpperCase()));
+        onInput(swatches.map((swatch) => swatch.dataset.color));
     }
 
     for (let index = 0; index < count; index++) {
-        const input = document.createElement("input");
-        input.type = "color";
-        input.value = colors[index] || colors[colors.length - 1] || "#FFFFFF";
-        input.addEventListener("input", emit);
-        inputs.push(input);
-        row.appendChild(input);
+        const swatch = document.createElement("button");
+        swatch.type = "button";
+        swatch.className = "color-swatch";
+        swatch.dataset.color = colors[index] || colors[colors.length - 1] || "#FFFFFF";
+        swatch.style.background = swatch.dataset.color;
+        swatch.title = "Click to cycle color";
+        swatch.addEventListener("click", () => {
+            const currentIndex = COLOR_CHOICES.indexOf(swatch.dataset.color);
+            const next = COLOR_CHOICES[(currentIndex + 1) % COLOR_CHOICES.length];
+            swatch.dataset.color = next;
+            swatch.style.background = next;
+            emit();
+        });
+        swatches.push(swatch);
+        row.appendChild(swatch);
     }
 
     root.append(title, row);
-    return { root, inputs };
+    return { root, swatches };
 }
 
 function installEditor(node) {
@@ -252,7 +280,7 @@ function installEditor(node) {
             }
             .drawings-ideogram .canvas-frame {
                 width: 100%;
-                height: 560px;
+                height: 420px;
                 border: 1px solid #58616d;
                 border-radius: 6px;
                 background: #0e1319;
@@ -319,10 +347,12 @@ function installEditor(node) {
                 display: flex;
                 gap: 5px;
             }
-            .drawings-ideogram .palette-row input[type="color"] {
+            .drawings-ideogram .color-swatch {
                 width: 32px;
                 height: 26px;
-                padding: 2px;
+                padding: 0;
+                border: 1px solid #6d7784;
+                border-radius: 5px;
                 cursor: pointer;
             }
             .drawings-ideogram .palette-preset {
@@ -539,8 +569,10 @@ function installEditor(node) {
         const preset = PALETTE_PRESETS.find(([name]) => name === palettePresetSelect.value);
         if (!preset) return;
         globalColors = [...preset[1]];
-        globalPalette.inputs.forEach((input, index) => {
-            input.value = globalColors[index] || "#FFFFFF";
+        globalPalette.swatches.forEach((swatch, index) => {
+            const color = globalColors[index] || "#FFFFFF";
+            swatch.dataset.color = color;
+            swatch.style.background = color;
         });
         syncScene("global_palette", globalColors.join(", "));
     });
@@ -646,9 +678,9 @@ function installEditor(node) {
     applyResolution();
 
     const domWidget = node.addDOMWidget("layout_editor", "drawings_ideogram_layout", root, {
-        getMinHeight: () => 760,
-        getMaxHeight: () => 980,
-        getHeight: () => 820,
+        getMinHeight: () => 700,
+        getMaxHeight: () => 860,
+        getHeight: () => 740,
     });
 
     if (domWidget && node.widgets?.includes(domWidget)) {
@@ -660,8 +692,8 @@ function installEditor(node) {
 
     const originalComputeSize = node.computeSize;
     node.computeSize = function computeSize(out) {
-        const size = originalComputeSize?.call(this, out) || [680, 900];
-        return [Math.max(size[0], 720), Math.max(size[1], 900)];
+        const size = originalComputeSize?.call(this, out) || [680, 780];
+        return [Math.max(size[0], 720), Math.max(size[1], 780)];
     };
 }
 
