@@ -126,13 +126,24 @@ function makeButton(text, title, onClick) {
     button.type = "button";
     button.textContent = text;
     button.title = title;
-    button.addEventListener("pointerdown", (event) => {
+    let lastRun = 0;
+
+    function run(event) {
+        event.preventDefault();
         event.stopPropagation();
-    });
+        event.stopImmediatePropagation?.();
+        const now = performance.now();
+        if (now - lastRun < 150) return;
+        lastRun = now;
+        onClick();
+    }
+
+    button.addEventListener("pointerdown", run);
+    button.addEventListener("mousedown", run);
     button.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        onClick();
+        event.stopImmediatePropagation?.();
     });
     return button;
 }
