@@ -1,9 +1,9 @@
 import inspect
 
-import nodes
-
 
 def _node_class(class_name):
+    import nodes
+
     try:
         return nodes.NODE_CLASS_MAPPINGS[class_name]
     except KeyError as exc:
@@ -106,3 +106,5 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "LTX23CompactAVSampler": "LTX2.3 Compact AV Sampler",
 }
+
+__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
