@@ -1,28 +1,29 @@
-# drawings
+# toobusy
 
 ComfyUI 커스텀 노드 저장소입니다.
 
 ## 설치
 
-`ComfyUI/custom_nodes` 경로에 이 저장소를 `drawings` 폴더명으로 클론한 뒤 ComfyUI를 재시작하세요.
+`ComfyUI/custom_nodes` 경로에 이 저장소를 `toobusy` 폴더명으로 클론한 뒤 ComfyUI를 재시작하세요.
 
 ```bash
-git clone https://github.com/nicekriss/drawings.git drawings
+git clone https://github.com/nicekriss/drawings.git toobusy
 ```
 
-> 이 저장소는 ComfyUI가 `custom_nodes/drawings/__init__.py`를 직접 import 하는 구조를 사용합니다.
+> 이 저장소는 ComfyUI가 `custom_nodes/toobusy/__init__.py`를 직접 import 하는 구조를 사용합니다.
 > 따라서 루트의 `__init__.py` 파일이 반드시 있어야 하며, 삭제되면 로딩 에러가 발생합니다.
 
-실제 노드는 `hf_model_auto_loader` 폴더에 있습니다.
+실제 노드는 `hf_model_auto_loader`, `ideogram_layout_builder`, `ltx23_compact_sampler_node`에 있습니다.
 
 ## 포함된 노드
 
 - `HF Model Auto Loader`: ComfyUI 모델 폴더에서 필요한 모델 파일을 찾고 상태를 알려주는 보조 노드입니다.
 - `Ideogram Layout Builder`: Ideogram 4용 structured JSON prompt를 시각적인 bbox 캔버스로 만드는 노드입니다.
+- `LTX2.3` compact nodes: LTX2.3 워크플로우의 prompt, latent, sampler 구간을 단순화하는 노드 묶음입니다.
 
 ## Ideogram Layout Builder
 
-ComfyUI에서 `drawings / ideogram / Ideogram Layout Builder`로 추가할 수 있습니다.
+ComfyUI에서 `toobusy / ideogram / Ideogram Layout Builder`로 추가할 수 있습니다.
 
 이 노드는 1000 x 1000 기준 캔버스에서 박스를 추가/이동/리사이즈하고, 각 박스에 텍스트/설명/색상 팔레트를 입력하면 Ideogram 4 워크플로우가 기대하는 JSON 문자열을 출력합니다.
 
