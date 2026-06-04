@@ -137,6 +137,7 @@ class LTX23EmptyAVLatents:
             audio_vae=audio_vae,
             frames_number=length,
             frame_rate=frame_rate_int,
+            batch_size=batch_size,
         )[0]
 
         if use_custom_audio:
