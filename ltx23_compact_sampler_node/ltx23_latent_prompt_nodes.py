@@ -19,7 +19,11 @@ class LTX23EmptyAVLatents:
                 "frame_rate": ("FLOAT", {"default": 24.0, "min": 1.0, "max": 120.0, "step": 0.01}),
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 4096}),
                 "add_terminal_frame": ("BOOLEAN", {"default": True}),
-            }
+                "use_custom_audio": ("BOOLEAN", {"default": False}),
+            },
+            "optional": {
+                "audio": ("AUDIO",),
+            },
         }
 
     RETURN_TYPES = ("LATENT", "LATENT", "INT", "INT", "INT", "FLOAT")
@@ -34,7 +38,18 @@ class LTX23EmptyAVLatents:
     FUNCTION = "create"
     CATEGORY = "LTXV/compact"
 
-    def create(self, audio_vae, width, height, duration_seconds, frame_rate, batch_size, add_terminal_frame):
+    def create(
+        self,
+        audio_vae,
+        width,
+        height,
+        duration_seconds,
+        frame_rate,
+        batch_size,
+        add_terminal_frame,
+        use_custom_audio,
+        audio=None,
+    ):
         frame_rate_int = int(round(frame_rate))
         frame_rate_float = float(frame_rate)
         frame_count, latent_frame_count = _frame_counts(duration_seconds, frame_rate_float, add_terminal_frame)
@@ -53,6 +68,27 @@ class LTX23EmptyAVLatents:
             frames_number=latent_frame_count,
             frame_rate=frame_rate_int,
         )[0]
+
+        if use_custom_audio:
+            if audio is None:
+                raise RuntimeError("Connect an AUDIO input or turn off use_custom_audio.")
+
+            audio_latent = _call_node(
+                "LTXVAudioVAEEncode",
+                audio=audio,
+                audio_vae=audio_vae,
+            )[0]
+            mask = _call_node(
+                "SolidMask",
+                value=0.0,
+                width=width,
+                height=height,
+            )[0]
+            audio_latent = _call_node(
+                "SetLatentNoiseMask",
+                samples=audio_latent,
+                mask=mask,
+            )[0]
 
         return (
             video_latent,
