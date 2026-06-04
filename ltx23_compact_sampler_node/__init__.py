@@ -1,0 +1,1 @@
+from .ltx23_compact_sampler import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
