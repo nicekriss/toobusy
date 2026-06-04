@@ -69,7 +69,7 @@ def _recommended_duration_seconds(prompt, language, fallback_duration):
         count = len(dialogue.split())
         speech_seconds = count / 2.4
 
-    return max(float(fallback_duration), round(speech_seconds + 1.0, 1))
+    return round(speech_seconds + 1.0, 1)
 
 
 def _ltx_length(duration_seconds, frame_rate):
