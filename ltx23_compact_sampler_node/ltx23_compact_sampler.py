@@ -28,11 +28,25 @@ def _call_node(class_name, **kwargs):
 
 def _sampler_names():
     try:
-        input_types = _node_class("KSamplerSelect").INPUT_TYPES()
-        names = list(input_types["required"]["sampler_name"][0])
-        return names or ["euler"]
+        import comfy.samplers
+
+        names = list(comfy.samplers.KSampler.SAMPLERS)
+        if names:
+            return names
     except Exception:
-        return ["euler"]
+        pass
+
+    try:
+        input_types = _node_class("KSamplerSelect").INPUT_TYPES()
+        sampler_spec = input_types["required"]["sampler_name"][0]
+        if not isinstance(sampler_spec, str):
+            names = list(sampler_spec)
+            if names:
+                return names
+    except Exception:
+        pass
+
+    return ["euler", "euler_cfg_pp", "euler_ancestral", "euler_ancestral_cfg_pp"]
 
 
 def _default_sampler_name(sampler_names):
