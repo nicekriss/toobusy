@@ -235,10 +235,12 @@ function installEditor(node) {
     let drag = null;
     node.properties = node.properties || {};
     const storedResolution = node.properties.ideogram_layout_resolution || {};
+    const widthWidget = widget(node, "width");
+    const heightWidget = widget(node, "height");
     let resolution = {
         preset: storedResolution.preset || "square_1024",
-        width: clamp(storedResolution.width || 1024, 256, 2048),
-        height: clamp(storedResolution.height || 1024, 256, 2048),
+        width: clamp(storedResolution.width || widthWidget?.value || 1024, 256, 2048),
+        height: clamp(storedResolution.height || heightWidget?.value || 1024, 256, 2048),
     };
 
     const root = document.createElement("div");
@@ -404,6 +406,14 @@ function installEditor(node) {
 
     function persistResolution() {
         node.properties.ideogram_layout_resolution = { ...resolution };
+        if (widthWidget) {
+            widthWidget.value = resolution.width;
+            widthWidget.callback?.(resolution.width);
+        }
+        if (heightWidget) {
+            heightWidget.value = resolution.height;
+            heightWidget.callback?.(resolution.height);
+        }
         node.setDirtyCanvas(true, true);
     }
 
