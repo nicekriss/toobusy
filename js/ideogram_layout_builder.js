@@ -123,7 +123,14 @@ function makeButton(text, title, onClick) {
     button.type = "button";
     button.textContent = text;
     button.title = title;
-    button.addEventListener("click", onClick);
+    button.addEventListener("pointerdown", (event) => {
+        event.stopPropagation();
+    });
+    button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onClick();
+    });
     return button;
 }
 
@@ -530,13 +537,33 @@ function installEditor(node) {
 
     function duplicateElement() {
         const element = selected();
-        if (!element) return;
+        if (!element) {
+            addElement();
+            return;
+        }
         const copy = JSON.parse(JSON.stringify(element));
-        copy.bbox = [copy.bbox[0] + 35, copy.bbox[1] + 35, copy.bbox[2] + 35, copy.bbox[3] + 35].map(clamp);
+        const [x1, y1, x2, y2] = copy.bbox;
+        const width = x2 - x1;
+        const height = y2 - y1;
+        const offset = 90;
+        let nextX = x1 + offset;
+        let nextY = y1 + offset;
+
+        if (nextX + width > CANVAS_SIZE) nextX = Math.max(0, x1 - offset);
+        if (nextY + height > CANVAS_SIZE) nextY = Math.max(0, y1 - offset);
+
+        copy.bbox = [
+            clamp(nextX, 0, CANVAS_SIZE - width),
+            clamp(nextY, 0, CANVAS_SIZE - height),
+            clamp(nextX, 0, CANVAS_SIZE - width) + width,
+            clamp(nextY, 0, CANVAS_SIZE - height) + height,
+        ];
+        copy.desc = copy.desc || "duplicated layout element";
         elements.push(normalizeElement(copy, elements.length));
         selectedIndex = elements.length - 1;
         syncElements();
         renderElementPanel();
+        draw();
     }
 
     function deleteElement() {
