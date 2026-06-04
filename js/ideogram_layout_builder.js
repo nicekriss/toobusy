@@ -15,14 +15,49 @@ const RESOLUTION_PRESETS = [
     ["custom", "Custom", 1024, 1024],
 ];
 
-const SCENE_FIELDS = [
-    ["high_level_description", "Scene", "textarea"],
-    ["aesthetics", "Aesthetics", "textarea"],
-    ["lighting", "Lighting", "textarea"],
-    ["photo", "Photo", "input"],
-    ["medium", "Medium", "input"],
-    ["global_palette", "Global palette", "input"],
-    ["background", "Background", "textarea"],
+const STYLE_PRESETS = [
+    ["Clean ad", "clean commercial design, sharp focus, balanced negative space"],
+    ["Premium product", "premium product advertising, polished materials, restrained luxury layout"],
+    ["Editorial poster", "editorial poster design, strong hierarchy, refined typography"],
+    ["Cinematic", "cinematic composition, dramatic mood, high contrast, filmic color"],
+    ["Minimal", "minimal modern design, lots of negative space, simple geometric layout"],
+    ["Playful graphic", "playful graphic design, bold shapes, energetic composition"],
+];
+
+const LIGHTING_PRESETS = [
+    ["Soft studio", "soft studio lighting with gentle shadows"],
+    ["Natural window", "soft natural window light from the side"],
+    ["Cinematic contrast", "dramatic cinematic key light with subtle rim light"],
+    ["Bright commercial", "bright even commercial lighting, clean highlights"],
+    ["Golden hour", "warm golden hour light with long soft shadows"],
+    ["Neon", "colored neon lighting with glowing accents"],
+];
+
+const CAMERA_PRESETS = [
+    ["Product photo", "professional product photography, 85mm lens"],
+    ["Portrait photo", "professional portrait photography, 50mm lens, shallow depth of field"],
+    ["Wide editorial", "editorial photography, 35mm lens, natural perspective"],
+    ["Macro detail", "macro photography, crisp fine detail, shallow depth of field"],
+    ["None", ""],
+];
+
+const MEDIUM_PRESETS = [
+    ["Photography", "photography"],
+    ["Digital illustration", "digital illustration"],
+    ["3D render", "3D render"],
+    ["Vector poster", "vector illustration"],
+    ["Typography poster", "graphic design poster"],
+    ["Oil painting", "oil painting"],
+    ["Watercolor", "watercolor"],
+];
+
+const PALETTE_PRESETS = [
+    ["Neutral", ["#111111", "#FFFFFF", "#D8C7A3", "#8A8F98", "#4A5562"]],
+    ["Warm editorial", ["#2B1A12", "#F2D8B3", "#C96F3D", "#7A3324", "#FFF8ED"]],
+    ["Cool tech", ["#07111F", "#EAF4FF", "#46A3FF", "#7DE2D1", "#94A3B8"]],
+    ["Luxury", ["#090909", "#F7F1DF", "#C8A95D", "#6D1F2A", "#FFFFFF"]],
+    ["Pastel", ["#F8C7D8", "#B8D8FF", "#FFF0B8", "#CFF2D0", "#FFFFFF"]],
+    ["High contrast", ["#000000", "#FFFFFF", "#FF3B30", "#FFD60A", "#0A84FF"]],
 ];
 
 function widget(node, name) {
@@ -85,6 +120,34 @@ function makeField(labelText, value, multiline, onInput) {
     return label;
 }
 
+function makeSelectField(labelText, options, currentValue, onInput) {
+    const label = document.createElement("label");
+    const span = document.createElement("span");
+    const select = document.createElement("select");
+    span.textContent = labelText;
+
+    let matched = false;
+    for (const [name, value] of options) {
+        const option = document.createElement("option");
+        option.textContent = name;
+        option.value = value;
+        if (value === currentValue) matched = true;
+        select.appendChild(option);
+    }
+
+    if (!matched && currentValue) {
+        const option = document.createElement("option");
+        option.textContent = "Current custom value";
+        option.value = currentValue;
+        select.appendChild(option);
+    }
+
+    select.value = currentValue || options[0][1];
+    select.addEventListener("change", () => onInput(select.value));
+    label.append(span, select);
+    return label;
+}
+
 function makeNumberInput(value, onInput) {
     const input = document.createElement("input");
     input.type = "number";
@@ -94,6 +157,40 @@ function makeNumberInput(value, onInput) {
     input.value = String(value);
     input.addEventListener("input", () => onInput(clamp(input.value, 256, 2048)));
     return input;
+}
+
+function parseColors(value, fallback) {
+    if (Array.isArray(value)) return value;
+    const colors = String(value || "")
+        .split(/[,\s]+/)
+        .map((color) => color.trim().toUpperCase())
+        .filter((color) => /^#[0-9A-F]{6}$/.test(color));
+    return colors.length ? colors : fallback;
+}
+
+function makePaletteEditor(labelText, colors, onInput, count = 5) {
+    const root = document.createElement("label");
+    const title = document.createElement("span");
+    const row = document.createElement("div");
+    const inputs = [];
+    title.textContent = labelText;
+    row.className = "palette-row";
+
+    function emit() {
+        onInput(inputs.map((input) => input.value.toUpperCase()));
+    }
+
+    for (let index = 0; index < count; index++) {
+        const input = document.createElement("input");
+        input.type = "color";
+        input.value = colors[index] || colors[colors.length - 1] || "#FFFFFF";
+        input.addEventListener("input", emit);
+        inputs.push(input);
+        row.appendChild(input);
+    }
+
+    root.append(title, row);
+    return { root, inputs };
 }
 
 function installEditor(node) {
@@ -139,6 +236,7 @@ function installEditor(node) {
                 display: grid;
                 grid-template-columns: minmax(360px, 1fr) 230px;
                 gap: 10px;
+                align-items: start;
             }
             .drawings-ideogram .resolution {
                 display: grid;
@@ -152,12 +250,23 @@ function installEditor(node) {
                 gap: 6px;
                 margin-bottom: 7px;
             }
-            .drawings-ideogram canvas {
+            .drawings-ideogram .canvas-frame {
                 width: 100%;
-                aspect-ratio: 1 / 1;
-                display: block;
+                height: 560px;
                 border: 1px solid #58616d;
                 border-radius: 6px;
+                background: #0e1319;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+            }
+            .drawings-ideogram canvas {
+                width: auto;
+                height: auto;
+                max-width: 100%;
+                max-height: 100%;
+                display: block;
                 background: #111418;
                 cursor: crosshair;
             }
@@ -206,12 +315,31 @@ function installEditor(node) {
                 display: flex;
                 align-items: center;
             }
+            .drawings-ideogram .palette-row {
+                display: flex;
+                gap: 5px;
+            }
+            .drawings-ideogram .palette-row input[type="color"] {
+                width: 32px;
+                height: 26px;
+                padding: 2px;
+                cursor: pointer;
+            }
+            .drawings-ideogram .palette-preset {
+                display: grid;
+                grid-template-columns: 150px minmax(0, 1fr);
+                gap: 7px;
+                align-items: end;
+                grid-column: 1 / -1;
+            }
         </style>
         <div class="scene"></div>
         <div class="resolution"></div>
         <div class="toolbar"></div>
         <div class="workspace">
-            <canvas width="1000" height="1000"></canvas>
+            <div class="canvas-frame">
+                <canvas width="1000" height="1000"></canvas>
+            </div>
             <div class="element"></div>
         </div>
     `;
@@ -250,7 +378,12 @@ function installEditor(node) {
     }
 
     function applyResolution() {
-        canvas.style.aspectRatio = `${resolution.width} / ${resolution.height}`;
+        const frame = canvas.parentElement;
+        const frameWidth = frame.clientWidth || 560;
+        const frameHeight = frame.clientHeight || 560;
+        const scale = Math.min(frameWidth / resolution.width, frameHeight / resolution.height);
+        canvas.style.width = `${Math.max(1, Math.round(resolution.width * scale))}px`;
+        canvas.style.height = `${Math.max(1, Math.round(resolution.height * scale))}px`;
         resolutionReadout.textContent = `${resolution.width} x ${resolution.height}`;
         persistResolution();
         draw();
@@ -319,6 +452,17 @@ function installEditor(node) {
             return;
         }
 
+        const elementPalette = makePaletteEditor(
+            "Element colors",
+            parseColors(element.color_palette, ["#8AB4F8", "#FFFFFF", "#111111"]),
+            (colors) => {
+                element.color_palette = colors;
+                syncElements();
+                draw();
+            },
+            3,
+        );
+
         elementPanel.append(
             makeField("Text", element.text, false, (value) => {
                 element.text = value;
@@ -330,11 +474,7 @@ function installEditor(node) {
                 syncElements();
                 draw();
             }),
-            makeField("Palette", element.color_palette.join(", "), false, (value) => {
-                element.color_palette = value.split(/[,\s]+/).filter(Boolean);
-                syncElements();
-                draw();
-            }),
+            elementPalette.root,
             bboxReadout,
         );
         bboxReadout.textContent = `bbox: [${element.bbox.join(", ")}]`;
@@ -367,10 +507,45 @@ function installEditor(node) {
         renderElementPanel();
     }
 
-    for (const [name, label, type] of SCENE_FIELDS) {
-        const item = widget(node, name);
-        scene.appendChild(makeField(label, item?.value, type === "textarea", (value) => syncScene(name, value)));
+    scene.append(
+        makeField("Scene", widget(node, "high_level_description")?.value, true, (value) => syncScene("high_level_description", value)),
+        makeSelectField("Style", STYLE_PRESETS, widget(node, "aesthetics")?.value, (value) => syncScene("aesthetics", value)),
+        makeSelectField("Lighting", LIGHTING_PRESETS, widget(node, "lighting")?.value, (value) => syncScene("lighting", value)),
+        makeSelectField("Camera", CAMERA_PRESETS, widget(node, "photo")?.value, (value) => syncScene("photo", value)),
+        makeSelectField("Output type", MEDIUM_PRESETS, widget(node, "medium")?.value, (value) => syncScene("medium", value)),
+        makeField("Background", widget(node, "background")?.value, true, (value) => syncScene("background", value)),
+    );
+
+    const palettePresetWrap = document.createElement("div");
+    palettePresetWrap.className = "palette-preset";
+    const palettePresetLabel = document.createElement("label");
+    const palettePresetTitle = document.createElement("span");
+    const palettePresetSelect = document.createElement("select");
+    palettePresetTitle.textContent = "Palette preset";
+    for (const [name] of PALETTE_PRESETS) {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        palettePresetSelect.appendChild(option);
     }
+    palettePresetLabel.append(palettePresetTitle, palettePresetSelect);
+
+    let globalColors = parseColors(widget(node, "global_palette")?.value, PALETTE_PRESETS[0][1]);
+    const globalPalette = makePaletteEditor("Global colors", globalColors, (colors) => {
+        globalColors = colors;
+        syncScene("global_palette", colors.join(", "));
+    });
+    palettePresetSelect.addEventListener("change", () => {
+        const preset = PALETTE_PRESETS.find(([name]) => name === palettePresetSelect.value);
+        if (!preset) return;
+        globalColors = [...preset[1]];
+        globalPalette.inputs.forEach((input, index) => {
+            input.value = globalColors[index] || "#FFFFFF";
+        });
+        syncScene("global_palette", globalColors.join(", "));
+    });
+    palettePresetWrap.append(palettePresetLabel, globalPalette.root);
+    scene.appendChild(palettePresetWrap);
 
     const presetLabel = document.createElement("label");
     const presetTitle = document.createElement("span");
@@ -479,6 +654,9 @@ function installEditor(node) {
     if (domWidget && node.widgets?.includes(domWidget)) {
         node.widgets = [domWidget, ...node.widgets.filter((item) => item !== domWidget)];
     }
+
+    requestAnimationFrame(applyResolution);
+    new ResizeObserver(applyResolution).observe(canvas.parentElement);
 
     const originalComputeSize = node.computeSize;
     node.computeSize = function computeSize(out) {
