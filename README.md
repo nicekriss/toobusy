@@ -6,6 +6,7 @@ The current public focus is:
 
 - `toobusy Keyframe Maker`
 - `toobusy Prompt Lines`
+- `toobusy Storyboard Board`
 - `toobusy LTX2.3` compact workflow nodes
 - `toobusy Z-Image Turbo`
 
@@ -109,6 +110,37 @@ Outputs:
 - `line`: list output. Connect this to a prompt/string input to run downstream nodes once per selected line.
 - `text`: selected lines joined back into one multiline string.
 - `count`: number of selected non-empty lines.
+
+### toobusy Storyboard Board
+
+Category:
+
+```text
+toobusy/Storyboard
+```
+
+A small whiteboard/moodboard node for planning video ideas, storylines, visual references, and shot structure inside ComfyUI.
+It is inspired by canvas-style creative workspaces, but it stays local and exports a normal ComfyUI `IMAGE`.
+
+Inputs:
+
+- `board_data`: serialized board JSON. The frontend hides this and edits it through the board editor.
+- `width` / `height`: exported image size.
+- `background`: board background color, for example `#f4f1e8`.
+- `image_1` to `image_6` optional: connect images here, then place matching image slots in the board editor.
+
+Editor features:
+
+- `Open board editor` opens the canvas editor.
+- Add text notes, image slots, rectangles, ellipses, arrows, and freehand pen strokes.
+- Select and drag items freely on the board.
+- Image slot items render from the matching `image_1` through `image_6` inputs.
+- `Apply` saves the board back into the node, and queueing the node exports the board as an image.
+
+Outputs:
+
+- `image`: rendered board image.
+- `board_data`: saved board JSON for reuse or debugging.
 
 ### toobusy Z-Image Turbo
 
