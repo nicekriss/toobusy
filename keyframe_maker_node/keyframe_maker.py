@@ -116,6 +116,32 @@ Rules:
 - English only."""
 
 
+ANCHOR_TEMPLATE = """Extract a compact visual identity anchor from this storyboard brief.
+
+Reference brief:
+{BRIEF}
+
+Style:
+{STYLE}
+
+Fixed elements:
+{FIXED}
+
+Return only this format (one value per line, no extra text):
+
+character: [main subject appearance — age, look, outfit, key traits. write "none" if no character]
+setting: [primary location or environment]
+palette: [2-3 dominant colors]
+lighting: [lighting quality and tone]
+signature_prop: [one key object or product that must appear consistently. write "none" if absent]
+
+Rules:
+- Be specific and literal.
+- Pull only from what is stated in the brief and fixed elements.
+- Keep each value under 12 words.
+- English only."""
+
+
 KEYFRAME_PROMPTS_TEMPLATE = """You are writing image-generation prompts for storyboard keyframes.
 
 Expand each shot beat into one cinematic image prompt.
@@ -125,6 +151,9 @@ Shot beats:
 
 Reference brief:
 {BRIEF}
+
+Visual identity anchor — repeat these across every shot:
+{ANCHOR}
 
 Global style:
 {STYLE}
@@ -136,6 +165,7 @@ Rules:
 - Output exactly {SHOT_COUNT} lines.
 - One line = one final image prompt.
 - Each line should be 25 to 40 words.
+- Every line must reflect the visual identity anchor (character, setting, palette, lighting).
 - Keep the same product/main subject and same character identity across all lines when present.
 - If the reference shows a human wearing a costume, write it as a realistic human in that costume.
 - Do not turn costume details into literal creature anatomy.
@@ -333,8 +363,8 @@ class ToobusyKeyframeMaker:
             },
         }
 
-    RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING")
-    RETURN_NAMES = ("product_brief", "shot_beats", "keyframe_prompts", "korean_story")
+    RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING", "STRING")
+    RETURN_NAMES = ("product_brief", "shot_beats", "visual_anchor", "keyframe_prompts", "korean_story")
     FUNCTION = "make"
     CATEGORY = "toobusy/Keyframe"
 
@@ -387,15 +417,24 @@ class ToobusyKeyframeMaker:
             )
             shot_beats = _generate_text(clip, shot_beats_prompt, max_length=512, seed=seed + 1).strip()
 
+        anchor_prompt = _format_template(
+            ANCHOR_TEMPLATE,
+            BRIEF=product_brief,
+            STYLE=style,
+            FIXED=fixed_elements,
+        )
+        anchor = _generate_text(clip, anchor_prompt, max_length=256, seed=seed + 2).strip()
+
         keyframe_prompt = _format_template(
             KEYFRAME_PROMPTS_TEMPLATE,
             SHOT_COUNT=effective_shot_count,
             BEATS=shot_beats,
             BRIEF=product_brief,
+            ANCHOR=anchor,
             STYLE=style,
             FIXED=fixed_elements,
         )
-        keyframe_prompts = _generate_text(clip, keyframe_prompt, max_length=2048, seed=seed + 2).strip()
+        keyframe_prompts = _generate_text(clip, keyframe_prompt, max_length=2048, seed=seed + 3).strip()
 
         korean_story_prompt = _format_template(
             KOREAN_STORY_TEMPLATE,
@@ -407,7 +446,7 @@ class ToobusyKeyframeMaker:
             FINAL_PROMPTS=keyframe_prompts,
             CUT_LIST=_cut_list(effective_shot_count),
         )
-        korean_story = _generate_text(clip, korean_story_prompt, max_length=2048, seed=seed + 3).strip()
+        korean_story = _generate_text(clip, korean_story_prompt, max_length=2048, seed=seed + 4).strip()
 
         return {
             "ui": {
@@ -416,6 +455,8 @@ class ToobusyKeyframeMaker:
                     product_brief,
                     "Shot beats:",
                     shot_beats,
+                    "Visual anchor:",
+                    anchor,
                     "Keyframe prompts:",
                     keyframe_prompts,
                     "Korean story:",
@@ -424,7 +465,7 @@ class ToobusyKeyframeMaker:
                     str(effective_shot_count),
                 ]
             },
-            "result": (product_brief, shot_beats, keyframe_prompts, korean_story),
+            "result": (product_brief, shot_beats, anchor, keyframe_prompts, korean_story),
         }
 
 
