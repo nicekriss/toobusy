@@ -187,14 +187,29 @@ class ToobusyKeyframeMaker:
                     {
                         "default": "한 여성이 집안에서 향수를 공중에 뿌리자, 집이 갑자기 궁전으로 변하며 여자의 모습도 화려한 공주로 변하게된다.",
                         "multiline": True,
+                        "tooltip": "광고의 핵심 사건, 변신, 제품 사용 상황을 적습니다.",
                     },
                 ),
                 "style": (
                     "STRING",
-                    {"default": "cinematic, 고급 향수 광고, elegant composition", "multiline": True},
+                    {
+                        "default": "cinematic, 고급 향수 광고, elegant composition",
+                        "multiline": True,
+                        "tooltip": "광고 톤, 촬영 스타일, 조명, 구도, 장르 느낌을 적습니다.",
+                    },
                 ),
-                "fixed_elements": ("STRING", {"default": "금빛 조명,웜톤", "multiline": True}),
-                "shot_count": ("INT", {"default": 6, "min": 1, "max": 24}),
+                "fixed_elements": (
+                    "STRING",
+                    {
+                        "default": "금빛 조명,웜톤",
+                        "multiline": True,
+                        "tooltip": "모든 컷에서 유지할 제품, 인물, 색감, 배경 규칙을 적습니다.",
+                    },
+                ),
+                "shot_count": (
+                    "INT",
+                    {"default": 6, "min": 1, "max": 24, "tooltip": "생성할 키프레임/샷 개수입니다."},
+                ),
                 "seed": (
                     "INT",
                     {
@@ -206,8 +221,22 @@ class ToobusyKeyframeMaker:
                 ),
             },
             "optional": {
-                "product_brief_override": ("STRING", {"default": "", "multiline": True}),
-                "shot_beats_override": ("STRING", {"default": "", "multiline": True}),
+                "product_brief_override": (
+                    "STRING",
+                    {
+                        "default": "",
+                        "multiline": True,
+                        "tooltip": "제품 분석 결과를 직접 넣으면 이미지 분석 단계를 건너뜁니다.",
+                    },
+                ),
+                "shot_beats_override": (
+                    "STRING",
+                    {
+                        "default": "",
+                        "multiline": True,
+                        "tooltip": "샷 비트를 직접 넣으면 샷 비트 생성 단계를 건너뜁니다.",
+                    },
+                ),
             },
         }
 
