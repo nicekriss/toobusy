@@ -84,14 +84,16 @@ app.registerExtension({
                 () => {},
                 { serialize: false }
             );
-            summaryWidget.inputEl.readOnly = true;
-            summaryWidget.inputEl.style.opacity = "0.95";
-            summaryWidget.inputEl.style.fontSize = "12px";
-            summaryWidget.inputEl.style.lineHeight = "1.35";
-            summaryWidget.inputEl.style.minHeight = "230px";
-            summaryWidget.inputEl.style.border = "1px solid rgba(124, 180, 135, 0.38)";
-            summaryWidget.inputEl.style.background = "rgba(15, 18, 16, 0.96)";
-            summaryWidget.inputEl.style.color = "rgba(232, 240, 232, 0.96)";
+            if (summaryWidget.inputEl) {
+                summaryWidget.inputEl.readOnly = true;
+                summaryWidget.inputEl.style.opacity = "0.95";
+                summaryWidget.inputEl.style.fontSize = "12px";
+                summaryWidget.inputEl.style.lineHeight = "1.35";
+                summaryWidget.inputEl.style.minHeight = "230px";
+                summaryWidget.inputEl.style.border = "1px solid rgba(124, 180, 135, 0.38)";
+                summaryWidget.inputEl.style.background = "rgba(15, 18, 16, 0.96)";
+                summaryWidget.inputEl.style.color = "rgba(232, 240, 232, 0.96)";
+            }
 
             this.addWidget("button", "Refresh guide / summary", "refresh", () => {
                 setSummary(this);
