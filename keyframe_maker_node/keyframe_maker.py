@@ -127,12 +127,7 @@ Output format:
 2~4문장으로 키프레임들이 어떤 순서로 이어지는지 설명한다.
 
 [컷별 해석]
-1컷: ...
-2컷: ...
-3컷: ...
-4컷: ...
-5컷: ...
-6컷: ...
+{CUT_LIST}
 
 [의도와 분위기]
 이 키프레임들이 전달하려는 제품 이미지, 감정, 광고 톤을 간단히 설명한다.
@@ -158,6 +153,14 @@ def _format_template(template, **values):
     for key, value in values.items():
         result = result.replace("{" + key + "}", str(value))
     return result
+
+
+def _line_count(text):
+    return len([line for line in str(text).splitlines() if line.strip()])
+
+
+def _cut_list(shot_count):
+    return "\n".join(f"{index}컷: ..." for index in range(1, int(shot_count) + 1))
 
 
 def _generate_text(clip, prompt, max_length, seed, image=None):
@@ -257,6 +260,7 @@ class ToobusyKeyframeMaker:
         product_brief_override="",
         shot_beats_override="",
     ):
+        effective_shot_count = int(shot_count)
         product_brief = product_brief_override.strip()
         if not product_brief:
             product_brief = _generate_text(
@@ -268,10 +272,14 @@ class ToobusyKeyframeMaker:
             ).strip()
 
         shot_beats = shot_beats_override.strip()
-        if not shot_beats:
+        if shot_beats:
+            override_line_count = _line_count(shot_beats)
+            if override_line_count:
+                effective_shot_count = override_line_count
+        else:
             shot_beats_prompt = _format_template(
                 SHOT_BEATS_TEMPLATE,
-                SHOT_COUNT=shot_count,
+                SHOT_COUNT=effective_shot_count,
                 PRODUCT_BRIEF=product_brief,
                 IDEA=idea,
                 STYLE=style,
@@ -281,7 +289,7 @@ class ToobusyKeyframeMaker:
 
         keyframe_prompt = _format_template(
             KEYFRAME_PROMPTS_TEMPLATE,
-            SHOT_COUNT=shot_count,
+            SHOT_COUNT=effective_shot_count,
             BEATS=shot_beats,
             PRODUCT_BRIEF=product_brief,
             STYLE=style,
@@ -296,6 +304,7 @@ class ToobusyKeyframeMaker:
             STYLE=style,
             BEATS=shot_beats,
             FINAL_PROMPTS=keyframe_prompts,
+            CUT_LIST=_cut_list(effective_shot_count),
         )
         korean_story = _generate_text(clip, korean_story_prompt, max_length=2048, seed=seed + 3).strip()
 
@@ -310,6 +319,8 @@ class ToobusyKeyframeMaker:
                     keyframe_prompts,
                     "Korean story:",
                     korean_story,
+                    "Effective shot count:",
+                    str(effective_shot_count),
                 ]
             },
             "result": (product_brief, shot_beats, keyframe_prompts, korean_story),
