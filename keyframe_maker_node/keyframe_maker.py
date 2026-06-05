@@ -54,6 +54,38 @@ Rules:
 - English only."""
 
 
+TEXT_BRIEF_TEMPLATE = """Create a compact reference brief for a {MODE_LABEL} storyboard from the user's text inputs.
+
+Core idea:
+{IDEA}
+
+Style:
+{STYLE}
+
+Fixed elements:
+{FIXED}
+
+Return only this format:
+
+main_subject:
+subject_type:
+outfit_or_styling:
+setting_or_background:
+dominant_colors:
+visual_mood:
+important_props:
+continuity_notes:
+
+Rules:
+- Be literal and concise.
+- Do not invent names or unrelated backstory.
+- Treat fixed elements as the strongest identity/continuity rules.
+- If the subject is described as a human wearing a costume, keep them human.
+- Do not transform a human costume into a literal animal, insect, monster, creature, or hybrid body.
+- Keep each field short.
+- English only."""
+
+
 SHOT_BEATS_TEMPLATE = """You are a storyboard planner.
 
 Create exactly {SHOT_COUNT} short visual beats for a {MODE_LABEL}.
@@ -202,6 +234,16 @@ def _brief_prompt_for_mode(mode):
     return _format_template(SUBJECT_BRIEF_PROMPT, MODE_LABEL=_mode_label(mode))
 
 
+def _text_brief_prompt(mode, idea, style, fixed_elements):
+    return _format_template(
+        TEXT_BRIEF_TEMPLATE,
+        MODE_LABEL=_mode_label(mode),
+        IDEA=idea,
+        STYLE=style,
+        FIXED=fixed_elements,
+    )
+
+
 def _line_count(text):
     return len([line for line in str(text).splitlines() if line.strip()])
 
@@ -231,7 +273,6 @@ class ToobusyKeyframeMaker:
         return {
             "required": {
                 "clip": ("CLIP",),
-                "product_image": ("IMAGE",),
                 "mode": (["Product Commercial", "Music Video", "Short Drama"], {"default": "Product Commercial"}),
                 "idea": (
                     "STRING",
@@ -272,6 +313,7 @@ class ToobusyKeyframeMaker:
                 ),
             },
             "optional": {
+                "product_image": ("IMAGE",),
                 "product_brief_override": (
                     "STRING",
                     {
@@ -299,7 +341,6 @@ class ToobusyKeyframeMaker:
     def make(
         self,
         clip,
-        product_image,
         mode,
         idea,
         style,
@@ -308,17 +349,26 @@ class ToobusyKeyframeMaker:
         seed,
         product_brief_override="",
         shot_beats_override="",
+        product_image=None,
     ):
         effective_shot_count = int(shot_count)
         product_brief = product_brief_override.strip()
         if not product_brief:
-            product_brief = _generate_text(
-                clip,
-                _brief_prompt_for_mode(mode),
-                max_length=512,
-                seed=seed,
-                image=product_image,
-            ).strip()
+            if product_image is not None:
+                product_brief = _generate_text(
+                    clip,
+                    _brief_prompt_for_mode(mode),
+                    max_length=512,
+                    seed=seed,
+                    image=product_image,
+                ).strip()
+            else:
+                product_brief = _generate_text(
+                    clip,
+                    _text_brief_prompt(mode, idea, style, fixed_elements),
+                    max_length=512,
+                    seed=seed,
+                ).strip()
 
         shot_beats = shot_beats_override.strip()
         if shot_beats:
