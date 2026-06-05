@@ -1,5 +1,7 @@
+import base64
 import json
 import math
+from io import BytesIO
 
 import numpy as np
 import torch
@@ -37,6 +39,22 @@ def _parse_board(board_data):
 
 def _hex_to_rgba(value, alpha=1.0):
     text = str(value or "#000000").strip()
+    if text.startswith("rgba(") and text.endswith(")"):
+        try:
+            parts = [part.strip() for part in text[5:-1].split(",")]
+            r = int(float(parts[0]))
+            g = int(float(parts[1]))
+            b = int(float(parts[2]))
+            a = float(parts[3]) if len(parts) > 3 else 1.0
+            return (r, g, b, max(0, min(255, int(a * 255))))
+        except Exception:
+            text = "#000000"
+    elif text.startswith("rgb(") and text.endswith(")"):
+        try:
+            parts = [part.strip() for part in text[4:-1].split(",")]
+            return (int(float(parts[0])), int(float(parts[1])), int(float(parts[2])), max(0, min(255, int(float(alpha) * 255))))
+        except Exception:
+            text = "#000000"
     if text.startswith("#"):
         text = text[1:]
     if len(text) == 3:
@@ -71,6 +89,16 @@ def _fit_image(image, width, height):
     canvas = Image.new("RGB", (width, height), (245, 245, 245))
     canvas.paste(resized, ((width - new_w) // 2, (height - new_h) // 2))
     return canvas
+
+
+def _data_url_to_pil(data_url):
+    if not isinstance(data_url, str) or not data_url.startswith("data:image/"):
+        return None
+    try:
+        _, payload = data_url.split(",", 1)
+        return Image.open(BytesIO(base64.b64decode(payload))).convert("RGB")
+    except Exception:
+        return None
 
 
 def _font(size):
@@ -116,14 +144,6 @@ class ToobusyStoryboardBoard:
                 "height": ("INT", {"default": 720, "min": 256, "max": 4096, "step": 8}),
                 "background": ("STRING", {"default": "#f4f1e8"}),
             },
-            "optional": {
-                "image_1": ("IMAGE",),
-                "image_2": ("IMAGE",),
-                "image_3": ("IMAGE",),
-                "image_4": ("IMAGE",),
-                "image_5": ("IMAGE",),
-                "image_6": ("IMAGE",),
-            },
         }
 
     RETURN_TYPES = ("IMAGE", "STRING")
@@ -131,7 +151,7 @@ class ToobusyStoryboardBoard:
     FUNCTION = "render"
     CATEGORY = "toobusy/Storyboard"
 
-    def render(self, board_data, width, height, background, **images):
+    def render(self, board_data, width, height, background):
         width = int(width)
         height = int(height)
         board = _parse_board(board_data)
@@ -151,14 +171,13 @@ class ToobusyStoryboardBoard:
             stroke_width = max(1, int(item.get("strokeWidth", 3)))
 
             if item_type == "image":
-                slot = int(item.get("slot", 1))
-                source = images.get(f"image_{slot}")
-                if source is not None:
-                    image = _fit_image(_tensor_to_pil(source), w, h)
+                image = _data_url_to_pil(item.get("src"))
+                if image is not None:
+                    image = _fit_image(image, w, h)
                     canvas.paste(image, (int(x), int(y)))
                 else:
                     draw.rectangle((x, y, x + w, y + h), fill=(235, 235, 235, 255), outline=color, width=stroke_width)
-                    draw.text((x + 12, y + 12), f"image_{slot}", fill=color, font=_font(18))
+                    draw.text((x + 12, y + 12), "drop image", fill=color, font=_font(18))
 
             elif item_type == "rect":
                 draw.rectangle((x, y, x + w, y + h), fill=fill, outline=color, width=stroke_width)
