@@ -221,17 +221,15 @@ function makePaletteEditor(labelText, colors, onInput, count = 5) {
     }
 
     for (let index = 0; index < count; index++) {
-        const swatch = document.createElement("button");
-        swatch.type = "button";
+        const swatch = document.createElement("input");
+        swatch.type = "color";
         swatch.className = "color-swatch";
-        swatch.dataset.color = colors[index] || colors[colors.length - 1] || "#FFFFFF";
-        swatch.style.background = swatch.dataset.color;
-        swatch.title = "Click to cycle color";
-        swatch.addEventListener("click", () => {
-            const currentIndex = COLOR_CHOICES.indexOf(swatch.dataset.color);
-            const next = COLOR_CHOICES[(currentIndex + 1) % COLOR_CHOICES.length];
-            swatch.dataset.color = next;
-            swatch.style.background = next;
+        const initial = (colors[index] || colors[colors.length - 1] || "#FFFFFF").toUpperCase();
+        swatch.value = initial;
+        swatch.dataset.color = initial;
+        swatch.title = "Pick color";
+        swatch.addEventListener("input", () => {
+            swatch.dataset.color = swatch.value.toUpperCase();
             emit();
         });
         swatches.push(swatch);
@@ -271,7 +269,7 @@ function installEditor(node) {
             .drawings-ideogram {
                 box-sizing: border-box;
                 width: 100%;
-                min-width: 620px;
+                min-width: 340px;
                 color: #e9edf1;
                 font: 12px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
                 user-select: none;
@@ -284,14 +282,13 @@ function installEditor(node) {
                 margin-bottom: 8px;
             }
             .drawings-ideogram .workspace {
-                display: grid;
-                grid-template-columns: minmax(360px, 1fr) 230px;
+                display: flex;
+                flex-direction: column;
                 gap: 10px;
-                align-items: start;
             }
             .drawings-ideogram .resolution {
                 display: grid;
-                grid-template-columns: 190px 90px 90px minmax(0, 1fr);
+                grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
                 gap: 7px;
                 align-items: end;
                 margin-bottom: 8px;
@@ -303,7 +300,7 @@ function installEditor(node) {
             }
             .drawings-ideogram .canvas-frame {
                 width: 100%;
-                height: 420px;
+                height: 360px;
                 border: 1px solid #58616d;
                 border-radius: 6px;
                 background: #0e1319;
@@ -371,13 +368,18 @@ function installEditor(node) {
                 gap: 5px;
             }
             .drawings-ideogram .color-swatch {
-                width: 32px;
+                width: 34px;
                 height: 26px;
                 padding: 0;
                 border: 1px solid #6d7784;
                 border-radius: 5px;
                 cursor: pointer;
+                background: none;
+                -webkit-appearance: none;
+                appearance: none;
             }
+            .drawings-ideogram .color-swatch::-webkit-color-swatch-wrapper { padding: 2px; }
+            .drawings-ideogram .color-swatch::-webkit-color-swatch { border: none; border-radius: 3px; }
             .drawings-ideogram .palette-preset {
                 display: grid;
                 grid-template-columns: 150px minmax(0, 1fr);
@@ -612,7 +614,6 @@ function installEditor(node) {
         selectedIndex = elements.length - 1;
         syncElements();
         renderElementPanel();
-        applyResolution();
         draw();
     }
 
@@ -657,9 +658,9 @@ function installEditor(node) {
         if (!preset) return;
         globalColors = [...preset[1]];
         globalPalette.swatches.forEach((swatch, index) => {
-            const color = globalColors[index] || "#FFFFFF";
+            const color = (globalColors[index] || "#FFFFFF").toUpperCase();
+            swatch.value = color;
             swatch.dataset.color = color;
-            swatch.style.background = color;
         });
         syncScene("global_palette", globalColors.join(", "));
     });
@@ -717,6 +718,8 @@ function installEditor(node) {
         makeButton("Delete", "Delete selected element", deleteElement),
     );
 
+    const DRAG_THRESHOLD = 10; // normalized units before an empty-canvas drag becomes a new box
+
     canvas.addEventListener("pointerdown", (event) => {
         const pos = point(event);
         const hit = hitTest(pos);
@@ -728,19 +731,30 @@ function installEditor(node) {
             return;
         }
 
-        // Empty canvas: start drawing a brand-new box (Photoshop style).
-        const fresh = normalizeElement({ bbox: [pos.x, pos.y, pos.x + MIN_BOX_SIZE, pos.y + MIN_BOX_SIZE] }, elements.length);
-        fresh.desc = "";
-        elements.push(fresh);
-        selectedIndex = elements.length - 1;
-        drag = { mode: "create", start: pos, bbox: [...fresh.bbox] };
+        // Empty canvas: wait for an actual drag before creating a box (a plain
+        // click should just deselect, not spawn a tiny box).
+        drag = { mode: "pending", start: pos };
         canvas.setPointerCapture(event.pointerId);
-        renderElementPanel();
     });
 
     canvas.addEventListener("pointermove", (event) => {
-        if (!drag || selectedIndex < 0) return;
+        if (!drag) return;
         const pos = point(event);
+
+        if (drag.mode === "pending") {
+            if (Math.abs(pos.x - drag.start.x) < DRAG_THRESHOLD && Math.abs(pos.y - drag.start.y) < DRAG_THRESHOLD) {
+                return;
+            }
+            // Threshold crossed: materialize the new box and switch to create mode.
+            const fresh = normalizeElement({ bbox: [drag.start.x, drag.start.y, drag.start.x + MIN_BOX_SIZE, drag.start.y + MIN_BOX_SIZE] }, elements.length);
+            fresh.desc = "";
+            elements.push(fresh);
+            selectedIndex = elements.length - 1;
+            drag = { mode: "create", start: drag.start, bbox: [...fresh.bbox] };
+            renderElementPanel();
+        }
+
+        if (selectedIndex < 0) return;
         const dx = pos.x - drag.start.x;
         const dy = pos.y - drag.start.y;
         const element = selected();
@@ -768,12 +782,16 @@ function installEditor(node) {
     });
 
     canvas.addEventListener("pointerup", (event) => {
-        const wasCreating = drag?.mode === "create";
+        const mode = drag?.mode;
         drag = null;
         try {
             canvas.releasePointerCapture(event.pointerId);
         } catch {}
-        if (wasCreating) {
+        if (mode === "pending") {
+            // Plain click on empty canvas -> deselect, don't create anything.
+            selectedIndex = -1;
+            renderElementPanel();
+        } else if (mode === "create") {
             syncElements();
             renderElementPanel();
         }
@@ -785,9 +803,9 @@ function installEditor(node) {
     applyResolution();
 
     const domWidget = node.addDOMWidget("layout_editor", "drawings_ideogram_layout", root, {
-        getMinHeight: () => 700,
-        getMaxHeight: () => 860,
-        getHeight: () => 740,
+        getMinHeight: () => 820,
+        getMaxHeight: () => 1100,
+        getHeight: () => 900,
     });
 
     if (domWidget && node.widgets?.includes(domWidget)) {
@@ -797,8 +815,8 @@ function installEditor(node) {
     requestAnimationFrame(applyResolution);
     new ResizeObserver(applyResolution).observe(canvas.parentElement);
 
-    const MIN_WIDTH = 740;
-    const MIN_HEIGHT = 820;
+    const MIN_WIDTH = 420;
+    const MIN_HEIGHT = 940;
 
     const originalComputeSize = node.computeSize;
     node.computeSize = function computeSize(out) {
