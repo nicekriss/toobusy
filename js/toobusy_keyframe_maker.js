@@ -22,6 +22,7 @@ function lineCount(value) {
 
 function setSummary(node) {
     const idea = widgetText(node, "idea");
+    const mode = String(findWidget(node, "mode")?.value ?? "Product Commercial").trim();
     const style = widgetText(node, "style");
     const fixed = widgetText(node, "fixed_elements");
     const productBrief = widgetText(node, "product_brief_override");
@@ -29,15 +30,17 @@ function setSummary(node) {
     const shotCount = String(findWidget(node, "shot_count")?.value ?? "").trim();
     const beatOverrideCount = lineCount(shotBeats);
 
+    const briefName = mode === "Product Commercial" ? "product brief" : "reference brief";
     const productBriefMode = productBrief
-        ? "OVERRIDE ON: product_image analysis is skipped."
-        : "AUTO: product brief is generated from product_image.";
+        ? `OVERRIDE ON: ${briefName} auto analysis is skipped.`
+        : `AUTO: ${briefName} is generated from product_image.`;
     const shotBeatsMode = shotBeats
         ? `OVERRIDE ON: shot beat generation is skipped. Effective shot count = ${beatOverrideCount || "?"}.`
         : `AUTO: generating ${shotCount || "?"} shot beats from brief + idea + style + fixed.`;
 
     const summary = [
         "INPUT GUIDE",
+        `Mode: ${mode}`,
         "Idea: commercial event, transformation, or story hook.",
         "Style: look, tone, camera feeling, lighting, genre.",
         "Fixed: product/character/color/background rules to keep consistent.",
