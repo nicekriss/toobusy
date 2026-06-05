@@ -5,6 +5,7 @@ ComfyUI custom nodes for reducing busy video-generation workflows.
 The current public focus is:
 
 - `toobusy Keyframe Maker`
+- `toobusy Prompt Lines`
 - `toobusy LTX2.3` compact workflow nodes
 - `toobusy Z-Image Turbo`
 
@@ -84,6 +85,30 @@ Override behavior:
 - When `shot_beats_override` is used, the effective shot count is the number of non-empty lines in the override text, not the `shot_count` widget.
 
 The frontend adds a small toobusy-tinted input guide and summary panel so the node remains readable after text is entered.
+
+### toobusy Prompt Lines
+
+Category:
+
+```text
+toobusy/Text
+```
+
+Splits multiline text into line-by-line prompt items, so `toobusy Keyframe Maker.keyframe_prompts` can be used without another custom PromptLine-style node.
+
+Inputs:
+
+- `source`: multiline text to split.
+- `start_index`: first line index to use, zero-based.
+- `max_rows`: maximum number of lines to output.
+- `remove_empty_lines`: removes blank lines before slicing.
+- `strip_lines`: trims whitespace from each line.
+
+Outputs:
+
+- `line`: list output. Connect this to a prompt/string input to run downstream nodes once per selected line.
+- `text`: selected lines joined back into one multiline string.
+- `count`: number of selected non-empty lines.
 
 ### toobusy Z-Image Turbo
 
