@@ -16,6 +16,10 @@ function shorten(value, maxLength = 84) {
     return oneLine.length > maxLength ? `${oneLine.slice(0, maxLength - 1)}...` : oneLine;
 }
 
+function lineCount(value) {
+    return String(value || "").split(/\r?\n/).filter((line) => line.trim()).length;
+}
+
 function roundedRect(ctx, x, y, width, height, radius) {
     if (ctx.roundRect) {
         ctx.roundRect(x, y, width, height, radius);
@@ -39,6 +43,8 @@ function refreshSummary(node) {
     const fixed = widgetText(node, "fixed_elements");
     const productBrief = widgetText(node, "product_brief_override");
     const shotBeats = widgetText(node, "shot_beats_override");
+    const shotCount = String(findWidget(node, "shot_count")?.value ?? "").trim();
+    const beatOverrideCount = lineCount(shotBeats);
 
     node.toobusyOverrideStates = {
         productBrief: Boolean(productBrief),
@@ -55,7 +61,9 @@ function refreshSummary(node) {
         ],
         [
             "Shot beats",
-            shotBeats ? "OVERRIDE ON - beat generation skipped" : "AUTO - generated from brief/idea/style/fixed",
+            shotBeats
+                ? `OVERRIDE ON - beat generation skipped, using ${beatOverrideCount || "?"} override lines`
+                : `AUTO - generating ${shotCount || "?"} beats from brief/idea/style/fixed`,
         ],
         [
             "Flow",
