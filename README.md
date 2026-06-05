@@ -6,6 +6,7 @@ The current public focus is:
 
 - `toobusy Keyframe Maker`
 - `toobusy LTX2.3` compact workflow nodes
+- `toobusy Z-Image Turbo`
 
 Experimental older nodes are kept in the repository for reference, but are not registered by default right now.
 
@@ -82,6 +83,45 @@ Override behavior:
 - When `shot_beats_override` is used, the effective shot count is the number of non-empty lines in the override text, not the `shot_count` widget.
 
 The frontend adds a small toobusy-tinted input guide and summary panel so the node remains readable after text is entered.
+
+### toobusy Z-Image Turbo
+
+Category:
+
+```text
+toobusy/Z-Image
+```
+
+Folds a compact Z-Image Turbo text-to-image workflow into one node, without the final `SaveImage` node.
+
+Internal flow:
+
+```text
+UNETLoader + CLIPLoader + VAELoader
+-> optional LoraLoader
+-> ModelSamplingAuraFlow
+-> CLIPTextEncode positive/negative
+-> EmptyLatentImage
+-> KSampler
+-> VAEDecode
+```
+
+Inputs include:
+
+- `model_name`: diffusion model/UNET file, for example `ZIT\zImage_turbo.safetensors`.
+- `clip_name`: text encoder file, for example `ZIT\zImage_textEncoder.safetensors`.
+- `vae_name`: VAE file, for example `FLUX1\ae.safetensors`.
+- `positive` / `negative`: prompt text.
+- `ratio_preset`, `megapixels`, `divisible_by`: resolution is calculated from aspect ratio and target megapixels.
+- `seed`, `steps`, `cfg`, `sampler_name`, `scheduler`, `denoise`, `aura_shift`.
+- `enable_lora`, `lora_name`, `lora_strength`: uses ComfyUI's built-in `LoraLoader`, so the rgthree Power Lora Loader is not required.
+
+Outputs:
+
+- `image`
+- `latent`
+- `width`
+- `height`
 
 ### toobusy LTX2.3 Prompt Guide
 
@@ -185,5 +225,5 @@ They may come back later, but they are hidden for now to keep the public node li
 Near-term plan:
 
 1. Finish `toobusy Keyframe Maker` polish.
-2. Add a compact Z-Image Turbo generation node.
+2. Polish the compact Z-Image Turbo generation node.
 3. Prepare the repository for ComfyUI-Manager registration and public video release.
