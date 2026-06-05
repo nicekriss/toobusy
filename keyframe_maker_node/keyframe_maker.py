@@ -72,7 +72,7 @@ Rules:
 - Each line must describe one shot beat only.
 - Each line must be short, under 12 words.
 - Keep the sequence visually progressive.
-- Keep the same product and same character identity.
+- Keep the same product/main subject and same character identity when present.
 - No numbering.
 - No explanations.
 - No blank lines.
@@ -99,7 +99,7 @@ Rules:
 - Output exactly {SHOT_COUNT} lines.
 - One line = one final image prompt.
 - Each line should be 25 to 40 words.
-- Keep the same product and same character identity across all lines.
+- Keep the same product/main subject and same character identity across all lines when present.
 - Make each shot visually distinct and sequential.
 - Include camera/composition cues naturally.
 - No numbering.
@@ -108,9 +108,9 @@ Rules:
 - English only."""
 
 
-KOREAN_STORY_TEMPLATE = """You are a Korean storyboard interpreter for AI-generated commercial keyframes.
+KOREAN_STORY_TEMPLATE = """You are a Korean storyboard interpreter for AI-generated storyboard keyframes.
 
-Your job is to read the generated keyframe prompts and explain what kind of commercial story they represent.
+Your job is to read the generated keyframe prompts and explain what kind of {MODE_LABEL} story they represent.
 
 Input information:
 
@@ -144,8 +144,8 @@ Rules:
 
 Output format:
 
-[광고 한 줄 요약]
-한 문장으로 이 광고가 어떤 분위기와 메시지를 가진 광고인지 설명한다.
+[한 줄 요약]
+한 문장으로 이 시퀀스가 어떤 분위기와 메시지를 가졌는지 설명한다.
 
 [전체 스토리 흐름]
 2~4문장으로 키프레임들이 어떤 순서로 이어지는지 설명한다.
@@ -154,10 +154,10 @@ Output format:
 {CUT_LIST}
 
 [의도와 분위기]
-이 키프레임들이 전달하려는 제품 이미지, 감정, 광고 톤을 간단히 설명한다.
+이 키프레임들이 전달하려는 이미지, 감정, 장르 톤을 간단히 설명한다.
 
 [체크 포인트]
-제품 일관성, 장면 흐름, 광고 전달력 관점에서 주의할 점이 있으면 1~3개만 적는다."""
+레퍼런스 일관성, 장면 흐름, 전달력 관점에서 주의할 점이 있으면 1~3개만 적는다."""
 
 
 def _sampling_mode(seed, temperature=0.7, top_k=64, top_p=0.95, min_p=0.05, repetition_penalty=1.05):
@@ -341,6 +341,7 @@ class ToobusyKeyframeMaker:
 
         korean_story_prompt = _format_template(
             KOREAN_STORY_TEMPLATE,
+            MODE_LABEL=_mode_label(mode),
             BRIEF=product_brief,
             IDEA=idea,
             STYLE=style,
