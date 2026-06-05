@@ -4,6 +4,10 @@ function findWidget(node, name) {
     return node.widgets?.find((widget) => widget.name === name);
 }
 
+function findToobusyWidget(node, id) {
+    return node.widgets?.find((widget) => widget.toobusyId === id);
+}
+
 function widgetText(node, name) {
     return String(findWidget(node, name)?.value ?? "").trim();
 }
@@ -16,10 +20,11 @@ function shorten(value, maxLength = 84) {
     return oneLine.length > maxLength ? `${oneLine.slice(0, maxLength - 1)}...` : oneLine;
 }
 
-function setWidget(node, name, value) {
-    const widget = findWidget(node, name);
+function setDisplay(node, id, label) {
+    const widget = findToobusyWidget(node, id);
     if (widget) {
-        widget.value = value;
+        widget.name = label;
+        widget.value = "";
     }
 }
 
@@ -30,22 +35,23 @@ function refreshSummary(node) {
     const productBrief = widgetText(node, "product_brief_override");
     const shotBeats = widgetText(node, "shot_beats_override");
 
-    setWidget(node, "toobusy_idea_summary", `idea: ${shorten(idea)}`);
-    setWidget(node, "toobusy_style_summary", `style: ${shorten(style)}`);
-    setWidget(node, "toobusy_fixed_summary", `fixed: ${shorten(fixed)}`);
+    setDisplay(node, "idea_summary", `Idea - ${shorten(idea)}`);
+    setDisplay(node, "style_summary", `Style - ${shorten(style)}`);
+    setDisplay(node, "fixed_summary", `Fixed - ${shorten(fixed)}`);
 
     const overrideState = [
         productBrief ? "product brief override on" : "product brief auto",
         shotBeats ? "shot beats override on" : "shot beats auto",
     ].join(" | ");
-    setWidget(node, "toobusy_override_summary", overrideState);
+    setDisplay(node, "override_summary", `Mode - ${overrideState}`);
 
     node.setDirtyCanvas?.(true, true);
     app.graph?.setDirtyCanvas?.(true, true);
 }
 
-function addReadOnlyText(node, name, value) {
-    const widget = node.addWidget("text", name, value, () => {}, { serialize: false });
+function addReadOnlyText(node, id, label) {
+    const widget = node.addWidget("text", label, "", () => {}, { serialize: false });
+    widget.toobusyId = id;
     widget.disabled = true;
     return widget;
 }
@@ -61,11 +67,11 @@ app.registerExtension({
         nodeType.prototype.onNodeCreated = function () {
             onNodeCreated?.apply(this, arguments);
 
-            addReadOnlyText(this, "toobusy_keyframe_guide", "Guide: idea=what happens | style=look/tone | fixed=keep consistent");
-            addReadOnlyText(this, "toobusy_idea_summary", "idea: (empty)");
-            addReadOnlyText(this, "toobusy_style_summary", "style: (empty)");
-            addReadOnlyText(this, "toobusy_fixed_summary", "fixed: (empty)");
-            addReadOnlyText(this, "toobusy_override_summary", "product brief auto | shot beats auto");
+            addReadOnlyText(this, "guide", "Guide - idea: event/story | style: look/tone | fixed: must stay consistent");
+            addReadOnlyText(this, "idea_summary", "Idea - (empty)");
+            addReadOnlyText(this, "style_summary", "Style - (empty)");
+            addReadOnlyText(this, "fixed_summary", "Fixed - (empty)");
+            addReadOnlyText(this, "override_summary", "Mode - product brief auto | shot beats auto");
 
             this.addWidget("button", "Refresh input summary", "refresh", () => {
                 refreshSummary(this);
