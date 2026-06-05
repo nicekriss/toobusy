@@ -126,24 +126,14 @@ function makeButton(text, title, onClick) {
     button.type = "button";
     button.textContent = text;
     button.title = title;
-    let lastRun = 0;
 
-    function run(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation?.();
-        const now = performance.now();
-        if (now - lastRun < 150) return;
-        lastRun = now;
-        onClick();
-    }
-
-    button.addEventListener("pointerdown", run);
-    button.addEventListener("mousedown", run);
+    // Stop pointerdown from reaching LiteGraph (so it doesn't start a node drag),
+    // but run the action on the standard click event for reliability.
+    button.addEventListener("pointerdown", (event) => event.stopPropagation());
     button.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        event.stopImmediatePropagation?.();
+        onClick();
     });
     return button;
 }
@@ -802,36 +792,41 @@ function installEditor(node) {
     renderElementPanel();
     applyResolution();
 
+    // Report the real measured content height so the node grows to fit the
+    // whole editor (otherwise the bottom panel spills outside the node).
+    const measureHeight = () => Math.max(820, Math.ceil(root.scrollHeight) + 12);
+
     const domWidget = node.addDOMWidget("layout_editor", "drawings_ideogram_layout", root, {
-        getMinHeight: () => 820,
-        getMaxHeight: () => 1100,
-        getHeight: () => 900,
+        getMinHeight: measureHeight,
+        getMaxHeight: () => 2000,
+        getHeight: measureHeight,
     });
 
     if (domWidget && node.widgets?.includes(domWidget)) {
         node.widgets = [domWidget, ...node.widgets.filter((item) => item !== domWidget)];
     }
 
-    requestAnimationFrame(applyResolution);
-    new ResizeObserver(applyResolution).observe(canvas.parentElement);
-
     const MIN_WIDTH = 420;
-    const MIN_HEIGHT = 940;
 
     const originalComputeSize = node.computeSize;
     node.computeSize = function computeSize(out) {
-        const size = originalComputeSize?.call(this, out) || [MIN_WIDTH, MIN_HEIGHT];
-        return [Math.max(size[0], MIN_WIDTH), Math.max(size[1], MIN_HEIGHT)];
+        const size = originalComputeSize?.call(this, out) || [MIN_WIDTH, measureHeight()];
+        return [Math.max(size[0], MIN_WIDTH), size[1]];
     };
 
-    // Force the node to be wide/tall enough so the DOM editor fits inside it.
-    const current = node.size || [0, 0];
-    node.setSize([Math.max(current[0], MIN_WIDTH), Math.max(current[1], MIN_HEIGHT)]);
-    node.setDirtyCanvas(true, true);
-    requestAnimationFrame(() => {
-        const size = node.size || [0, 0];
-        node.setSize([Math.max(size[0], MIN_WIDTH), Math.max(size[1], MIN_HEIGHT)]);
+    const fitNode = () => {
+        node.setSize(node.computeSize());
         node.setDirtyCanvas(true, true);
+    };
+
+    // Keep the canvas pixel buffer matched to its (fixed-height) frame.
+    new ResizeObserver(applyResolution).observe(canvas.parentElement);
+
+    // Size the node to fit the full editor a few frames after mount.
+    requestAnimationFrame(() => {
+        applyResolution();
+        fitNode();
+        requestAnimationFrame(fitNode);
     });
 }
 
