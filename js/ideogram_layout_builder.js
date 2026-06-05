@@ -452,8 +452,13 @@ function installEditor(node) {
         const frameWidth = frame.clientWidth || 560;
         const frameHeight = frame.clientHeight || 560;
         const scale = Math.min(frameWidth / resolution.width, frameHeight / resolution.height);
-        canvas.style.width = `${Math.max(1, Math.round(resolution.width * scale))}px`;
-        canvas.style.height = `${Math.max(1, Math.round(resolution.height * scale))}px`;
+        const pixelWidth = Math.max(1, Math.round(resolution.width * scale));
+        const pixelHeight = Math.max(1, Math.round(resolution.height * scale));
+        // Match the drawing buffer to the real aspect ratio so nothing gets stretched.
+        canvas.width = pixelWidth;
+        canvas.height = pixelHeight;
+        canvas.style.width = `${pixelWidth}px`;
+        canvas.style.height = `${pixelHeight}px`;
         resolutionReadout.textContent = `${resolution.width} x ${resolution.height}`;
         persistResolution();
         draw();
@@ -479,48 +484,54 @@ function installEditor(node) {
     }
 
     function drawLabel(ctx, label, x, y, width) {
-        const displayScale = Math.max(0.1, canvas.getBoundingClientRect().width / CANVAS_SIZE);
-        let fontSize = Math.round(13 / displayScale);
-        fontSize = Math.max(28, Math.min(64, fontSize));
+        const fontSize = 13;
         ctx.font = `${fontSize}px system-ui, sans-serif`;
-
         let text = label || "";
-        while (text.length > 1 && ctx.measureText(text).width > width - 24) {
+        while (text.length > 1 && ctx.measureText(text).width > width - 12) {
             text = text.slice(0, -2);
         }
         if (text !== label && text.length > 1) text = `${text}...`;
-        ctx.fillText(text, x + 12, y + fontSize + 10);
+        ctx.fillText(text, x + 6, y + fontSize + 6);
     }
 
     function draw() {
         const ctx = canvas.getContext("2d");
-        ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+        const W = canvas.width;
+        const H = canvas.height;
+        const fx = W / CANVAS_SIZE;
+        const fy = H / CANVAS_SIZE;
+
+        ctx.clearRect(0, 0, W, H);
         ctx.fillStyle = "#151a20";
-        ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+        ctx.fillRect(0, 0, W, H);
 
         ctx.strokeStyle = "#2d3642";
         ctx.lineWidth = 1;
         for (let line = 100; line < CANVAS_SIZE; line += 100) {
             ctx.beginPath();
-            ctx.moveTo(line, 0);
-            ctx.lineTo(line, CANVAS_SIZE);
-            ctx.moveTo(0, line);
-            ctx.lineTo(CANVAS_SIZE, line);
+            ctx.moveTo(line * fx, 0);
+            ctx.lineTo(line * fx, H);
+            ctx.moveTo(0, line * fy);
+            ctx.lineTo(W, line * fy);
             ctx.stroke();
         }
 
         for (const [index, element] of elements.entries()) {
             const [x1, y1, x2, y2] = element.bbox;
+            const px = x1 * fx;
+            const py = y1 * fy;
+            const pw = (x2 - x1) * fx;
+            const ph = (y2 - y1) * fy;
             const active = index === selectedIndex;
             const color = element.color_palette?.[0] || "#8AB4F8";
             ctx.fillStyle = `${color}33`;
             ctx.strokeStyle = active ? "#FFFFFF" : color;
-            ctx.lineWidth = active ? 5 : 3;
-            ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
-            ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+            ctx.lineWidth = active ? 3 : 2;
+            ctx.fillRect(px, py, pw, ph);
+            ctx.strokeRect(px, py, pw, ph);
             ctx.fillStyle = "#FFFFFF";
-            drawLabel(ctx, element.text || element.desc || `Element ${index + 1}`, x1, y1, x2 - x1);
-            if (active) ctx.fillRect(x2 - 18, y2 - 18, 18, 18);
+            drawLabel(ctx, element.text || element.desc || `Element ${index + 1}`, px, py, pw);
+            if (active) ctx.fillRect(px + pw - 10, py + ph - 10, 10, 10);
         }
     }
 
