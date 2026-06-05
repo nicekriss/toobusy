@@ -4,10 +4,6 @@ function findWidget(node, name) {
     return node.widgets?.find((widget) => widget.name === name);
 }
 
-function findToobusyWidget(node, id) {
-    return node.widgets?.find((widget) => widget.toobusyId === id);
-}
-
 function widgetText(node, name) {
     return String(findWidget(node, name)?.value ?? "").trim();
 }
@@ -20,14 +16,6 @@ function shorten(value, maxLength = 84) {
     return oneLine.length > maxLength ? `${oneLine.slice(0, maxLength - 1)}...` : oneLine;
 }
 
-function setDisplay(node, id, label) {
-    const widget = findToobusyWidget(node, id);
-    if (widget) {
-        widget.name = label;
-        widget.value = "";
-    }
-}
-
 function refreshSummary(node) {
     const idea = widgetText(node, "idea");
     const style = widgetText(node, "style");
@@ -35,25 +23,57 @@ function refreshSummary(node) {
     const productBrief = widgetText(node, "product_brief_override");
     const shotBeats = widgetText(node, "shot_beats_override");
 
-    setDisplay(node, "idea_summary", `Idea - ${shorten(idea)}`);
-    setDisplay(node, "style_summary", `Style - ${shorten(style)}`);
-    setDisplay(node, "fixed_summary", `Fixed - ${shorten(fixed)}`);
-
-    const overrideState = [
-        productBrief ? "product brief override on" : "product brief auto",
-        shotBeats ? "shot beats override on" : "shot beats auto",
-    ].join(" | ");
-    setDisplay(node, "override_summary", `Mode - ${overrideState}`);
+    node.toobusySummaryLines = [
+        ["Idea", shorten(idea, 78)],
+        ["Style", shorten(style, 78)],
+        ["Fixed", shorten(fixed, 78)],
+        [
+            "Mode",
+            [
+                productBrief ? "product brief override" : "product brief auto",
+                shotBeats ? "shot beats override" : "shot beats auto",
+            ].join(" | "),
+        ],
+    ];
 
     node.setDirtyCanvas?.(true, true);
     app.graph?.setDirtyCanvas?.(true, true);
 }
 
-function addReadOnlyText(node, id, label) {
-    const widget = node.addWidget("text", label, "", () => {}, { serialize: false });
-    widget.toobusyId = id;
-    widget.disabled = true;
-    return widget;
+function drawSummaryPanel(node, ctx) {
+    const lines = node.toobusySummaryLines;
+    if (!lines?.length) {
+        return;
+    }
+
+    const margin = 16;
+    const panelHeight = 124;
+    const panelY = node.size[1] - panelHeight - 12;
+    const panelWidth = node.size[0] - margin * 2;
+
+    ctx.save();
+    ctx.fillStyle = "rgba(24, 26, 28, 0.92)";
+    ctx.strokeStyle = "rgba(120, 150, 170, 0.38)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(margin, panelY, panelWidth, panelHeight, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(230, 236, 240, 0.92)";
+    ctx.font = "13px sans-serif";
+    ctx.fillText("Input summary", margin + 12, panelY + 22);
+
+    ctx.font = "12px sans-serif";
+    lines.forEach(([label, value], index) => {
+        const y = panelY + 44 + index * 22;
+        ctx.fillStyle = "rgba(135, 180, 210, 0.92)";
+        ctx.fillText(label, margin + 12, y);
+        ctx.fillStyle = "rgba(225, 225, 225, 0.88)";
+        ctx.fillText(value, margin + 72, y);
+    });
+
+    ctx.restore();
 }
 
 app.registerExtension({
@@ -67,16 +87,13 @@ app.registerExtension({
         nodeType.prototype.onNodeCreated = function () {
             onNodeCreated?.apply(this, arguments);
 
-            addReadOnlyText(this, "guide", "Guide - idea: event/story | style: look/tone | fixed: must stay consistent");
-            addReadOnlyText(this, "idea_summary", "Idea - (empty)");
-            addReadOnlyText(this, "style_summary", "Style - (empty)");
-            addReadOnlyText(this, "fixed_summary", "Fixed - (empty)");
-            addReadOnlyText(this, "override_summary", "Mode - product brief auto | shot beats auto");
+            this.toobusySummaryLines = [];
 
             this.addWidget("button", "Refresh input summary", "refresh", () => {
                 refreshSummary(this);
             }, { serialize: false });
 
+            this.size[1] = Math.max(this.size[1], 820);
             refreshSummary(this);
         };
 
@@ -84,6 +101,12 @@ app.registerExtension({
         nodeType.prototype.onExecuted = function (message) {
             onExecuted?.apply(this, arguments);
             refreshSummary(this);
+        };
+
+        const onDrawForeground = nodeType.prototype.onDrawForeground;
+        nodeType.prototype.onDrawForeground = function (ctx) {
+            onDrawForeground?.apply(this, arguments);
+            drawSummaryPanel(this, ctx);
         };
     },
 });
