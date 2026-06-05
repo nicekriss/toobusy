@@ -33,7 +33,7 @@ function setSummary(node) {
     const briefName = mode === "Product Commercial" ? "product brief" : "reference brief";
     const productBriefMode = productBrief
         ? `OVERRIDE ON: ${briefName} auto analysis is skipped.`
-        : `AUTO: ${briefName} is generated from product_image.`;
+        : `AUTO: ${briefName} is generated from product_image if connected, otherwise from text inputs.`;
     const shotBeatsMode = shotBeats
         ? `OVERRIDE ON: shot beat generation is skipped. Effective shot count = ${beatOverrideCount || "?"}.`
         : `AUTO: generating ${shotCount || "?"} shot beats from brief + idea + style + fixed.`;
