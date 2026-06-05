@@ -98,7 +98,7 @@ Internal flow:
 
 ```text
 UNETLoader + CLIPLoader + VAELoader
--> optional LoraLoader
+-> optional LoraLoader slot chain
 -> ModelSamplingAuraFlow
 -> CLIPTextEncode positive/negative
 -> EmptyLatentImage
@@ -114,7 +114,13 @@ Inputs include:
 - `positive` / `negative`: prompt text.
 - `ratio_preset`, `megapixels`, `divisible_by`: resolution is calculated from aspect ratio and target megapixels.
 - `seed`, `steps`, `cfg`, `sampler_name`, `scheduler`, `denoise`, `aura_shift`.
-- `enable_lora`, `lora_name`, `lora_strength`: uses ComfyUI's built-in `LoraLoader`, so the rgthree Power Lora Loader is not required.
+- LoRA slots: the frontend adds `Add LoRA slot` and `Remove LoRA slot` buttons. Up to 5 LoRA slots can be shown, and each slot has its own enable toggle, LoRA file, and strength.
+
+LoRA behavior:
+
+- Uses ComfyUI's built-in `LoraLoader`, so the rgthree Power Lora Loader is not required.
+- Enabled slots are applied in slot order.
+- Disabled slots and slots set to `None` are skipped.
 
 Outputs:
 
