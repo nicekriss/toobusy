@@ -37,23 +37,31 @@ Category:
 toobusy/Keyframe
 ```
 
-This node turns a product image and a short commercial idea into storyboard/keyframe text outputs.
+This node turns a reference image and a short idea into storyboard/keyframe text outputs.
+It can be used for product commercials, music videos, and short drama-style sequences.
+
+Modes:
+
+- `Product Commercial`: analyzes the image as a product reference and plans a commercial sequence.
+- `Music Video`: analyzes the image as a subject/visual reference and plans a mood-driven music-video sequence.
+- `Short Drama`: analyzes the image as a subject/visual reference and plans a short narrative sequence.
 
 Inputs:
 
 - `clip`: a text-generation capable CLIP/text encoder, for example the Gemma/LTX text model used by ComfyUI `TextGenerate`.
-- `product_image`: product reference image.
-- `idea`: the core commercial event or transformation.
+- `product_image`: product, subject, or visual reference image.
+- `mode`: storyboard mode. Current options are `Product Commercial`, `Music Video`, and `Short Drama`.
+- `idea`: the core event, transformation, story hook, or scene direction.
 - `style`: visual tone, camera style, lighting, mood, genre.
 - `fixed_elements`: product/character/colors/background rules that should remain consistent across shots.
 - `shot_count`: number of shots to generate when `shot_beats_override` is empty.
 - `seed`: base seed. The node uses `seed`, `seed + 1`, `seed + 2`, and `seed + 3` across its internal text-generation stages.
-- `product_brief_override` optional: if filled, image analysis is skipped and this text is used as the product brief.
+- `product_brief_override` optional: if filled, image analysis is skipped and this text is used as the reference brief.
 - `shot_beats_override` optional: if filled, shot-beat generation is skipped.
 
 Outputs:
 
-- `product_brief`
+- `product_brief`: compatibility name for the generated reference brief. In non-product modes this is a subject/visual brief.
 - `shot_beats`
 - `keyframe_prompts`
 - `korean_story`
@@ -61,19 +69,19 @@ Outputs:
 Internal flow:
 
 ```text
-product_image -> product brief
-product brief + idea + style + fixed + shot_count -> shot beats
-shot beats + product brief + style + fixed -> keyframe prompts
+product_image + mode -> reference brief
+reference brief + idea + style + fixed + shot_count -> shot beats
+shot beats + reference brief + style + fixed -> keyframe prompts
 brief + idea + style + beats + keyframe prompts -> Korean story explanation
 ```
 
 Override behavior:
 
-- If `product_brief_override` is filled, the product-image analysis result is ignored.
+- If `product_brief_override` is filled, the image-analysis result is ignored.
 - If `shot_beats_override` is filled, shot-beat generation is ignored.
 - When `shot_beats_override` is used, the effective shot count is the number of non-empty lines in the override text, not the `shot_count` widget.
 
-The frontend adds field namecards and an input summary panel so the node remains readable after text is entered.
+The frontend adds a small toobusy-tinted input guide and summary panel so the node remains readable after text is entered.
 
 ### toobusy LTX2.3 Prompt Guide
 
