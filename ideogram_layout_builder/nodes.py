@@ -75,9 +75,7 @@ def _build_desc(text, desc):
 
 
 def _element_type(text, desc):
-    if text and desc.lower() in PLACEHOLDER_DESCS:
-        return "text"
-    return "obj"
+    return "text" if text else "obj"
 
 
 def _load_elements(elements_json):
@@ -199,14 +197,18 @@ class IdeogramLayoutBuilder:
             if _is_placeholder_element(text, desc, bbox):
                 continue
 
-            elements.append(
-                {
-                    "type": _element_type(text, desc),
-                    "bbox": _to_ideogram_bbox(bbox),
-                    "desc": _build_desc(text, desc),
-                    "color_palette": _parse_palette(item.get("color_palette"), ["#FFFFFF", "#111111"]),
-                }
-            )
+            element_type = _element_type(text, desc)
+            palette = _parse_palette(item.get("color_palette"), ["#FFFFFF", "#111111"])[:5]
+
+            # Ideogram requires a fixed key order per type:
+            #   obj : type -> bbox -> desc -> color_palette
+            #   text: type -> bbox -> text -> desc -> color_palette
+            element = {"type": element_type, "bbox": _to_ideogram_bbox(bbox)}
+            if element_type == "text":
+                element["text"] = text
+            element["desc"] = _build_desc(text, desc)
+            element["color_palette"] = palette
+            elements.append(element)
 
         if not elements:
             elements.append(

@@ -106,7 +106,7 @@ class ToobusyZImageTurbo:
         sampler_names = _sampler_names()
         scheduler_names = _scheduler_names()
 
-        return {
+        base = {
             "required": {
                 "model_name": (model_names, {"default": _first_existing(model_names, ["ZIT\\zImage_turbo.safetensors"])}),
                 "clip_name": (clip_names, {"default": _first_existing(clip_names, ["ZIT\\zImage_textEncoder.safetensors"])}),
@@ -133,23 +133,22 @@ class ToobusyZImageTurbo:
                 "denoise": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "aura_shift": ("FLOAT", {"default": 3.0, "min": 0.0, "max": 20.0, "step": 0.1}),
                 "lora_slots": ("INT", {"default": 1, "min": 0, "max": MAX_LORA_SLOTS}),
-                "lora_1_enable": ("BOOLEAN", {"default": True}),
-                "lora_1_name": (lora_names, {"default": _default_lora_name(lora_names)}),
-                "lora_1_strength": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
-                "lora_2_enable": ("BOOLEAN", {"default": False}),
-                "lora_2_name": (lora_names, {"default": "None"}),
-                "lora_2_strength": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
-                "lora_3_enable": ("BOOLEAN", {"default": False}),
-                "lora_3_name": (lora_names, {"default": "None"}),
-                "lora_3_strength": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
-                "lora_4_enable": ("BOOLEAN", {"default": False}),
-                "lora_4_name": (lora_names, {"default": "None"}),
-                "lora_4_strength": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
-                "lora_5_enable": ("BOOLEAN", {"default": False}),
-                "lora_5_name": (lora_names, {"default": "None"}),
-                "lora_5_strength": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
             },
         }
+
+        required = base["required"]
+        for slot in range(1, MAX_LORA_SLOTS + 1):
+            required[f"lora_{slot}_enable"] = ("BOOLEAN", {"default": slot == 1})
+            required[f"lora_{slot}_name"] = (
+                lora_names,
+                {"default": _default_lora_name(lora_names) if slot == 1 else "None"},
+            )
+            required[f"lora_{slot}_strength"] = (
+                "FLOAT",
+                {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01},
+            )
+
+        return base
 
     RETURN_TYPES = ("IMAGE", "LATENT", "INT", "INT")
     RETURN_NAMES = ("image", "latent", "width", "height")
@@ -175,21 +174,7 @@ class ToobusyZImageTurbo:
         denoise,
         aura_shift,
         lora_slots,
-        lora_1_enable,
-        lora_1_name,
-        lora_1_strength,
-        lora_2_enable,
-        lora_2_name,
-        lora_2_strength,
-        lora_3_enable,
-        lora_3_name,
-        lora_3_strength,
-        lora_4_enable,
-        lora_4_name,
-        lora_4_strength,
-        lora_5_enable,
-        lora_5_name,
-        lora_5_strength,
+        **lora_kwargs,
     ):
         width, height = _resolution_from_megapixels(ratio_preset, megapixels, divisible_by)
 
@@ -198,14 +183,10 @@ class ToobusyZImageTurbo:
         vae = _call_node("VAELoader", vae_name=vae_name)[0]
 
         lora_slots = max(0, min(MAX_LORA_SLOTS, int(lora_slots)))
-        lora_settings = [
-            (lora_1_enable, lora_1_name, lora_1_strength),
-            (lora_2_enable, lora_2_name, lora_2_strength),
-            (lora_3_enable, lora_3_name, lora_3_strength),
-            (lora_4_enable, lora_4_name, lora_4_strength),
-            (lora_5_enable, lora_5_name, lora_5_strength),
-        ]
-        for enabled, lora_name, lora_strength in lora_settings[:lora_slots]:
+        for slot in range(1, lora_slots + 1):
+            enabled = lora_kwargs.get(f"lora_{slot}_enable", False)
+            lora_name = lora_kwargs.get(f"lora_{slot}_name", "None")
+            lora_strength = lora_kwargs.get(f"lora_{slot}_strength", 1.0)
             if enabled and lora_name != "None":
                 model, clip = _call_node(
                     "LoraLoader",

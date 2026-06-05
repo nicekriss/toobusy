@@ -529,7 +529,7 @@ function installEditor(node) {
         const element = selected();
         if (!element) {
             const empty = document.createElement("div");
-            empty.textContent = "Select or add an element.";
+            empty.textContent = "Drag on the canvas to draw a box, or click an existing one.";
             elementPanel.appendChild(empty);
             draw();
             return;
@@ -709,11 +709,21 @@ function installEditor(node) {
     canvas.addEventListener("pointerdown", (event) => {
         const pos = point(event);
         const hit = hitTest(pos);
-        selectedIndex = hit.index;
-        if (selectedIndex >= 0) {
+        if (hit.index >= 0) {
+            selectedIndex = hit.index;
             drag = { mode: hit.mode, start: pos, bbox: [...selected().bbox] };
             canvas.setPointerCapture(event.pointerId);
+            renderElementPanel();
+            return;
         }
+
+        // Empty canvas: start drawing a brand-new box (Photoshop style).
+        const fresh = normalizeElement({ bbox: [pos.x, pos.y, pos.x + MIN_BOX_SIZE, pos.y + MIN_BOX_SIZE] }, elements.length);
+        fresh.desc = "";
+        elements.push(fresh);
+        selectedIndex = elements.length - 1;
+        drag = { mode: "create", start: pos, bbox: [...fresh.bbox] };
+        canvas.setPointerCapture(event.pointerId);
         renderElementPanel();
     });
 
@@ -724,7 +734,12 @@ function installEditor(node) {
         const dy = pos.y - drag.start.y;
         const element = selected();
         const bbox = [...drag.bbox];
-        if (drag.mode === "resize") {
+        if (drag.mode === "create") {
+            bbox[0] = clamp(Math.min(drag.start.x, pos.x));
+            bbox[1] = clamp(Math.min(drag.start.y, pos.y));
+            bbox[2] = Math.max(bbox[0] + MIN_BOX_SIZE, clamp(Math.max(drag.start.x, pos.x)));
+            bbox[3] = Math.max(bbox[1] + MIN_BOX_SIZE, clamp(Math.max(drag.start.y, pos.y)));
+        } else if (drag.mode === "resize") {
             bbox[2] = Math.max(bbox[0] + 20, clamp(bbox[2] + dx));
             bbox[3] = Math.max(bbox[1] + 20, clamp(bbox[3] + dy));
         } else {
@@ -742,10 +757,15 @@ function installEditor(node) {
     });
 
     canvas.addEventListener("pointerup", (event) => {
+        const wasCreating = drag?.mode === "create";
         drag = null;
         try {
             canvas.releasePointerCapture(event.pointerId);
         } catch {}
+        if (wasCreating) {
+            syncElements();
+            renderElementPanel();
+        }
     });
 
     if (!elements.length) addElement();
