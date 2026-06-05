@@ -124,18 +124,17 @@ It is inspired by canvas-style creative workspaces, but it stays local and expor
 
 Inputs:
 
-- `board_data`: serialized board JSON. The frontend hides this and edits it through the board editor.
+- `board_data`: serialized board JSON. The frontend hides this and keeps it synced from the inline board.
 - `width` / `height`: exported image size.
 - `background`: board background color, for example `#f4f1e8`.
-- `image_1` to `image_6` optional: connect images here, then place matching image slots in the board editor.
 
-Editor features:
+Inline board features:
 
-- `Open board editor` opens the canvas editor.
-- Add text notes, image slots, rectangles, ellipses, arrows, and freehand pen strokes.
+- The board is visible directly inside the node; there is no separate popup editor.
+- Drag image files directly onto the board to place them. Dropped images are embedded into `board_data`, so separate image input slots are not required.
+- Add text notes, rectangles, ellipses, arrows, and freehand pen strokes.
 - Select and drag items freely on the board.
-- Image slot items render from the matching `image_1` through `image_6` inputs.
-- `Apply` saves the board back into the node, and queueing the node exports the board as an image.
+- Queueing the node exports the current board as an image.
 
 Outputs:
 
@@ -209,7 +208,7 @@ Outputs:
 
 Dialogue duration helper:
 
-- Quoted dialogue is detected with `'...'`, `"..."`, `“...”`, `‘...’`, `「...」`, and `『...』`.
+- Quoted dialogue is detected with `'...'`, `"..."`, “...”, ‘...’, 「...」, and 『...』.
 - `Suggest duration` estimates duration from dialogue length.
 - `Apply recommended duration` copies the estimate into `duration_seconds`.
 
