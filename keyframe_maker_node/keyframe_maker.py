@@ -46,6 +46,9 @@ Rules:
 - Be literal and concise.
 - Focus only on what is visible in the image.
 - Do not invent names or backstory.
+- If the subject is a human wearing a costume, describe them as a human wearing a costume.
+- Do not transform a human costume into a literal animal, insect, monster, creature, or hybrid body.
+- Preserve human face, human body proportions, and ordinary costume material when visible.
 - If text is unreadable, write "unreadable".
 - Keep each field short.
 - English only."""
@@ -73,6 +76,8 @@ Rules:
 - Each line must be short, under 12 words.
 - Keep the sequence visually progressive.
 - Keep the same product/main subject and same character identity when present.
+- If the reference shows a human in a costume, keep them human.
+- Do not add creature anatomy such as insect eyes, antennae, claws, wings, or exoskeleton unless clearly visible.
 - No numbering.
 - No explanations.
 - No blank lines.
@@ -100,6 +105,9 @@ Rules:
 - One line = one final image prompt.
 - Each line should be 25 to 40 words.
 - Keep the same product/main subject and same character identity across all lines when present.
+- If the reference shows a human wearing a costume, write it as a realistic human in that costume.
+- Do not turn costume details into literal creature anatomy.
+- Avoid insectoid, monster, hybrid, multifaceted eyes, antennae, claws, wings, or exoskeleton unless the reference visibly has them.
 - Make each shot visually distinct and sequential.
 - Include camera/composition cues naturally.
 - No numbering.
