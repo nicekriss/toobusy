@@ -41,7 +41,10 @@ def _model_names():
 
 
 def _clip_names():
-    return _folder_list("text_encoders", ["ZIT\\zImage_textEncoder.safetensors"])
+    names = _folder_list("text_encoders", [])
+    if not names:
+        names = _folder_list("clip", [])
+    return names or ["ZIT\\zImage_textEncoder.safetensors"]
 
 
 def _vae_names():
@@ -50,6 +53,19 @@ def _vae_names():
 
 def _lora_names():
     return ["None"] + _folder_list("loras", ["Lora\\ZIT\\ZIT_Neobabae_v1.safetensors"])
+
+
+def _default_lora_name(lora_names):
+    preferred = ["Lora\\ZIT\\ZIT_Neobabae_v1.safetensors", "ZIT\\ZIT_Neobabae_v1.safetensors"]
+    for name in preferred:
+        if name in lora_names:
+            return name
+
+    for name in lora_names:
+        if "ZIT_Neobabae" in name:
+            return name
+
+    return lora_names[1] if len(lora_names) > 1 else "None"
 
 
 def _scheduler_names():
@@ -115,7 +131,7 @@ class ToobusyZImageTurbo:
                 "denoise": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "aura_shift": ("FLOAT", {"default": 3.0, "min": 0.0, "max": 20.0, "step": 0.1}),
                 "enable_lora": ("BOOLEAN", {"default": True}),
-                "lora_name": (lora_names, {"default": _first_existing(lora_names, ["Lora\\ZIT\\ZIT_Neobabae_v1.safetensors", "None"])}),
+                "lora_name": (lora_names, {"default": _default_lora_name(lora_names)}),
                 "lora_strength": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
             },
         }
