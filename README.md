@@ -1,61 +1,181 @@
 # toobusy
 
-ComfyUI 커스텀 노드 저장소입니다.
+ComfyUI custom nodes for reducing busy video-generation workflows.
 
-## 설치
+The current public focus is:
 
-`ComfyUI/custom_nodes` 경로에 이 저장소를 `toobusy` 폴더명으로 클론한 뒤 ComfyUI를 재시작하세요.
+- `toobusy Keyframe Maker`
+- `toobusy LTX2.3` compact workflow nodes
+
+Experimental older nodes are kept in the repository for reference, but are not registered by default right now.
+
+## Install
+
+Clone this repository into `ComfyUI/custom_nodes` as `toobusy`, then restart ComfyUI.
 
 ```bash
+cd ComfyUI/custom_nodes
 git clone https://github.com/nicekriss/toobusy.git toobusy
 ```
 
-> 이 저장소는 ComfyUI가 `custom_nodes/toobusy/__init__.py`를 직접 import 하는 구조를 사용합니다.
-> 따라서 루트의 `__init__.py` 파일이 반드시 있어야 하며, 삭제되면 로딩 에러가 발생합니다.
+Update later with:
 
-실제 노드는 `hf_model_auto_loader`, `ideogram_layout_builder`, `ltx23_compact_sampler_node`에 있습니다.
-
-## 포함된 노드
-
-- `HF Model Auto Loader`: ComfyUI 모델 폴더에서 필요한 모델 파일을 찾고 상태를 알려주는 보조 노드입니다.
-- `Ideogram Layout Builder`: Ideogram 4용 structured JSON prompt를 시각적인 bbox 캔버스로 만드는 노드입니다.
-- `LTX2.3` compact nodes: LTX2.3 워크플로우의 prompt, latent, sampler 구간을 단순화하는 노드 묶음입니다.
-
-## Ideogram Layout Builder
-
-ComfyUI에서 `toobusy / ideogram / Ideogram Layout Builder`로 추가할 수 있습니다.
-
-이 노드는 1000 x 1000 기준 캔버스에서 박스를 추가/이동/리사이즈하고, 각 박스에 텍스트/설명/색상 팔레트를 입력하면 Ideogram 4 워크플로우가 기대하는 JSON 문자열을 출력합니다.
-
-출력 예시는 다음 구조입니다.
-
-```json
-{
-  "high_level_description": "",
-  "style_description": {
-    "aesthetics": "",
-    "lighting": "",
-    "photo": "",
-    "medium": "",
-    "color_palette": []
-  },
-  "compositional_deconstruction": {
-    "background": "",
-    "elements": [
-      {
-        "type": "obj",
-        "bbox": [100, 100, 900, 300],
-        "desc": "large headline text",
-        "color_palette": ["#FFFFFF", "#111111"]
-      }
-    ]
-  }
-}
+```bash
+cd ComfyUI/custom_nodes/toobusy
+git pull
 ```
 
-추천 사용 방식:
+After pulling frontend changes, restart ComfyUI and hard-refresh the browser.
 
-1. 전체 장면, 스타일, 조명, 배경을 먼저 입력합니다.
-2. 제목/제품/서브텍스트처럼 중요한 요소마다 박스를 하나씩 만듭니다.
-3. 이미지 안에 들어갈 글자는 `Text` 필드에 정확히 입력합니다.
-4. 결과 `ideogram_json` 출력을 Ideogram 4 워크플로우의 prompt 입력에 연결합니다.
+## Active Nodes
+
+### toobusy Keyframe Maker
+
+Category:
+
+```text
+toobusy/Keyframe
+```
+
+This node turns a product image and a short commercial idea into storyboard/keyframe text outputs.
+
+Inputs:
+
+- `clip`: a text-generation capable CLIP/text encoder, for example the Gemma/LTX text model used by ComfyUI `TextGenerate`.
+- `product_image`: product reference image.
+- `idea`: the core commercial event or transformation.
+- `style`: visual tone, camera style, lighting, mood, genre.
+- `fixed_elements`: product/character/colors/background rules that should remain consistent across shots.
+- `shot_count`: number of shots to generate when `shot_beats_override` is empty.
+- `seed`: base seed. The node uses `seed`, `seed + 1`, `seed + 2`, and `seed + 3` across its internal text-generation stages.
+- `product_brief_override` optional: if filled, image analysis is skipped and this text is used as the product brief.
+- `shot_beats_override` optional: if filled, shot-beat generation is skipped.
+
+Outputs:
+
+- `product_brief`
+- `shot_beats`
+- `keyframe_prompts`
+- `korean_story`
+
+Internal flow:
+
+```text
+product_image -> product brief
+product brief + idea + style + fixed + shot_count -> shot beats
+shot beats + product brief + style + fixed -> keyframe prompts
+brief + idea + style + beats + keyframe prompts -> Korean story explanation
+```
+
+Override behavior:
+
+- If `product_brief_override` is filled, the product-image analysis result is ignored.
+- If `shot_beats_override` is filled, shot-beat generation is ignored.
+- When `shot_beats_override` is used, the effective shot count is the number of non-empty lines in the override text, not the `shot_count` widget.
+
+The frontend adds field namecards and an input summary panel so the node remains readable after text is entered.
+
+### toobusy LTX2.3 Prompt Guide
+
+Category:
+
+```text
+toobusy/LTXV
+```
+
+Folds prompt/negative encoding and LTX frame-rate conditioning into one node.
+
+Outputs:
+
+- `positive`
+- `negative`
+- `frame_rate_int`
+- `frame_rate_float`
+- `length`
+
+`length` is calculated from `duration_seconds * frame_rate + 1`, so it can be connected directly to `toobusy LTX2.3 Empty AV Latents.length`.
+
+Dialogue duration helper:
+
+- Quoted dialogue is detected with `'...'`, `"..."`, `“...”`, `‘...’`, `「...」`, and `『...』`.
+- `Suggest duration` estimates duration from dialogue length.
+- `Apply recommended duration` copies the estimate into `duration_seconds`.
+
+### toobusy LTX2.3 Empty AV Latents
+
+Category:
+
+```text
+toobusy/LTXV
+```
+
+Combines `EmptyLTXVLatentVideo` and `LTXVEmptyLatentAudio` into one node.
+
+Inputs include:
+
+- `audio_vae`
+- `ratio_preset`
+- `megapixels`
+- `divisible_by`
+- `length`
+- `frame_rate`
+- `batch_size`
+- `use_custom_audio`
+- optional `audio`
+
+The node calculates `width` and `height` from `ratio_preset * megapixels`, rounded to `divisible_by`.
+
+When `use_custom_audio` is off, it creates empty audio latent with `LTXVEmptyLatentAudio`.
+When `use_custom_audio` is on, connect an `audio` input and it uses:
+
+```text
+LTXVAudioVAEEncode -> SolidMask(0) -> SetLatentNoiseMask
+```
+
+### toobusy LTX2.3 Compact AV Sampler
+
+Category:
+
+```text
+toobusy/LTXV
+```
+
+Folds the common LTX2.3 AV sampling block into one node:
+
+```text
+RandomNoise -> LTXVConcatAVLatent -> CFGGuider -> KSamplerSelect -> ManualSigmas/SIGMAS -> SamplerCustomAdvanced -> LTXVSeparateAVLatent -> LTXVCropGuides
+```
+
+Inputs:
+
+- `model`
+- `positive`
+- `negative`
+- `video_latent`
+- `audio_latent`
+- `seed`
+- `cfg`
+- `sampler_name`
+- `manual_sigmas`
+- optional `sigmas`
+
+If `sigmas` is connected, the node uses that injected sigma schedule. Otherwise it uses `manual_sigmas`.
+
+The node always runs `LTXVCropGuides` after sampling so guide frames are removed before the latent continues.
+
+## Hidden Experimental Nodes
+
+These folders are currently kept in the repository but are not exposed through `NODE_CLASS_MAPPINGS`:
+
+- `hf_model_auto_loader`
+- `ideogram_layout_builder`
+
+They may come back later, but they are hidden for now to keep the public node list focused.
+
+## Roadmap
+
+Near-term plan:
+
+1. Finish `toobusy Keyframe Maker` polish.
+2. Add a compact Z-Image Turbo generation node.
+3. Prepare the repository for ComfyUI-Manager registration and public video release.
