@@ -27,12 +27,36 @@ Rules:
 - English only."""
 
 
+SUBJECT_BRIEF_PROMPT = """Analyze the reference image and create a compact subject/visual brief for a {MODE_LABEL} storyboard.
+
+Return only this format:
+
+main_subject:
+subject_type:
+outfit_or_styling:
+visible_identity_traits:
+pose_or_expression:
+setting_or_background:
+dominant_colors:
+visual_mood:
+important_props:
+continuity_notes:
+
+Rules:
+- Be literal and concise.
+- Focus only on what is visible in the image.
+- Do not invent names or backstory.
+- If text is unreadable, write "unreadable".
+- Keep each field short.
+- English only."""
+
+
 SHOT_BEATS_TEMPLATE = """You are a storyboard planner.
 
-Create exactly {SHOT_COUNT} short visual beats for a short commercial.
+Create exactly {SHOT_COUNT} short visual beats for a {MODE_LABEL}.
 
-Product brief:
-{PRODUCT_BRIEF}
+Reference brief:
+{BRIEF}
 
 Core idea:
 {IDEA}
@@ -62,8 +86,8 @@ Expand each shot beat into one cinematic image prompt.
 Shot beats:
 {BEATS}
 
-Product brief:
-{PRODUCT_BRIEF}
+Reference brief:
+{BRIEF}
 
 Global style:
 {STYLE}
@@ -90,8 +114,8 @@ Your job is to read the generated keyframe prompts and explain what kind of comm
 
 Input information:
 
-Product brief:
-{PRODUCT_BRIEF}
+Reference brief:
+{BRIEF}
 
 Original idea:
 {IDEA}
@@ -155,6 +179,21 @@ def _format_template(template, **values):
     return result
 
 
+def _mode_label(mode):
+    return {
+        "Product Commercial": "product commercial",
+        "Music Video": "music video",
+        "Short Drama": "short drama",
+    }.get(mode, "storyboard")
+
+
+def _brief_prompt_for_mode(mode):
+    if mode == "Product Commercial":
+        return PRODUCT_BRIEF_PROMPT
+
+    return _format_template(SUBJECT_BRIEF_PROMPT, MODE_LABEL=_mode_label(mode))
+
+
 def _line_count(text):
     return len([line for line in str(text).splitlines() if line.strip()])
 
@@ -185,6 +224,7 @@ class ToobusyKeyframeMaker:
             "required": {
                 "clip": ("CLIP",),
                 "product_image": ("IMAGE",),
+                "mode": (["Product Commercial", "Music Video", "Short Drama"], {"default": "Product Commercial"}),
                 "idea": (
                     "STRING",
                     {
@@ -252,6 +292,7 @@ class ToobusyKeyframeMaker:
         self,
         clip,
         product_image,
+        mode,
         idea,
         style,
         fixed_elements,
@@ -265,7 +306,7 @@ class ToobusyKeyframeMaker:
         if not product_brief:
             product_brief = _generate_text(
                 clip,
-                PRODUCT_BRIEF_PROMPT,
+                _brief_prompt_for_mode(mode),
                 max_length=512,
                 seed=seed,
                 image=product_image,
@@ -280,7 +321,8 @@ class ToobusyKeyframeMaker:
             shot_beats_prompt = _format_template(
                 SHOT_BEATS_TEMPLATE,
                 SHOT_COUNT=effective_shot_count,
-                PRODUCT_BRIEF=product_brief,
+                MODE_LABEL=_mode_label(mode),
+                BRIEF=product_brief,
                 IDEA=idea,
                 STYLE=style,
                 FIXED=fixed_elements,
@@ -291,7 +333,7 @@ class ToobusyKeyframeMaker:
             KEYFRAME_PROMPTS_TEMPLATE,
             SHOT_COUNT=effective_shot_count,
             BEATS=shot_beats,
-            PRODUCT_BRIEF=product_brief,
+            BRIEF=product_brief,
             STYLE=style,
             FIXED=fixed_elements,
         )
@@ -299,7 +341,7 @@ class ToobusyKeyframeMaker:
 
         korean_story_prompt = _format_template(
             KOREAN_STORY_TEMPLATE,
-            PRODUCT_BRIEF=product_brief,
+            BRIEF=product_brief,
             IDEA=idea,
             STYLE=style,
             BEATS=shot_beats,
@@ -311,7 +353,7 @@ class ToobusyKeyframeMaker:
         return {
             "ui": {
                 "text": [
-                    "Product brief:",
+                    "Reference brief:",
                     product_brief,
                     "Shot beats:",
                     shot_beats,
