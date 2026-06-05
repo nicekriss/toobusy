@@ -4,10 +4,15 @@ import re
 
 HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 MIN_BOX_SIZE = 40
+# Boxes smaller than this in both dimensions are treated as stray/degenerate
+# (e.g. an accidental click box) and dropped from the output.
+DEGENERATE_BOX_SIZE = 48
+STYLE_PALETTE_MAX = 16
+ELEMENT_PALETTE_MAX = 5
 PLACEHOLDER_DESCS = {"", "new layout element", "layout element", "duplicated layout element"}
 
 
-def _parse_palette(value, fallback=None):
+def _parse_palette(value, fallback=None, limit=ELEMENT_PALETTE_MAX):
     fallback = fallback or []
     if isinstance(value, list):
         colors = value
@@ -17,13 +22,17 @@ def _parse_palette(value, fallback=None):
         colors = []
 
     normalized = []
+    seen = set()
     for color in colors:
         if not isinstance(color, str):
             continue
         color = color.strip().upper()
-        if HEX_RE.match(color):
+        if HEX_RE.match(color) and color not in seen:
+            seen.add(color)
             normalized.append(color)
-    return normalized or fallback
+
+    result = normalized or list(fallback)
+    return result[:limit] if limit else result
 
 
 def _clamp_int(value, minimum=0, maximum=1000):
@@ -57,6 +66,10 @@ def _to_ideogram_bbox(value):
 def _is_placeholder_element(text, desc, bbox):
     width = bbox[2] - bbox[0]
     height = bbox[3] - bbox[1]
+    # Drop stray/degenerate boxes (tiny in both dimensions), e.g. an accidental
+    # click box that was never dragged into a real region.
+    if width < DEGENERATE_BOX_SIZE and height < DEGENERATE_BOX_SIZE:
+        return True
     is_tiny_corner = bbox[0] == 0 and bbox[1] == 0 and width <= MIN_BOX_SIZE and height <= MIN_BOX_SIZE
     return not text and desc.lower() in PLACEHOLDER_DESCS and is_tiny_corner
 
@@ -67,10 +80,7 @@ def _build_desc(text, desc):
     if text and desc:
         return desc if text.lower() in desc.lower() else f"{desc} Text reads '{text}'."
     if text:
-        return (
-            "transparent magazine cover text overlay printed directly over the continuous full-bleed photo, "
-            f"text reads '{text}', no separate background box, no label panel, no paper card"
-        )
+        return f"clean rendered text integrated into the composition, text reads '{text}'"
     return desc or "layout element"
 
 
@@ -198,17 +208,24 @@ class IdeogramLayoutBuilder:
                 continue
 
             element_type = _element_type(text, desc)
-            palette = _parse_palette(item.get("color_palette"), ["#FFFFFF", "#111111"])[:5]
+            palette = _parse_palette(
+                item.get("color_palette"), ["#FFFFFF", "#111111"], limit=ELEMENT_PALETTE_MAX
+            )
+            ideogram_bbox = _to_ideogram_bbox(bbox)
 
             # Ideogram requires a fixed key order per type:
             #   obj : type -> bbox -> desc -> color_palette
             #   text: type -> bbox -> text -> desc -> color_palette
-            element = {"type": element_type, "bbox": _to_ideogram_bbox(bbox)}
+            element = {"type": element_type, "bbox": ideogram_bbox}
             if element_type == "text":
                 element["text"] = text
             element["desc"] = _build_desc(text, desc)
             element["color_palette"] = palette
             elements.append(element)
+
+        # Order elements roughly top-to-bottom, then left-to-right (reading order),
+        # which Ideogram recommends. bbox is [y_min, x_min, y_max, x_max].
+        elements.sort(key=lambda el: (el["bbox"][0], el["bbox"][1]))
 
         if not elements:
             elements.append(
@@ -227,7 +244,9 @@ class IdeogramLayoutBuilder:
                 "lighting": lighting.strip(),
                 "photo": photo.strip(),
                 "medium": medium.strip(),
-                "color_palette": _parse_palette(global_palette, ["#111111", "#FFFFFF", "#D8C7A3"]),
+                "color_palette": _parse_palette(
+                    global_palette, ["#111111", "#FFFFFF", "#D8C7A3"], limit=STYLE_PALETTE_MAX
+                ),
             },
             "compositional_deconstruction": {
                 "background": background.strip(),

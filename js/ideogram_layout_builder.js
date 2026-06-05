@@ -144,7 +144,7 @@ function makeField(labelText, value, multiline, onInput) {
     const input = multiline ? document.createElement("textarea") : document.createElement("input");
     span.textContent = labelText;
     input.value = value || "";
-    if (multiline) input.rows = 2;
+    if (multiline) input.rows = 4;
     input.addEventListener("input", () => onInput(input.value));
     label.append(span, input);
     return label;
@@ -330,6 +330,10 @@ function installEditor(node) {
                 padding: 6px;
                 font: inherit;
                 resize: vertical;
+            }
+            .drawings-ideogram textarea {
+                min-height: 72px;
+                line-height: 1.4;
             }
             .drawings-ideogram button {
                 border: 1px solid #4d5662;
