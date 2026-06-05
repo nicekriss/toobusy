@@ -199,8 +199,12 @@ function parseColors(value, fallback) {
 }
 
 function makePaletteEditor(labelText, colors, onInput, count = 5) {
-    const root = document.createElement("label");
+    // Use a div (not a label) so clicking empty space or the title does not
+    // trigger the first color input.
+    const root = document.createElement("div");
+    root.className = "palette-editor";
     const title = document.createElement("span");
+    title.className = "palette-title";
     const row = document.createElement("div");
     const swatches = [];
     title.textContent = labelText;
@@ -353,9 +357,17 @@ function installEditor(node) {
                 display: flex;
                 align-items: center;
             }
+            .drawings-ideogram .palette-editor {
+                display: flex;
+                flex-direction: column;
+                gap: 3px;
+                min-width: 0;
+            }
+            .drawings-ideogram .palette-title { color: #aeb8c4; }
             .drawings-ideogram .palette-row {
                 display: flex;
                 gap: 5px;
+                flex-wrap: wrap;
             }
             .drawings-ideogram .color-swatch {
                 width: 34px;
