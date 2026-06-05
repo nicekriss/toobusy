@@ -28,7 +28,9 @@ function parseBoard(node) {
 function saveBoard(node, board) {
     const widget = boardWidget(node);
     if (widget) {
-        widget.value = JSON.stringify(board);
+        // Skip the back-reference to the ComfyNode, otherwise JSON.stringify hits
+        // a circular structure (node -> widgets -> DOMWidget._node).
+        widget.value = JSON.stringify(board, (key, value) => (key === "_node" ? undefined : value));
     }
     node.setDirtyCanvas?.(true, true);
     app.graph?.setDirtyCanvas?.(true, true);
