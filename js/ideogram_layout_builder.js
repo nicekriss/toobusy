@@ -786,11 +786,24 @@ function installEditor(node) {
     requestAnimationFrame(applyResolution);
     new ResizeObserver(applyResolution).observe(canvas.parentElement);
 
+    const MIN_WIDTH = 740;
+    const MIN_HEIGHT = 820;
+
     const originalComputeSize = node.computeSize;
     node.computeSize = function computeSize(out) {
-        const size = originalComputeSize?.call(this, out) || [680, 780];
-        return [Math.max(size[0], 720), Math.max(size[1], 780)];
+        const size = originalComputeSize?.call(this, out) || [MIN_WIDTH, MIN_HEIGHT];
+        return [Math.max(size[0], MIN_WIDTH), Math.max(size[1], MIN_HEIGHT)];
     };
+
+    // Force the node to be wide/tall enough so the DOM editor fits inside it.
+    const current = node.size || [0, 0];
+    node.setSize([Math.max(current[0], MIN_WIDTH), Math.max(current[1], MIN_HEIGHT)]);
+    node.setDirtyCanvas(true, true);
+    requestAnimationFrame(() => {
+        const size = node.size || [0, 0];
+        node.setSize([Math.max(size[0], MIN_WIDTH), Math.max(size[1], MIN_HEIGHT)]);
+        node.setDirtyCanvas(true, true);
+    });
 }
 
 app.registerExtension({
