@@ -155,11 +155,20 @@ function makeButton(text, title, onClick) {
     return button;
 }
 
+let __uidCounter = 0;
+function uid(prefix) {
+    __uidCounter += 1;
+    return `toobusy-ig-${prefix}-${__uidCounter}`;
+}
+
 function makeField(labelText, value, multiline, onInput) {
     const label = document.createElement("label");
     const span = document.createElement("span");
     const input = multiline ? document.createElement("textarea") : document.createElement("input");
     span.textContent = labelText;
+    input.id = uid("field");
+    input.name = input.id;
+    span.htmlFor = input.id;
     input.value = value || "";
     if (multiline) input.rows = 4;
     input.addEventListener("input", () => onInput(input.value));
@@ -172,6 +181,8 @@ function makeSelectField(labelText, options, currentValue, onInput) {
     const span = document.createElement("span");
     const select = document.createElement("select");
     span.textContent = labelText;
+    select.id = uid("select");
+    select.name = select.id;
 
     let matched = false;
     for (const [name, value] of options) {
@@ -198,6 +209,8 @@ function makeSelectField(labelText, options, currentValue, onInput) {
 function makeNumberInput(value, onInput) {
     const input = document.createElement("input");
     input.type = "number";
+    input.id = uid("num");
+    input.name = input.id;
     input.min = "256";
     input.max = "2048";
     input.step = "1";
@@ -234,6 +247,8 @@ function makePaletteEditor(labelText, colors, onInput, count = 5) {
     for (let index = 0; index < count; index++) {
         const swatch = document.createElement("input");
         swatch.type = "color";
+        swatch.id = uid("color");
+        swatch.name = swatch.id;
         swatch.className = "color-swatch";
         const initial = (colors[index] || colors[colors.length - 1] || "#FFFFFF").toUpperCase();
         swatch.value = initial;
@@ -309,6 +324,12 @@ function installEditor(node) {
                 display: flex;
                 gap: 6px;
                 margin-bottom: 7px;
+                align-items: center;
+            }
+            .toobusy-ideogram .count-readout {
+                margin-left: auto;
+                color: #9fb0c0;
+                font-size: 11px;
             }
             .toobusy-ideogram .canvas-frame {
                 width: 100%;
@@ -433,9 +454,12 @@ function installEditor(node) {
     const resolutionReadout = document.createElement("div");
     resolutionReadout.className = "resolution-readout";
 
+    let updateCount = () => {};
+
     function syncElements() {
         jsonWidget.value = JSON.stringify(elements, null, 2);
         jsonWidget.callback?.(jsonWidget.value);
+        updateCount();
         node.setDirtyCanvas(true, true);
     }
 
@@ -669,6 +693,8 @@ function installEditor(node) {
     const palettePresetLabel = document.createElement("label");
     const palettePresetTitle = document.createElement("span");
     const palettePresetSelect = document.createElement("select");
+    palettePresetSelect.id = uid("select");
+    palettePresetSelect.name = palettePresetSelect.id;
     palettePresetTitle.textContent = "Palette preset";
     for (const [name] of PALETTE_PRESETS) {
         const option = document.createElement("option");
@@ -700,6 +726,8 @@ function installEditor(node) {
     const presetLabel = document.createElement("label");
     const presetTitle = document.createElement("span");
     const presetSelect = document.createElement("select");
+    presetSelect.id = uid("select");
+    presetSelect.name = presetSelect.id;
     presetTitle.textContent = "Canvas preset";
     for (const [id, label] of RESOLUTION_PRESETS) {
         const option = document.createElement("option");
@@ -747,6 +775,14 @@ function installEditor(node) {
         makeButton("Duplicate", "Duplicate selected element", duplicateElement),
         makeButton("Delete", "Delete selected element", deleteElement),
     );
+
+    const countReadout = document.createElement("span");
+    countReadout.className = "count-readout";
+    toolbar.appendChild(countReadout);
+    updateCount = () => {
+        countReadout.textContent = `${elements.length} element(s)`;
+    };
+    updateCount();
 
     const DRAG_THRESHOLD = 10; // normalized units before an empty-canvas drag becomes a new box
 
