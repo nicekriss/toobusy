@@ -141,7 +141,11 @@ function makeButton(text, title, onClick) {
         event.stopPropagation();
         if (!armed) return;
         armed = false;
-        onClick();
+        try {
+            onClick();
+        } catch (err) {
+            console.error(`[toobusy ideogram] "${text}" button failed:`, err);
+        }
     });
     button.addEventListener("pointerleave", () => { armed = false; });
     button.addEventListener("click", (event) => {
