@@ -127,13 +127,26 @@ function makeButton(text, title, onClick) {
     button.textContent = text;
     button.title = title;
 
-    // Stop pointerdown from reaching LiteGraph (so it doesn't start a node drag),
-    // but run the action on the standard click event for reliability.
-    button.addEventListener("pointerdown", (event) => event.stopPropagation());
+    // Run the action on pointerup and stop the event from reaching LiteGraph.
+    // Some ComfyUI (Nodes 2.0) builds swallow the synthetic "click" on DOM
+    // widgets overlapping the canvas, so we don't rely on it.
+    let armed = false;
+    button.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        armed = true;
+    });
+    button.addEventListener("pointerup", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!armed) return;
+        armed = false;
+        onClick();
+    });
+    button.addEventListener("pointerleave", () => { armed = false; });
     button.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        onClick();
     });
     return button;
 }
@@ -272,9 +285,10 @@ function installEditor(node) {
             .toobusy-ideogram .scene {
                 display: grid;
                 grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 7px;
-                margin-bottom: 8px;
+                gap: 8px 10px;
+                margin-bottom: 10px;
             }
+            .toobusy-ideogram .scene .full { grid-column: 1 / -1; }
             .toobusy-ideogram .workspace {
                 display: flex;
                 flex-direction: column;
@@ -631,13 +645,19 @@ function installEditor(node) {
         renderElementPanel();
     }
 
+    const sceneField = makeField("Scene", widget(node, "high_level_description")?.value, true, (value) => syncScene("high_level_description", value));
+    const backgroundField = makeField("Background", widget(node, "background")?.value, true, (value) => syncScene("background", value));
+    sceneField.classList.add("full");
+    backgroundField.classList.add("full");
+
+    // Full-width text areas, then the four preset selects in a tidy 2x2 grid.
     scene.append(
-        makeField("Scene", widget(node, "high_level_description")?.value, true, (value) => syncScene("high_level_description", value)),
+        sceneField,
         makeSelectField("Style", STYLE_PRESETS, widget(node, "aesthetics")?.value, (value) => syncScene("aesthetics", value)),
+        makeSelectField("Output type", MEDIUM_PRESETS, widget(node, "medium")?.value, (value) => syncScene("medium", value)),
         makeSelectField("Lighting", LIGHTING_PRESETS, widget(node, "lighting")?.value, (value) => syncScene("lighting", value)),
         makeSelectField("Camera", CAMERA_PRESETS, widget(node, "photo")?.value, (value) => syncScene("photo", value)),
-        makeSelectField("Output type", MEDIUM_PRESETS, widget(node, "medium")?.value, (value) => syncScene("medium", value)),
-        makeField("Background", widget(node, "background")?.value, true, (value) => syncScene("background", value)),
+        backgroundField,
     );
 
     const palettePresetWrap = document.createElement("div");

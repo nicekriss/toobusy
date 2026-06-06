@@ -262,5 +262,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "IdeogramLayoutBuilder": "Ideogram Layout Builder",
+    "IdeogramLayoutBuilder": "toobusy Ideogram Layout Builder",
 }
