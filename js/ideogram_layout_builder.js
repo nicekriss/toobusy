@@ -420,6 +420,13 @@ function installEditor(node) {
                 min-width: 0;
             }
             .toobusy-ideogram .palette-title { color: #aeb8c4; }
+            .toobusy-ideogram .clear-colors {
+                margin-top: 4px;
+                align-self: flex-start;
+                font-size: 11px;
+                padding: 3px 8px;
+            }
+            .toobusy-ideogram .clear-colors:disabled { opacity: 0.45; cursor: default; }
             .toobusy-ideogram .palette-row {
                 display: flex;
                 gap: 5px;
@@ -630,8 +637,9 @@ function installEditor(node) {
             return;
         }
 
+        const hasColors = Array.isArray(element.color_palette) && element.color_palette.length > 0;
         const elementPalette = makePaletteEditor(
-            "Element colors (optional)",
+            hasColors ? "Element colors" : "Element colors (optional, unset)",
             parseColors(element.color_palette, ["#8AB4F8", "#FFFFFF", "#111111"]),
             (colors) => {
                 element.color_palette = colors;
@@ -640,6 +648,17 @@ function installEditor(node) {
             },
             3,
         );
+
+        // Reset this element's palette to "unset" (omitted from the output JSON).
+        const clearColors = makeButton("Clear colors", "Reset this element's colors to unset", () => {
+            element.color_palette = [];
+            syncElements();
+            renderElementPanel();
+            draw();
+        });
+        clearColors.classList.add("clear-colors");
+        if (!hasColors) clearColors.disabled = true;
+        elementPalette.root.appendChild(clearColors);
 
         elementPanel.append(
             makeField(
