@@ -121,7 +121,7 @@ function normalizeElement(element = {}, index = 0) {
         bbox,
         text: element.text || "",
         desc: element.desc || "",
-        color_palette: Array.isArray(element.color_palette) ? element.color_palette : ["#8AB4F8", "#FFFFFF"],
+        color_palette: Array.isArray(element.color_palette) ? element.color_palette : [],
     };
 }
 
@@ -165,7 +165,7 @@ function uid(prefix) {
     return `toobusy-ig-${prefix}-${__uidCounter}`;
 }
 
-function makeField(labelText, value, multiline, onInput) {
+function makeField(labelText, value, multiline, onInput, placeholder = "") {
     const label = document.createElement("label");
     const span = document.createElement("span");
     const input = multiline ? document.createElement("textarea") : document.createElement("input");
@@ -174,6 +174,7 @@ function makeField(labelText, value, multiline, onInput) {
     input.name = input.id;
     span.htmlFor = input.id;
     input.value = value || "";
+    if (placeholder) input.placeholder = placeholder;
     if (multiline) input.rows = 4;
     input.addEventListener("input", () => onInput(input.value));
     label.append(span, input);
@@ -601,7 +602,7 @@ function installEditor(node) {
         }
 
         const elementPalette = makePaletteEditor(
-            "Element colors",
+            "Element colors (optional)",
             parseColors(element.color_palette, ["#8AB4F8", "#FFFFFF", "#111111"]),
             (colors) => {
                 element.color_palette = colors;
@@ -612,16 +613,28 @@ function installEditor(node) {
         );
 
         elementPanel.append(
-            makeField("Text", element.text, false, (value) => {
-                element.text = value;
-                syncElements();
-                draw();
-            }),
-            makeField("Description", element.desc, true, (value) => {
-                element.desc = value;
-                syncElements();
-                draw();
-            }),
+            makeField(
+                "Text",
+                element.text,
+                false,
+                (value) => {
+                    element.text = value;
+                    syncElements();
+                    draw();
+                },
+                "Type to render this box as text. Leave blank for an object.",
+            ),
+            makeField(
+                "Description",
+                element.desc,
+                true,
+                (value) => {
+                    element.desc = value;
+                    syncElements();
+                    draw();
+                },
+                "What this region shows (e.g. 'a woman in a red top').",
+            ),
             elementPalette.root,
             bboxReadout,
         );

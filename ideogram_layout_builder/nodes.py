@@ -108,7 +108,7 @@ class IdeogramLayoutBuilder:
                     "STRING",
                     {
                         "multiline": True,
-                        "default": "A clean editorial poster with deliberate layout and readable text.",
+                        "default": "A clean editorial poster with deliberate layout.",
                     },
                 ),
                 "aesthetics": (
@@ -208,19 +208,21 @@ class IdeogramLayoutBuilder:
                 continue
 
             element_type = _element_type(text, desc)
-            palette = _parse_palette(
-                item.get("color_palette"), ["#FFFFFF", "#111111"], limit=ELEMENT_PALETTE_MAX
-            )
+            # No fallback: only keep colors the user actually chose. An unset /
+            # default palette is omitted so we don't inject a meaningless color
+            # hint into every element (it gets overridden by desc anyway).
+            palette = _parse_palette(item.get("color_palette"), [], limit=ELEMENT_PALETTE_MAX)
             ideogram_bbox = _to_ideogram_bbox(bbox)
 
             # Ideogram requires a fixed key order per type:
-            #   obj : type -> bbox -> desc -> color_palette
-            #   text: type -> bbox -> text -> desc -> color_palette
+            #   obj : type -> bbox -> desc -> [color_palette]
+            #   text: type -> bbox -> text -> desc -> [color_palette]
             element = {"type": element_type, "bbox": ideogram_bbox}
             if element_type == "text":
                 element["text"] = text
             element["desc"] = _build_desc(text, desc)
-            element["color_palette"] = palette
+            if palette:
+                element["color_palette"] = palette
             elements.append(element)
 
         # Order elements roughly top-to-bottom, then left-to-right (reading order),
