@@ -888,20 +888,35 @@ function installEditor(node) {
     }
 
     const MIN_WIDTH = 420;
+    // Keep computeSize's minimum small so the user can still shrink the node
+    // (the root scrolls internally); we set the preferred size explicitly below.
     const originalComputeSize = node.computeSize;
     node.computeSize = function computeSize(out) {
-        const size = originalComputeSize?.call(this, out) || [MIN_WIDTH, PREFERRED_HEIGHT];
+        const size = originalComputeSize?.call(this, out) || [MIN_WIDTH, 320];
         return [Math.max(size[0], MIN_WIDTH), size[1]];
     };
 
     // Keep the canvas pixel buffer matched to its (fixed-height) frame.
     new ResizeObserver(applyResolution).observe(canvas.parentElement);
 
-    requestAnimationFrame(() => {
-        applyResolution();
-        node.setSize([Math.max(node.size?.[0] || 0, MIN_WIDTH), Math.max(node.size?.[1] || 0, PREFERRED_HEIGHT)]);
+    const ensurePreferredSize = () => {
+        const w = Math.max(node.size?.[0] || 0, MIN_WIDTH);
+        const h = Math.max(node.size?.[1] || 0, PREFERRED_HEIGHT);
+        node.setSize([w, h]);
         node.setDirtyCanvas(true, true);
-    });
+    };
+
+    // Apply the preferred size on first mount and again after ComfyUI restores a
+    // saved (possibly too-short) size when loading a workflow.
+    requestAnimationFrame(() => { applyResolution(); ensurePreferredSize(); });
+    setTimeout(ensurePreferredSize, 50);
+
+    const originalOnConfigure = node.onConfigure;
+    node.onConfigure = function onConfigure() {
+        const result = originalOnConfigure?.apply(this, arguments);
+        requestAnimationFrame(ensurePreferredSize);
+        return result;
+    };
 }
 
 app.registerExtension({
