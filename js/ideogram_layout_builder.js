@@ -642,7 +642,7 @@ function installEditor(node) {
         const [x1, y1, x2, y2] = copy.bbox;
         const width = Math.max(MIN_BOX_SIZE, x2 - x1);
         const height = Math.max(MIN_BOX_SIZE, y2 - y1);
-        const offset = 90;
+        const offset = 160;
         let nextX = x1 + offset;
         let nextY = y1 + offset;
 
