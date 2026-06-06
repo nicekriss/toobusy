@@ -780,7 +780,9 @@ function installEditor(node) {
     countReadout.className = "count-readout";
     toolbar.appendChild(countReadout);
     updateCount = () => {
-        countReadout.textContent = `${elements.length} element(s)`;
+        const last = elements[elements.length - 1];
+        const bbox = last ? `[${last.bbox.join(",")}]` : "-";
+        countReadout.textContent = `${elements.length} el | canvas ${canvas.width}x${canvas.height} | last ${bbox}`;
     };
     updateCount();
 
