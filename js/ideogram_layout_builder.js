@@ -300,7 +300,7 @@ function installEditor(node) {
             .toobusy-ideogram {
                 box-sizing: border-box;
                 width: 100%;
-                min-width: 340px;
+                min-width: 640px;
                 color: #e9edf1;
                 font: 12px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
                 user-select: none;
@@ -321,10 +321,22 @@ function installEditor(node) {
                 margin-bottom: 10px;
             }
             .toobusy-ideogram .scene .full { grid-column: 1 / -1; }
-            .toobusy-ideogram .workspace {
+            .toobusy-ideogram .editor {
+                display: grid;
+                grid-template-columns: minmax(260px, 1fr) 360px;
+                gap: 14px;
+                align-items: start;
+            }
+            .toobusy-ideogram .left {
+                display: flex;
+                flex-direction: column;
+                min-width: 0;
+            }
+            .toobusy-ideogram .right {
                 display: flex;
                 flex-direction: column;
                 gap: 10px;
+                min-width: 0;
             }
             .toobusy-ideogram .resolution {
                 display: grid;
@@ -453,14 +465,18 @@ function installEditor(node) {
                 grid-column: 1 / -1;
             }
         </style>
-        <div class="scene"></div>
-        <div class="resolution"></div>
-        <div class="toolbar"></div>
-        <div class="workspace">
-            <div class="canvas-frame">
-                <canvas width="1000" height="1000"></canvas>
+        <div class="editor">
+            <div class="left">
+                <div class="scene"></div>
+                <div class="resolution"></div>
+                <div class="toolbar"></div>
             </div>
-            <div class="element"></div>
+            <div class="right">
+                <div class="canvas-frame">
+                    <canvas width="1000" height="1000"></canvas>
+                </div>
+                <div class="element"></div>
+            </div>
         </div>
     `;
 
@@ -980,7 +996,7 @@ function installEditor(node) {
         }),
     );
     refreshPresetSelect();
-    root.insertBefore(presetBar, scene);
+    root.insertBefore(presetBar, root.querySelector(".editor"));
 
     const DRAG_THRESHOLD = 28; // normalized units before an empty-canvas drag becomes a new box
 
@@ -1095,14 +1111,15 @@ function installEditor(node) {
     renderElementPanel();
     applyResolution();
 
-    // Preferred height fits the whole editor; the root scrolls internally so the
-    // user can freely shrink the node (getMinHeight stays small) without clipping.
-    const PREFERRED_HEIGHT = 900;
+    // Two-column layout: preferred size is wider and shorter. The root scrolls
+    // internally so the user can still shrink the node without clipping.
+    const PREFERRED_WIDTH = 760;
+    const PREFERRED_HEIGHT = 620;
     root.style.overflowY = "auto";
 
     const domWidget = node.addDOMWidget("layout_editor", "toobusy_ideogram_layout", root, {
         getMinHeight: () => 320,
-        getMaxHeight: () => 1600,
+        getMaxHeight: () => 1400,
         getHeight: () => PREFERRED_HEIGHT,
     });
 
@@ -1110,9 +1127,7 @@ function installEditor(node) {
         node.widgets = [domWidget, ...node.widgets.filter((item) => item !== domWidget)];
     }
 
-    const MIN_WIDTH = 420;
-    // Keep computeSize's minimum small so the user can still shrink the node
-    // (the root scrolls internally); we set the preferred size explicitly below.
+    const MIN_WIDTH = 660;
     const originalComputeSize = node.computeSize;
     node.computeSize = function computeSize(out) {
         const size = originalComputeSize?.call(this, out) || [MIN_WIDTH, 320];
@@ -1123,7 +1138,7 @@ function installEditor(node) {
     new ResizeObserver(applyResolution).observe(canvas.parentElement);
 
     const ensurePreferredSize = () => {
-        const w = Math.max(node.size?.[0] || 0, MIN_WIDTH);
+        const w = Math.max(node.size?.[0] || 0, PREFERRED_WIDTH);
         const h = Math.max(node.size?.[1] || 0, PREFERRED_HEIGHT);
         node.setSize([w, h]);
         node.setDirtyCanvas(true, true);
