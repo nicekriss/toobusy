@@ -300,7 +300,7 @@ function installEditor(node) {
             .toobusy-ideogram {
                 box-sizing: border-box;
                 width: 100%;
-                min-width: 640px;
+                min-width: 820px;
                 color: #e9edf1;
                 font: 12px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
                 user-select: none;
@@ -314,30 +314,31 @@ function installEditor(node) {
             }
             .toobusy-ideogram .preset-bar .preset-bar-title { color: #aeb8c4; }
             .toobusy-ideogram .preset-bar select { flex: 1; min-width: 0; }
-            .toobusy-ideogram .scene {
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 8px 10px;
-                margin-bottom: 10px;
-            }
-            .toobusy-ideogram .scene .full { grid-column: 1 / -1; }
             .toobusy-ideogram .editor {
                 display: grid;
-                grid-template-columns: minmax(260px, 1fr) 360px;
+                grid-template-columns: 240px minmax(320px, 1fr) 250px;
                 gap: 14px;
                 align-items: start;
             }
-            .toobusy-ideogram .left {
+            .toobusy-ideogram .col-left,
+            .toobusy-ideogram .col-right {
                 display: flex;
                 flex-direction: column;
+                gap: 8px;
                 min-width: 0;
             }
-            .toobusy-ideogram .right {
+            .toobusy-ideogram .col-center {
                 display: flex;
                 flex-direction: column;
-                gap: 10px;
+                gap: 8px;
                 min-width: 0;
             }
+            .toobusy-ideogram .scene {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .toobusy-ideogram .scene .full { width: 100%; }
             .toobusy-ideogram .resolution {
                 display: grid;
                 grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
@@ -398,6 +399,30 @@ function installEditor(node) {
             .toobusy-ideogram textarea {
                 min-height: 72px;
                 line-height: 1.4;
+            }
+            /* Free-text fields: warm neutral accent */
+            .toobusy-ideogram textarea,
+            .toobusy-ideogram input:not([type="color"]) {
+                border-left: 3px solid #8a8170;
+                background: #14181d;
+            }
+            /* Dropdowns: blue accent + custom chevron, clearly different from text */
+            .toobusy-ideogram select {
+                border-left: 3px solid #4a90e2;
+                background-color: #15212c;
+                cursor: pointer;
+                -webkit-appearance: none;
+                appearance: none;
+                padding-right: 26px;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237fb2e8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+                background-repeat: no-repeat;
+                background-position: right 9px center;
+            }
+            /* Preset system dropdown: stronger (green) accent */
+            .toobusy-ideogram .preset-bar select {
+                border-left: 3px solid #5bc88a;
+                background-color: #16241d;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238fe0b3' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
             }
             .toobusy-ideogram button {
                 border: 1px solid #4d5662;
@@ -466,15 +491,17 @@ function installEditor(node) {
             }
         </style>
         <div class="editor">
-            <div class="left">
+            <div class="col-left">
                 <div class="scene"></div>
-                <div class="resolution"></div>
-                <div class="toolbar"></div>
             </div>
-            <div class="right">
+            <div class="col-center">
+                <div class="toolbar"></div>
                 <div class="canvas-frame">
                     <canvas width="1000" height="1000"></canvas>
                 </div>
+                <div class="resolution"></div>
+            </div>
+            <div class="col-right">
                 <div class="element"></div>
             </div>
         </div>
@@ -1113,8 +1140,8 @@ function installEditor(node) {
 
     // Two-column layout: preferred size is wider and shorter. The root scrolls
     // internally so the user can still shrink the node without clipping.
-    const PREFERRED_WIDTH = 760;
-    const PREFERRED_HEIGHT = 620;
+    const PREFERRED_WIDTH = 880;
+    const PREFERRED_HEIGHT = 600;
     root.style.overflowY = "auto";
 
     const domWidget = node.addDOMWidget("layout_editor", "toobusy_ideogram_layout", root, {
@@ -1127,7 +1154,7 @@ function installEditor(node) {
         node.widgets = [domWidget, ...node.widgets.filter((item) => item !== domWidget)];
     }
 
-    const MIN_WIDTH = 660;
+    const MIN_WIDTH = 820;
     const originalComputeSize = node.computeSize;
     node.computeSize = function computeSize(out) {
         const size = originalComputeSize?.call(this, out) || [MIN_WIDTH, 320];
