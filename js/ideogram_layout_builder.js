@@ -107,7 +107,11 @@ function parseElements(value) {
 
 function normalizeElement(element = {}, index = 0) {
     const fallback = [130 + index * 30, 130 + index * 30, 560 + index * 30, 380 + index * 30];
-    const bbox = Array.isArray(element.bbox) && element.bbox.length === 4 ? element.bbox.map(clamp) : fallback;
+    // NOTE: use an arrow wrapper — passing `clamp` straight to map would feed
+    // map's (value, index, array) args into clamp's (value, min, max) and yield NaN.
+    const bbox = Array.isArray(element.bbox) && element.bbox.length === 4
+        ? element.bbox.map((value) => clamp(value))
+        : fallback;
     if (bbox[2] - bbox[0] < MIN_BOX_SIZE) bbox[2] = Math.min(CANVAS_SIZE, bbox[0] + MIN_BOX_SIZE);
     if (bbox[3] - bbox[1] < MIN_BOX_SIZE) bbox[3] = Math.min(CANVAS_SIZE, bbox[1] + MIN_BOX_SIZE);
     if (bbox[2] - bbox[0] < MIN_BOX_SIZE) bbox[0] = Math.max(0, bbox[2] - MIN_BOX_SIZE);
@@ -780,9 +784,7 @@ function installEditor(node) {
     countReadout.className = "count-readout";
     toolbar.appendChild(countReadout);
     updateCount = () => {
-        const last = elements[elements.length - 1];
-        const bbox = last ? `[${last.bbox.join(",")}]` : "-";
-        countReadout.textContent = `${elements.length} el | canvas ${canvas.width}x${canvas.height} | last ${bbox}`;
+        countReadout.textContent = `${elements.length} element(s)`;
     };
     updateCount();
 
@@ -870,14 +872,15 @@ function installEditor(node) {
     renderElementPanel();
     applyResolution();
 
-    // Report the real measured content height so the node grows to fit the
-    // whole editor (otherwise the bottom panel spills outside the node).
-    const measureHeight = () => Math.max(820, Math.ceil(root.scrollHeight) + 12);
+    // Preferred height fits the whole editor; the root scrolls internally so the
+    // user can freely shrink the node (getMinHeight stays small) without clipping.
+    const PREFERRED_HEIGHT = 900;
+    root.style.overflowY = "auto";
 
     const domWidget = node.addDOMWidget("layout_editor", "toobusy_ideogram_layout", root, {
-        getMinHeight: measureHeight,
-        getMaxHeight: () => 2000,
-        getHeight: measureHeight,
+        getMinHeight: () => 320,
+        getMaxHeight: () => 1600,
+        getHeight: () => PREFERRED_HEIGHT,
     });
 
     if (domWidget && node.widgets?.includes(domWidget)) {
@@ -885,26 +888,19 @@ function installEditor(node) {
     }
 
     const MIN_WIDTH = 420;
-
     const originalComputeSize = node.computeSize;
     node.computeSize = function computeSize(out) {
-        const size = originalComputeSize?.call(this, out) || [MIN_WIDTH, measureHeight()];
+        const size = originalComputeSize?.call(this, out) || [MIN_WIDTH, PREFERRED_HEIGHT];
         return [Math.max(size[0], MIN_WIDTH), size[1]];
-    };
-
-    const fitNode = () => {
-        node.setSize(node.computeSize());
-        node.setDirtyCanvas(true, true);
     };
 
     // Keep the canvas pixel buffer matched to its (fixed-height) frame.
     new ResizeObserver(applyResolution).observe(canvas.parentElement);
 
-    // Size the node to fit the full editor a few frames after mount.
     requestAnimationFrame(() => {
         applyResolution();
-        fitNode();
-        requestAnimationFrame(fitNode);
+        node.setSize([Math.max(node.size?.[0] || 0, MIN_WIDTH), Math.max(node.size?.[1] || 0, PREFERRED_HEIGHT)]);
+        node.setDirtyCanvas(true, true);
     });
 }
 
