@@ -306,6 +306,14 @@ function installEditor(node) {
                 user-select: none;
             }
             .toobusy-ideogram * { box-sizing: border-box; }
+            .toobusy-ideogram .preset-bar {
+                display: flex;
+                gap: 6px;
+                align-items: center;
+                margin-bottom: 10px;
+            }
+            .toobusy-ideogram .preset-bar .preset-bar-title { color: #aeb8c4; }
+            .toobusy-ideogram .preset-bar select { flex: 1; min-width: 0; }
             .toobusy-ideogram .scene {
                 display: grid;
                 grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -712,19 +720,26 @@ function installEditor(node) {
     }
 
     const sceneField = makeField("Scene", widget(node, "high_level_description")?.value, true, (value) => syncScene("high_level_description", value));
+    const styleField = makeSelectField("Style", STYLE_PRESETS, widget(node, "aesthetics")?.value, (value) => syncScene("aesthetics", value));
+    const outputField = makeSelectField("Output type", MEDIUM_PRESETS, widget(node, "medium")?.value, (value) => syncScene("medium", value));
+    const lightingField = makeSelectField("Lighting", LIGHTING_PRESETS, widget(node, "lighting")?.value, (value) => syncScene("lighting", value));
+    const cameraField = makeSelectField("Camera", CAMERA_PRESETS, widget(node, "photo")?.value, (value) => syncScene("photo", value));
     const backgroundField = makeField("Background", widget(node, "background")?.value, true, (value) => syncScene("background", value));
     sceneField.classList.add("full");
     backgroundField.classList.add("full");
 
+    // Map scene widget names to their DOM input so presets can refresh the view.
+    const sceneInputs = {
+        high_level_description: sceneField.querySelector("textarea, input"),
+        aesthetics: styleField.querySelector("select"),
+        medium: outputField.querySelector("select"),
+        lighting: lightingField.querySelector("select"),
+        photo: cameraField.querySelector("select"),
+        background: backgroundField.querySelector("textarea, input"),
+    };
+
     // Full-width text areas, then the four preset selects in a tidy 2x2 grid.
-    scene.append(
-        sceneField,
-        makeSelectField("Style", STYLE_PRESETS, widget(node, "aesthetics")?.value, (value) => syncScene("aesthetics", value)),
-        makeSelectField("Output type", MEDIUM_PRESETS, widget(node, "medium")?.value, (value) => syncScene("medium", value)),
-        makeSelectField("Lighting", LIGHTING_PRESETS, widget(node, "lighting")?.value, (value) => syncScene("lighting", value)),
-        makeSelectField("Camera", CAMERA_PRESETS, widget(node, "photo")?.value, (value) => syncScene("photo", value)),
-        backgroundField,
-    );
+    scene.append(sceneField, styleField, outputField, lightingField, cameraField, backgroundField);
 
     const palettePresetWrap = document.createElement("div");
     palettePresetWrap.className = "palette-preset";
@@ -821,6 +836,132 @@ function installEditor(node) {
         countReadout.textContent = `${elements.length} element(s)`;
     };
     updateCount();
+
+    // ----- Presets (saved in the browser via localStorage) -----
+    const PRESET_STORE_KEY = "toobusy.ideogram.presets";
+    const loadPresets = () => {
+        try { return JSON.parse(localStorage.getItem(PRESET_STORE_KEY)) || {}; } catch { return {}; }
+    };
+    const savePresets = (obj) => {
+        try { localStorage.setItem(PRESET_STORE_KEY, JSON.stringify(obj)); } catch {}
+    };
+
+    const presetBar = document.createElement("div");
+    presetBar.className = "preset-bar";
+    const presetBarTitle = document.createElement("span");
+    presetBarTitle.className = "preset-bar-title";
+    presetBarTitle.textContent = "Preset";
+    const presetSelectEl = document.createElement("select");
+    presetSelectEl.id = uid("preset");
+    presetSelectEl.name = presetSelectEl.id;
+
+    const refreshPresetSelect = (selected) => {
+        const presets = loadPresets();
+        const names = Object.keys(presets).sort();
+        presetSelectEl.replaceChildren();
+        if (!names.length) {
+            const opt = document.createElement("option");
+            opt.value = "";
+            opt.textContent = "(no presets)";
+            presetSelectEl.appendChild(opt);
+        } else {
+            for (const name of names) {
+                const opt = document.createElement("option");
+                opt.value = name;
+                opt.textContent = name;
+                presetSelectEl.appendChild(opt);
+            }
+        }
+        if (selected) presetSelectEl.value = selected;
+    };
+
+    function captureState() {
+        return {
+            high_level_description: widget(node, "high_level_description")?.value || "",
+            aesthetics: widget(node, "aesthetics")?.value || "",
+            lighting: widget(node, "lighting")?.value || "",
+            photo: widget(node, "photo")?.value || "",
+            medium: widget(node, "medium")?.value || "",
+            global_palette: widget(node, "global_palette")?.value || "",
+            background: widget(node, "background")?.value || "",
+            elements: JSON.parse(JSON.stringify(elements)),
+            resolution: { ...resolution },
+        };
+    }
+
+    function applyState(state) {
+        if (!state) return;
+        const setScene = (name, value) => {
+            if (value === undefined) return;
+            syncScene(name, value);
+            const input = sceneInputs[name];
+            if (input) input.value = value;
+        };
+        setScene("high_level_description", state.high_level_description);
+        setScene("aesthetics", state.aesthetics);
+        setScene("lighting", state.lighting);
+        setScene("photo", state.photo);
+        setScene("medium", state.medium);
+        setScene("background", state.background);
+
+        if (state.global_palette !== undefined) {
+            syncScene("global_palette", state.global_palette);
+            globalColors = parseColors(state.global_palette, PALETTE_PRESETS[0][1]);
+            globalPalette.swatches.forEach((sw, i) => {
+                const c = (globalColors[i] || "#FFFFFF").toUpperCase();
+                sw.value = c;
+                sw.dataset.color = c;
+            });
+        }
+
+        if (Array.isArray(state.elements)) {
+            elements = state.elements.map(normalizeElement);
+            selectedIndex = elements.length ? 0 : -1;
+        }
+
+        if (state.resolution && state.resolution.width && state.resolution.height) {
+            resolution = {
+                preset: state.resolution.preset || "custom",
+                width: clamp(state.resolution.width, 256, 2048),
+                height: clamp(state.resolution.height, 256, 2048),
+            };
+            widthInput.value = String(resolution.width);
+            heightInput.value = String(resolution.height);
+            presetSelect.value = RESOLUTION_PRESETS.some(([id]) => id === resolution.preset) ? resolution.preset : "custom";
+        }
+
+        syncElements();
+        renderElementPanel();
+        applyResolution();
+    }
+
+    presetBar.append(
+        presetBarTitle,
+        presetSelectEl,
+        makeButton("Save", "Save current layout as a named preset", () => {
+            const name = (window.prompt("Preset name:") || "").trim();
+            if (!name) return;
+            const presets = loadPresets();
+            presets[name] = captureState();
+            savePresets(presets);
+            refreshPresetSelect(name);
+        }),
+        makeButton("Load", "Load the selected preset", () => {
+            const name = presetSelectEl.value;
+            if (!name) return;
+            applyState(loadPresets()[name]);
+        }),
+        makeButton("Delete", "Delete the selected preset", () => {
+            const name = presetSelectEl.value;
+            if (!name) return;
+            const presets = loadPresets();
+            delete presets[name];
+            savePresets(presets);
+            refreshPresetSelect();
+        }),
+    );
+    refreshPresetSelect();
+    root.insertBefore(presetBar, scene);
 
     const DRAG_THRESHOLD = 28; // normalized units before an empty-canvas drag becomes a new box
 
