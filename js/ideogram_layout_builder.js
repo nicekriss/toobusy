@@ -527,12 +527,28 @@ function installEditor(node) {
         };
     }
 
+    const HANDLE_HIT = 28; // normalized distance to grab a corner handle
+
+    function cornerAt(pos, bbox) {
+        const [x1, y1, x2, y2] = bbox;
+        const near = (a, b) => Math.abs(pos.x - a) < HANDLE_HIT && Math.abs(pos.y - b) < HANDLE_HIT;
+        if (near(x1, y1)) return "nw";
+        if (near(x2, y1)) return "ne";
+        if (near(x1, y2)) return "sw";
+        if (near(x2, y2)) return "se";
+        return null;
+    }
+
     function hitTest(pos) {
         for (let i = elements.length - 1; i >= 0; i--) {
-            const [x1, y1, x2, y2] = elements[i].bbox;
+            const bbox = elements[i].bbox;
+            const [x1, y1, x2, y2] = bbox;
+            const corner = cornerAt(pos, bbox);
+            if (corner) {
+                return { index: i, mode: "resize", handle: corner };
+            }
             if (pos.x >= x1 && pos.x <= x2 && pos.y >= y1 && pos.y <= y2) {
-                const resize = Math.abs(pos.x - x2) < 26 && Math.abs(pos.y - y2) < 26;
-                return { index: i, mode: resize ? "resize" : "move" };
+                return { index: i, mode: "move" };
             }
         }
         return { index: -1, mode: "none" };
@@ -586,7 +602,12 @@ function installEditor(node) {
             ctx.strokeRect(px, py, pw, ph);
             ctx.fillStyle = "#FFFFFF";
             drawLabel(ctx, element.text || element.desc || `Element ${index + 1}`, px, py, pw);
-            if (active) ctx.fillRect(px + pw - 10, py + ph - 10, 10, 10);
+            if (active) {
+                const hs = 9;
+                for (const [cx, cy] of [[px, py], [px + pw, py], [px, py + ph], [px + pw, py + ph]]) {
+                    ctx.fillRect(cx - hs / 2, cy - hs / 2, hs, hs);
+                }
+            }
         }
     }
 
@@ -801,14 +822,14 @@ function installEditor(node) {
     };
     updateCount();
 
-    const DRAG_THRESHOLD = 10; // normalized units before an empty-canvas drag becomes a new box
+    const DRAG_THRESHOLD = 28; // normalized units before an empty-canvas drag becomes a new box
 
     canvas.addEventListener("pointerdown", (event) => {
         const pos = point(event);
         const hit = hitTest(pos);
         if (hit.index >= 0) {
             selectedIndex = hit.index;
-            drag = { mode: hit.mode, start: pos, bbox: [...selected().bbox] };
+            drag = { mode: hit.mode, handle: hit.handle, start: pos, bbox: [...selected().bbox] };
             canvas.setPointerCapture(event.pointerId);
             renderElementPanel();
             return;
@@ -820,9 +841,19 @@ function installEditor(node) {
         canvas.setPointerCapture(event.pointerId);
     });
 
+    const CURSOR_FOR_HANDLE = { nw: "nwse-resize", se: "nwse-resize", ne: "nesw-resize", sw: "nesw-resize" };
+
     canvas.addEventListener("pointermove", (event) => {
-        if (!drag) return;
         const pos = point(event);
+
+        if (!drag) {
+            // Hover feedback: resize cursor on corners, move cursor inside a box.
+            const hit = hitTest(pos);
+            canvas.style.cursor = hit.mode === "resize"
+                ? CURSOR_FOR_HANDLE[hit.handle] || "crosshair"
+                : hit.mode === "move" ? "move" : "crosshair";
+            return;
+        }
 
         if (drag.mode === "pending") {
             if (Math.abs(pos.x - drag.start.x) < DRAG_THRESHOLD && Math.abs(pos.y - drag.start.y) < DRAG_THRESHOLD) {
@@ -848,8 +879,27 @@ function installEditor(node) {
             bbox[2] = Math.max(bbox[0] + MIN_BOX_SIZE, clamp(Math.max(drag.start.x, pos.x)));
             bbox[3] = Math.max(bbox[1] + MIN_BOX_SIZE, clamp(Math.max(drag.start.y, pos.y)));
         } else if (drag.mode === "resize") {
-            bbox[2] = Math.max(bbox[0] + 20, clamp(bbox[2] + dx));
-            bbox[3] = Math.max(bbox[1] + 20, clamp(bbox[3] + dy));
+            const handle = drag.handle || "se";
+            let [a, b, c, d] = drag.bbox; // x1, y1, x2, y2
+            if (handle.includes("w")) a = clamp(a + dx);
+            if (handle.includes("e")) c = clamp(c + dx);
+            if (handle.includes("n")) b = clamp(b + dy);
+            if (handle.includes("s")) d = clamp(d + dy);
+            // Normalize ordering and enforce a minimum size.
+            let x1 = Math.min(a, c);
+            let x2 = Math.max(a, c);
+            let y1 = Math.min(b, d);
+            let y2 = Math.max(b, d);
+            if (x2 - x1 < MIN_BOX_SIZE) {
+                if (handle.includes("w")) x1 = x2 - MIN_BOX_SIZE; else x2 = x1 + MIN_BOX_SIZE;
+            }
+            if (y2 - y1 < MIN_BOX_SIZE) {
+                if (handle.includes("n")) y1 = y2 - MIN_BOX_SIZE; else y2 = y1 + MIN_BOX_SIZE;
+            }
+            bbox[0] = clamp(x1);
+            bbox[1] = clamp(y1);
+            bbox[2] = clamp(x2);
+            bbox[3] = clamp(y2);
         } else {
             const width = bbox[2] - bbox[0];
             const height = bbox[3] - bbox[1];
