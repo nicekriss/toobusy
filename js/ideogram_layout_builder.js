@@ -235,8 +235,8 @@ function makePaletteEditor(labelText, colors, onInput, count = 5) {
 }
 
 function installEditor(node) {
-    if (node.__drawingsIdeogramInstalled) return;
-    node.__drawingsIdeogramInstalled = true;
+    if (node.__toobusyIdeogramInstalled) return;
+    node.__toobusyIdeogramInstalled = true;
 
     const jsonWidget = widget(node, "elements_json");
     if (!jsonWidget) return;
@@ -257,10 +257,10 @@ function installEditor(node) {
     };
 
     const root = document.createElement("div");
-    root.className = "drawings-ideogram";
+    root.className = "toobusy-ideogram";
     root.innerHTML = `
         <style>
-            .drawings-ideogram {
+            .toobusy-ideogram {
                 box-sizing: border-box;
                 width: 100%;
                 min-width: 340px;
@@ -268,31 +268,31 @@ function installEditor(node) {
                 font: 12px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
                 user-select: none;
             }
-            .drawings-ideogram * { box-sizing: border-box; }
-            .drawings-ideogram .scene {
+            .toobusy-ideogram * { box-sizing: border-box; }
+            .toobusy-ideogram .scene {
                 display: grid;
                 grid-template-columns: repeat(2, minmax(0, 1fr));
                 gap: 7px;
                 margin-bottom: 8px;
             }
-            .drawings-ideogram .workspace {
+            .toobusy-ideogram .workspace {
                 display: flex;
                 flex-direction: column;
                 gap: 10px;
             }
-            .drawings-ideogram .resolution {
+            .toobusy-ideogram .resolution {
                 display: grid;
                 grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
                 gap: 7px;
                 align-items: end;
                 margin-bottom: 8px;
             }
-            .drawings-ideogram .toolbar {
+            .toobusy-ideogram .toolbar {
                 display: flex;
                 gap: 6px;
                 margin-bottom: 7px;
             }
-            .drawings-ideogram .canvas-frame {
+            .toobusy-ideogram .canvas-frame {
                 width: 100%;
                 height: 360px;
                 border: 1px solid #58616d;
@@ -303,7 +303,7 @@ function installEditor(node) {
                 justify-content: center;
                 overflow: hidden;
             }
-            .drawings-ideogram canvas {
+            .toobusy-ideogram canvas {
                 width: auto;
                 height: auto;
                 max-width: 100%;
@@ -312,16 +312,16 @@ function installEditor(node) {
                 background: #111418;
                 cursor: crosshair;
             }
-            .drawings-ideogram label {
+            .toobusy-ideogram label {
                 display: flex;
                 flex-direction: column;
                 gap: 3px;
                 color: #aeb8c4;
                 min-width: 0;
             }
-            .drawings-ideogram input,
-            .drawings-ideogram select,
-            .drawings-ideogram textarea {
+            .toobusy-ideogram input,
+            .toobusy-ideogram select,
+            .toobusy-ideogram textarea {
                 width: 100%;
                 border: 1px solid #4d5662;
                 border-radius: 6px;
@@ -331,11 +331,11 @@ function installEditor(node) {
                 font: inherit;
                 resize: vertical;
             }
-            .drawings-ideogram textarea {
+            .toobusy-ideogram textarea {
                 min-height: 72px;
                 line-height: 1.4;
             }
-            .drawings-ideogram button {
+            .toobusy-ideogram button {
                 border: 1px solid #4d5662;
                 border-radius: 6px;
                 background: #252b33;
@@ -343,37 +343,37 @@ function installEditor(node) {
                 padding: 5px 9px;
                 cursor: pointer;
             }
-            .drawings-ideogram button:hover { background: #303844; }
-            .drawings-ideogram .element {
+            .toobusy-ideogram button:hover { background: #303844; }
+            .toobusy-ideogram .element {
                 display: flex;
                 flex-direction: column;
                 gap: 8px;
                 min-width: 0;
             }
-            .drawings-ideogram .bbox {
+            .toobusy-ideogram .bbox {
                 color: #cbd5df;
                 min-height: 18px;
                 overflow-wrap: anywhere;
             }
-            .drawings-ideogram .resolution-readout {
+            .toobusy-ideogram .resolution-readout {
                 color: #cbd5df;
                 min-height: 27px;
                 display: flex;
                 align-items: center;
             }
-            .drawings-ideogram .palette-editor {
+            .toobusy-ideogram .palette-editor {
                 display: flex;
                 flex-direction: column;
                 gap: 3px;
                 min-width: 0;
             }
-            .drawings-ideogram .palette-title { color: #aeb8c4; }
-            .drawings-ideogram .palette-row {
+            .toobusy-ideogram .palette-title { color: #aeb8c4; }
+            .toobusy-ideogram .palette-row {
                 display: flex;
                 gap: 5px;
                 flex-wrap: wrap;
             }
-            .drawings-ideogram .color-swatch {
+            .toobusy-ideogram .color-swatch {
                 width: 34px;
                 height: 26px;
                 padding: 0;
@@ -384,9 +384,9 @@ function installEditor(node) {
                 -webkit-appearance: none;
                 appearance: none;
             }
-            .drawings-ideogram .color-swatch::-webkit-color-swatch-wrapper { padding: 2px; }
-            .drawings-ideogram .color-swatch::-webkit-color-swatch { border: none; border-radius: 3px; }
-            .drawings-ideogram .palette-preset {
+            .toobusy-ideogram .color-swatch::-webkit-color-swatch-wrapper { padding: 2px; }
+            .toobusy-ideogram .color-swatch::-webkit-color-swatch { border: none; border-radius: 3px; }
+            .toobusy-ideogram .palette-preset {
                 display: grid;
                 grid-template-columns: 150px minmax(0, 1fr);
                 gap: 7px;
@@ -812,7 +812,7 @@ function installEditor(node) {
     // whole editor (otherwise the bottom panel spills outside the node).
     const measureHeight = () => Math.max(820, Math.ceil(root.scrollHeight) + 12);
 
-    const domWidget = node.addDOMWidget("layout_editor", "drawings_ideogram_layout", root, {
+    const domWidget = node.addDOMWidget("layout_editor", "toobusy_ideogram_layout", root, {
         getMinHeight: measureHeight,
         getMaxHeight: () => 2000,
         getHeight: measureHeight,
@@ -847,7 +847,7 @@ function installEditor(node) {
 }
 
 app.registerExtension({
-    name: "drawings.ideogram.layout_builder",
+    name: "toobusy.ideogram.layout_builder",
     async nodeCreated(node) {
         if (node.comfyClass === NODE_CLASS) installEditor(node);
     },
