@@ -2,6 +2,17 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [0.2.2] - 2026-06-07
+
+### Added
+- Ideogram Layout Builder에 **`Import polished`** 버튼: Prompt Polish가 만든
+  Ideogram JSON을 붙여넣으면, 요소 개수·scene 요약으로 **미리보기 확인** 후
+  `Apply`할 때만 캔버스(박스)+scene/style/background/palette 필드에 반영됩니다.
+  확인 전에는 현재 작업 내용을 보존(덮어쓰지 않음). bbox 순서도 자동 변환.
+  → Coda의 v0.3 "작업대에서 preview→Apply" UX의 sound 부분.
+  (빌더 안에서 LLM을 직접 호출하는 *라이브 버튼*은 서버 라우트+모델 접근 설계가
+  필요해 ComfyUI 실구동 검증과 함께 별도 단계로 진행 예정.)
+
 ## [0.2.1] - 2026-06-07
 
 ### Added
