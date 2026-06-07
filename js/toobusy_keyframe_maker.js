@@ -66,6 +66,18 @@ function setSummary(node) {
     app.graph?.setDirtyCanvas?.(true, true);
 }
 
+function copyGeneratedToOverride(node, captureKey, overrideName) {
+    const value = node[captureKey];
+    if (typeof value !== "string" || !value.trim()) {
+        return; // nothing generated yet — run the node once first.
+    }
+    const widget = findWidget(node, overrideName);
+    if (!widget) return;
+    widget.value = value;
+    widget.callback?.(widget.value, node, widget);
+    setSummary(node);
+}
+
 app.registerExtension({
     name: "toobusy.keyframeMaker",
     beforeRegisterNodeDef(nodeType, nodeData) {
@@ -102,12 +114,29 @@ app.registerExtension({
                 setSummary(this);
             }, { serialize: false });
 
+            // Lock an expensive generated stage into its override so later runs
+            // reuse it and only the downstream stages regenerate.
+            this.addWidget("button", "Use generated brief as override", "use_brief", () => {
+                copyGeneratedToOverride(this, "_toobusyGeneratedBrief", "product_brief_override");
+            }, { serialize: false });
+
+            this.addWidget("button", "Use generated shot beats as override", "use_beats", () => {
+                copyGeneratedToOverride(this, "_toobusyGeneratedBeats", "shot_beats_override");
+            }, { serialize: false });
+
             setSummary(this);
         };
 
         const onExecuted = nodeType.prototype.onExecuted;
         nodeType.prototype.onExecuted = function (message) {
             onExecuted?.apply(this, arguments);
+            // ui.text is [label, value, label, value, ...] from keyframe_maker.py:
+            // index 1 = reference/product brief, index 3 = shot beats.
+            const text = message?.text;
+            if (Array.isArray(text)) {
+                if (typeof text[1] === "string") this._toobusyGeneratedBrief = text[1];
+                if (typeof text[3] === "string") this._toobusyGeneratedBeats = text[3];
+            }
             setSummary(this);
         };
     },
