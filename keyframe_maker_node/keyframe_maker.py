@@ -366,7 +366,7 @@ class ToobusyKeyframeMaker:
     RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING", "STRING")
     RETURN_NAMES = ("product_brief", "shot_beats", "visual_anchor", "keyframe_prompts", "korean_story")
     FUNCTION = "make"
-    CATEGORY = "toobusy/Keyframe"
+    CATEGORY = "toobusy/Plan"
 
     def make(
         self,

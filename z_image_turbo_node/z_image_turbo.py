@@ -153,7 +153,7 @@ class ToobusyZImageTurbo:
     RETURN_TYPES = ("IMAGE", "LATENT", "INT", "INT")
     RETURN_NAMES = ("image", "latent", "width", "height")
     FUNCTION = "generate"
-    CATEGORY = "toobusy/Z-Image"
+    CATEGORY = "toobusy/Make"
 
     def generate(
         self,

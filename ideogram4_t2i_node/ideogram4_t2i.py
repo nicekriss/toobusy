@@ -151,7 +151,7 @@ class ToobusyIdeogram4T2I:
     RETURN_TYPES = ("IMAGE", "LATENT", "INT", "INT")
     RETURN_NAMES = ("image", "latent", "width", "height")
     FUNCTION = "generate"
-    CATEGORY = "toobusy/Ideogram4"
+    CATEGORY = "toobusy/Make"
 
     def generate(
         self,

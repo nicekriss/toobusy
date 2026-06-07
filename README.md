@@ -1,6 +1,15 @@
-# toobusy
+# toobusy · 너무바쁜베짱이
 
-복잡한 영상 생성 워크플로우를 단순하게 만들어주는 ComfyUI 커스텀 노드 모음입니다.
+**번거로운 여러 단계를 노드 하나로 접어버리는** ComfyUI 커스텀 노드 모음입니다.
+12개 노드를 일일이 배선하기 귀찮은 사람을 위해, 한 노드가 체인 전체를 삼킵니다.
+
+> Fold tedious multi-step ComfyUI workflows into a single node.
+
+노드는 세 갈래로 접혀 있습니다:
+
+- **`toobusy/Plan`** — 기획·연출·프롬프트를 접는다: Keyframe Maker, Storyboard Board, Prompt Lines, Ideogram Layout Builder
+- **`toobusy/Make`** — 생성 파이프라인을 접는다: Z-Image Turbo, Ideogram4 T2I, LTX2.3 3종
+- **`toobusy/Setup`** — 셋업을 접는다: HF Model Auto Loader
 
 현재 공개 중점 노드:
 
@@ -37,7 +46,7 @@ git pull
 카테고리:
 
 ```text
-toobusy/Keyframe
+toobusy/Plan
 ```
 
 선택적인 참조 이미지와 짧은 아이디어를 스토리보드/키프레임 텍스트 출력으로 바꿔주는 노드입니다.
@@ -94,7 +103,7 @@ product_image + mode -> 참조 브리프
 카테고리:
 
 ```text
-toobusy/Text
+toobusy/Plan
 ```
 
 여러 줄 텍스트를 한 줄씩 프롬프트 항목으로 분리합니다. 덕분에 별도의 PromptLine 류 커스텀 노드 없이도 `toobusy Keyframe Maker.keyframe_prompts`를 바로 사용할 수 있습니다.
@@ -118,7 +127,7 @@ toobusy/Text
 카테고리:
 
 ```text
-toobusy/Storyboard
+toobusy/Plan
 ```
 
 ComfyUI 안에서 영상 아이디어, 스토리라인, 비주얼 참조, 샷 구성을 기획할 수 있는 작은 화이트보드/무드보드 노드입니다.
@@ -156,7 +165,7 @@ ComfyUI 안에서 영상 아이디어, 스토리라인, 비주얼 참조, 샷 �
 카테고리:
 
 ```text
-toobusy/Z-Image
+toobusy/Make
 ```
 
 컴팩트한 Z-Image Turbo 텍스트→이미지 워크플로우를 하나의 노드로 묶었습니다(마지막 `SaveImage` 노드는 제외).
@@ -207,7 +216,7 @@ Basic / Advanced:
 카테고리:
 
 ```text
-toobusy/LTXV
+toobusy/Make
 ```
 
 프롬프트/네거티브 인코딩과 LTX 프레임레이트 컨디셔닝을 하나의 노드로 묶었습니다.
@@ -233,7 +242,7 @@ toobusy/LTXV
 카테고리:
 
 ```text
-toobusy/LTXV
+toobusy/Make
 ```
 
 `EmptyLTXVLatentVideo`와 `LTXVEmptyLatentAudio`를 하나의 노드로 결합합니다.
@@ -269,7 +278,7 @@ LTXVAudioVAEEncode -> SolidMask(0) -> SetLatentNoiseMask
 카테고리:
 
 ```text
-toobusy/LTXV
+toobusy/Make
 ```
 
 자주 쓰는 LTX2.3 AV 샘플링 블록을 하나의 노드로 묶었습니다:

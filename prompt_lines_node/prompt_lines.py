@@ -15,7 +15,7 @@ class ToobusyPromptLines:
     RETURN_NAMES = ("line", "text", "count")
     OUTPUT_IS_LIST = (True, False, False)
     FUNCTION = "split"
-    CATEGORY = "toobusy/Text"
+    CATEGORY = "toobusy/Plan"
 
     def split(self, source, start_index, max_rows, remove_empty_lines, strip_lines):
         lines = str(source or "").splitlines()

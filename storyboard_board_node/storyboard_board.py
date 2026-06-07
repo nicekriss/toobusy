@@ -149,7 +149,7 @@ class ToobusyStoryboardBoard:
     RETURN_TYPES = ("IMAGE", "STRING")
     RETURN_NAMES = ("image", "board_data")
     FUNCTION = "render"
-    CATEGORY = "toobusy/Storyboard"
+    CATEGORY = "toobusy/Plan"
 
     def render(self, board_data, width, height, background):
         width = int(width)

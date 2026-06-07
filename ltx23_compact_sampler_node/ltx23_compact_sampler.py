@@ -94,7 +94,7 @@ class LTX23CompactAVSampler:
     RETURN_TYPES = ("CONDITIONING", "CONDITIONING", "LATENT", "LATENT")
     RETURN_NAMES = ("positive", "negative", "video_latent", "audio_latent")
     FUNCTION = "sample"
-    CATEGORY = "toobusy/LTXV"
+    CATEGORY = "toobusy/Make"
 
     def sample(
         self,
