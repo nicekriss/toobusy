@@ -1,0 +1,19 @@
+# Files excluded from the published ComfyUI Registry package.
+.git/
+.github/
+.gitignore
+.comfyignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+Thumbs.db
+
+# Dev/large media should never be shipped in the node package.
+*.blend
+*.blend1
+*.wav
+*.mp4
+*.mov
+*.psd

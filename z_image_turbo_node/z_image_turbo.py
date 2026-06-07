@@ -39,26 +39,26 @@ def _model_names():
     names = _folder_list("diffusion_models", [])
     if not names:
         names = _folder_list("unet", [])
-    return names or ["ZIT\\zImage_turbo.safetensors"]
+    return names or ["ZIT/zImage_turbo.safetensors"]
 
 
 def _clip_names():
     names = _folder_list("text_encoders", [])
     if not names:
         names = _folder_list("clip", [])
-    return names or ["ZIT\\zImage_textEncoder.safetensors"]
+    return names or ["ZIT/zImage_textEncoder.safetensors"]
 
 
 def _vae_names():
-    return _folder_list("vae", ["FLUX1\\ae.safetensors"])
+    return _folder_list("vae", ["FLUX1/ae.safetensors"])
 
 
 def _lora_names():
-    return ["None"] + _folder_list("loras", ["Lora\\ZIT\\ZIT_Neobabae_v1.safetensors"])
+    return ["None"] + _folder_list("loras", ["Lora/ZIT/ZIT_Neobabae_v1.safetensors"])
 
 
 def _default_lora_name(lora_names):
-    preferred = ["Lora\\ZIT\\ZIT_Neobabae_v1.safetensors", "ZIT\\ZIT_Neobabae_v1.safetensors"]
+    preferred = ["Lora/ZIT/ZIT_Neobabae_v1.safetensors", "ZIT/ZIT_Neobabae_v1.safetensors"]
     for name in preferred:
         if name in lora_names:
             return name
@@ -108,9 +108,9 @@ class ToobusyZImageTurbo:
 
         base = {
             "required": {
-                "model_name": (model_names, {"default": _first_existing(model_names, ["ZIT\\zImage_turbo.safetensors"])}),
-                "clip_name": (clip_names, {"default": _first_existing(clip_names, ["ZIT\\zImage_textEncoder.safetensors"])}),
-                "vae_name": (vae_names, {"default": _first_existing(vae_names, ["FLUX1\\ae.safetensors"])}),
+                "model_name": (model_names, {"default": _first_existing(model_names, ["ZIT/zImage_turbo.safetensors"])}),
+                "clip_name": (clip_names, {"default": _first_existing(clip_names, ["ZIT/zImage_textEncoder.safetensors"])}),
+                "vae_name": (vae_names, {"default": _first_existing(vae_names, ["FLUX1/ae.safetensors"])}),
                 "positive": ("STRING", {"default": "", "multiline": True}),
                 "negative": ("STRING", {"default": "", "multiline": True}),
                 "ratio_preset": (list(RATIO_PRESETS.keys()), {"default": "2:3"}),
