@@ -3,13 +3,31 @@ import re
 
 
 HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
+# Keep in sync with MIN_BOX_SIZE in js/ideogram_layout_builder.js: the UI never
+# lets a box get smaller than this, so anything at this size is a real box.
 MIN_BOX_SIZE = 40
-# Boxes smaller than this in both dimensions are treated as stray/degenerate
-# (e.g. an accidental click box) and dropped from the output.
-DEGENERATE_BOX_SIZE = 48
 STYLE_PALETTE_MAX = 16
 ELEMENT_PALETTE_MAX = 5
 PLACEHOLDER_DESCS = {"", "new layout element", "layout element", "duplicated layout element"}
+
+# Optional role hint appended to an element's description. Keep keys in sync with
+# ROLE_PRESETS in js/ideogram_layout_builder.js.
+ROLE_HINTS = {
+    "headline": "large bold headline typography, dominant in the layout",
+    "subtitle": "secondary subtitle text, smaller than the headline",
+    "body": "body copy, evenly spaced and comfortably readable",
+    "footer": "small footer text near the edge of the composition",
+    "product label": "label text printed on the product surface",
+    "sign": "sign text, legible despite perspective and reflections",
+    "ui label": "small UI label text, crisp and precisely aligned",
+    "logo": "logo / wordmark, clean and balanced",
+}
+
+# Appended to text elements when strict_text is on, to push faithful rendering.
+STRICT_TEXT_HINTS = (
+    "spelled exactly as written, sharp and readable, no extra or missing "
+    "letters, preserve capitalization and punctuation"
+)
 
 
 def _parse_palette(value, fallback=None, limit=ELEMENT_PALETTE_MAX):
@@ -66,22 +84,49 @@ def _to_ideogram_bbox(value):
 def _is_placeholder_element(text, desc, bbox):
     width = bbox[2] - bbox[0]
     height = bbox[3] - bbox[1]
-    # Drop stray/degenerate boxes (tiny in both dimensions), e.g. an accidental
-    # click box that was never dragged into a real region.
-    if width < DEGENERATE_BOX_SIZE and height < DEGENERATE_BOX_SIZE:
-        return True
-    is_tiny_corner = bbox[0] == 0 and bbox[1] == 0 and width <= MIN_BOX_SIZE and height <= MIN_BOX_SIZE
-    return not text and desc.lower() in PLACEHOLDER_DESCS and is_tiny_corner
+    has_content = bool(text) or desc.lower() not in PLACEHOLDER_DESCS
+    # A box is "stray" only when it carries no real content AND is tiny in both
+    # dimensions (e.g. an accidental click box, or an empty default element that
+    # was never positioned). bbox is already grown to MIN_BOX_SIZE by
+    # _normalize_bbox, so a described box at the UI minimum is always kept.
+    is_tiny = width <= MIN_BOX_SIZE and height <= MIN_BOX_SIZE
+    return not has_content and is_tiny
 
 
-def _build_desc(text, desc):
+def _build_desc(text, desc, role="", strict_text=False, reinforce_text=True):
     if desc.lower() in PLACEHOLDER_DESCS:
         desc = ""
-    if text and desc:
-        return desc if text.lower() in desc.lower() else f"{desc} Text reads '{text}'."
-    if text:
-        return f"clean rendered text integrated into the composition, text reads '{text}'"
-    return desc or "layout element"
+    role_hint = ROLE_HINTS.get(role.strip().lower(), "") if role else ""
+
+    if not text:
+        # Object element: description plus an optional role hint (e.g. a logo
+        # placed as an object rather than literal text).
+        clauses = [c for c in (desc, role_hint) if c]
+        return ". ".join(clauses) if clauses else "layout element"
+
+    # Text element.
+    clauses = []
+    if desc and text.lower() in desc.lower():
+        # The user already wrote the literal text into the description; trust it
+        # and only layer on the role hint.
+        clauses.append(desc)
+        if role_hint:
+            clauses.append(role_hint)
+    else:
+        if desc:
+            clauses.append(desc)
+        if role_hint:
+            clauses.append(role_hint)
+        if reinforce_text:
+            clauses.append(f"text reads '{text}'")
+    if not clauses:
+        base = "clean rendered text integrated into the composition"
+        if reinforce_text:
+            base += f", text reads '{text}'"
+        clauses.append(base)
+    if strict_text:
+        clauses.append(STRICT_TEXT_HINTS)
+    return ". ".join(clauses)
 
 
 def _element_type(text, desc):
@@ -91,11 +136,19 @@ def _element_type(text, desc):
 def _load_elements(elements_json):
     if not elements_json.strip():
         return []
-    data = json.loads(elements_json)
+    try:
+        data = json.loads(elements_json)
+    except (ValueError, TypeError):
+        # Malformed JSON (hand-edited or fed from another node) should not abort
+        # the whole graph; fall back to "no elements" and let build() emit its
+        # default centered subject.
+        print("[toobusy ideogram] elements_json is not valid JSON; ignoring it.")
+        return []
     if isinstance(data, dict):
         data = data.get("elements", [])
     if not isinstance(data, list):
-        raise ValueError("elements_json must be a JSON array or an object with an elements array.")
+        print("[toobusy ideogram] elements_json must be a JSON array or an object with an 'elements' array; ignoring it.")
+        return []
     return data
 
 
@@ -142,6 +195,30 @@ class IdeogramLayoutBuilder:
                     "STRING",
                     {
                         "default": "#111111, #FFFFFF, #D8C7A3",
+                    },
+                ),
+                "include_global_palette": (
+                    "BOOLEAN",
+                    {
+                        "default": True,
+                        "label_on": "use global palette",
+                        "label_off": "omit global palette",
+                    },
+                ),
+                "strict_text": (
+                    "BOOLEAN",
+                    {
+                        "default": True,
+                        "label_on": "strict text rendering",
+                        "label_off": "relaxed text",
+                    },
+                ),
+                "reinforce_text": (
+                    "BOOLEAN",
+                    {
+                        "default": True,
+                        "label_on": "reinforce text (reads '...')",
+                        "label_off": "compact JSON",
                     },
                 ),
                 "background": (
@@ -196,6 +273,9 @@ class IdeogramLayoutBuilder:
         elements_json,
         width,
         height,
+        include_global_palette=True,
+        strict_text=True,
+        reinforce_text=True,
     ):
         elements = []
         for item in _load_elements(elements_json):
@@ -204,6 +284,7 @@ class IdeogramLayoutBuilder:
             bbox = _normalize_bbox(item.get("bbox"))
             text = str(item.get("text", "")).strip()
             desc = str(item.get("desc", "")).strip()
+            role = str(item.get("role", "")).strip()
             if _is_placeholder_element(text, desc, bbox):
                 continue
 
@@ -220,7 +301,9 @@ class IdeogramLayoutBuilder:
             element = {"type": element_type, "bbox": ideogram_bbox}
             if element_type == "text":
                 element["text"] = text
-            element["desc"] = _build_desc(text, desc)
+            element["desc"] = _build_desc(
+                text, desc, role=role, strict_text=strict_text, reinforce_text=reinforce_text
+            )
             if palette:
                 element["color_palette"] = palette
             elements.append(element)
@@ -239,17 +322,23 @@ class IdeogramLayoutBuilder:
                 }
             )
 
+        style_description = {
+            "aesthetics": aesthetics.strip(),
+            "lighting": lighting.strip(),
+            "photo": photo.strip(),
+            "medium": medium.strip(),
+        }
+        # Only attach a global color_palette when the user opted in. Omitting it
+        # lets color conditioning be left intentionally open (color_palette is
+        # the last key, so dropping it keeps the documented key order intact).
+        if include_global_palette:
+            style_description["color_palette"] = _parse_palette(
+                global_palette, ["#111111", "#FFFFFF", "#D8C7A3"], limit=STYLE_PALETTE_MAX
+            )
+
         payload = {
             "high_level_description": high_level_description.strip(),
-            "style_description": {
-                "aesthetics": aesthetics.strip(),
-                "lighting": lighting.strip(),
-                "photo": photo.strip(),
-                "medium": medium.strip(),
-                "color_palette": _parse_palette(
-                    global_palette, ["#111111", "#FFFFFF", "#D8C7A3"], limit=STYLE_PALETTE_MAX
-                ),
-            },
+            "style_description": style_description,
             "compositional_deconstruction": {
                 "background": background.strip(),
                 "elements": elements,

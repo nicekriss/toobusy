@@ -61,6 +61,62 @@ const PALETTE_PRESETS = [
     ["High contrast", ["#000000", "#FFFFFF", "#FF3B30", "#FFD60A", "#0A84FF"]],
 ];
 
+// Text element roles. Value is sent as `role` on each element; the Python node
+// expands it into a description hint (keep keys in sync with ROLE_HINTS).
+const ROLE_PRESETS = [
+    ["None", ""],
+    ["Headline", "headline"],
+    ["Subtitle", "subtitle"],
+    ["Body", "body"],
+    ["Footer", "footer"],
+    ["Product label", "product label"],
+    ["Sign", "sign"],
+    ["UI label", "ui label"],
+    ["Logo / wordmark", "logo"],
+];
+
+// One-click starting layouts. bbox is [x_min, y_min, x_max, y_max] on the
+// 0-1000 canvas; text + role + desc seed each region (desc left blank so the
+// user fills the specifics).
+const LAYOUT_TEMPLATES = [
+    ["(template…)", null],
+    ["Poster", [
+        { bbox: [120, 90, 880, 240], text: "HEADLINE", role: "headline" },
+        { bbox: [120, 250, 880, 340], text: "Subtitle goes here", role: "subtitle" },
+        { bbox: [200, 380, 800, 820], text: "", role: "", desc: "hero subject" },
+        { bbox: [120, 900, 880, 960], text: "footer / website", role: "footer" },
+    ]],
+    ["Product ad", [
+        { bbox: [300, 120, 700, 620], text: "", role: "", desc: "hero product" },
+        { bbox: [100, 660, 900, 780], text: "HEADLINE", role: "headline" },
+        { bbox: [150, 790, 850, 860], text: "supporting claim", role: "subtitle" },
+        { bbox: [410, 890, 590, 960], text: "LOGO", role: "logo" },
+    ]],
+    ["Packaging label", [
+        { bbox: [380, 80, 620, 200], text: "LOGO", role: "logo" },
+        { bbox: [120, 240, 880, 380], text: "PRODUCT TITLE", role: "headline" },
+        { bbox: [160, 410, 840, 520], text: "descriptor", role: "subtitle" },
+        { bbox: [380, 820, 620, 920], text: "500ml", role: "product label" },
+    ]],
+    ["UI screenshot", [
+        { bbox: [40, 40, 240, 960], text: "", role: "", desc: "sidebar navigation" },
+        { bbox: [280, 40, 960, 130], text: "Dashboard", role: "ui label" },
+        { bbox: [280, 160, 470, 360], text: "", role: "", desc: "KPI card" },
+        { bbox: [500, 160, 690, 360], text: "", role: "", desc: "KPI card" },
+        { bbox: [720, 160, 960, 360], text: "", role: "", desc: "KPI card" },
+        { bbox: [280, 390, 960, 760], text: "", role: "", desc: "main graph" },
+        { bbox: [280, 790, 960, 960], text: "", role: "", desc: "activity panel" },
+    ]],
+    ["Infographic", [
+        { bbox: [120, 70, 880, 190], text: "TITLE", role: "headline" },
+        { bbox: [60, 260, 250, 520], text: "Step 1", role: "subtitle" },
+        { bbox: [280, 260, 470, 520], text: "Step 2", role: "subtitle" },
+        { bbox: [500, 260, 690, 520], text: "Step 3", role: "subtitle" },
+        { bbox: [720, 260, 940, 520], text: "Step 4", role: "subtitle" },
+        { bbox: [120, 600, 880, 920], text: "", role: "", desc: "summary / chart" },
+    ]],
+];
+
 const COLOR_CHOICES = [
     "#000000",
     "#111111",
@@ -121,6 +177,7 @@ function normalizeElement(element = {}, index = 0) {
         bbox,
         text: element.text || "",
         desc: element.desc || "",
+        role: typeof element.role === "string" ? element.role : "",
         color_palette: Array.isArray(element.color_palette) ? element.color_palette : [],
     };
 }
@@ -211,6 +268,23 @@ function makeSelectField(labelText, options, currentValue, onInput) {
     return label;
 }
 
+function makeCheckboxField(labelText, checked, onInput, title = "") {
+    const label = document.createElement("label");
+    label.className = "checkbox-field";
+    if (title) label.title = title;
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.id = uid("check");
+    input.name = input.id;
+    input.checked = !!checked;
+    const span = document.createElement("span");
+    span.textContent = labelText;
+    span.htmlFor = input.id;
+    input.addEventListener("change", () => onInput(input.checked));
+    label.append(input, span);
+    return label;
+}
+
 function makeNumberInput(value, onInput) {
     const input = document.createElement("input");
     input.type = "number";
@@ -220,7 +294,22 @@ function makeNumberInput(value, onInput) {
     input.max = "2048";
     input.step = "1";
     input.value = String(value);
-    input.addEventListener("input", () => onInput(clamp(input.value, 256, 2048)));
+    // Clamp on commit (blur / Enter), not on every keystroke: clamping mid-typing
+    // turns a partial "1" into 256, flips the preset to custom, and triggers a
+    // canvas redraw on each character. On commit, also write the clamped value
+    // back so the field never shows an out-of-range number.
+    const commit = () => {
+        const clamped = clamp(input.value, 256, 2048);
+        input.value = String(clamped);
+        onInput(clamped);
+    };
+    input.addEventListener("change", commit);
+    input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            input.blur();
+        }
+    });
     return input;
 }
 
@@ -376,6 +465,42 @@ function installEditor(node) {
                 color: #9fb0c0;
                 font-size: 11px;
             }
+            .toobusy-ideogram .layer-list {
+                display: flex;
+                flex-direction: column;
+                gap: 3px;
+                max-height: 220px;
+                overflow-y: auto;
+            }
+            .toobusy-ideogram .layer-row {
+                display: flex;
+                gap: 2px;
+                align-items: center;
+            }
+            .toobusy-ideogram .layer-row.active .layer-name {
+                border-color: #6f93c8;
+                background: #1d2733;
+                color: #ffffff;
+            }
+            .toobusy-ideogram .layer-name {
+                flex: 1 1 auto;
+                min-width: 0;
+                text-align: left;
+                padding: 3px 6px;
+                font-size: 11px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .toobusy-ideogram .layer-btn {
+                flex: 0 0 auto;
+                width: 22px;
+                height: 24px;
+                padding: 0;
+                font-size: 10px;
+                line-height: 1;
+            }
+            .toobusy-ideogram .layer-btn:disabled { opacity: 0.35; cursor: default; }
             .toobusy-ideogram .canvas-frame {
                 width: 100%;
                 height: 360px;
@@ -402,6 +527,23 @@ function installEditor(node) {
                 gap: 3px;
                 color: #aeb8c4;
                 min-width: 0;
+            }
+            .toobusy-ideogram label.checkbox-field {
+                flex-direction: row;
+                align-items: center;
+                gap: 7px;
+                cursor: pointer;
+            }
+            .toobusy-ideogram label.checkbox-field input {
+                width: auto;
+                flex: 0 0 auto;
+                margin: 0;
+                cursor: pointer;
+            }
+            .toobusy-ideogram .output-options {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
             }
             .toobusy-ideogram input,
             .toobusy-ideogram select,
@@ -692,6 +834,7 @@ function installEditor(node) {
 
     function renderElementPanel() {
         elementPanel.replaceChildren();
+        renderLayerList();
         const heading = document.createElement("div");
         heading.className = "section-title";
         heading.textContent = "Selected element";
@@ -742,6 +885,16 @@ function installEditor(node) {
                     draw();
                 },
                 "Type to render this box as text. Leave blank for an object.",
+            ),
+            makeSelectField(
+                "Role (text hint)",
+                ROLE_PRESETS,
+                element.role || "",
+                (value) => {
+                    element.role = value;
+                    syncElements();
+                    draw();
+                },
             ),
             makeField(
                 "Description",
@@ -881,6 +1034,65 @@ function installEditor(node) {
     palettePresetWrap.append(palettePresetLabel, globalPalette.root);
     scene.appendChild(palettePresetWrap);
 
+    // ----- Output / text options (drive the hidden BOOLEAN widgets) -----
+    const outputTitle = document.createElement("div");
+    outputTitle.className = "section-title";
+    outputTitle.textContent = "Text & output";
+    const outputOptions = document.createElement("div");
+    outputOptions.className = "output-options";
+    const includePaletteField = makeCheckboxField(
+        "Include global palette",
+        widget(node, "include_global_palette")?.value ?? true,
+        (checked) => syncScene("include_global_palette", checked),
+        "When off, the global color_palette is omitted so color is left open.",
+    );
+    const strictTextField = makeCheckboxField(
+        "Strict text rendering",
+        widget(node, "strict_text")?.value ?? true,
+        (checked) => syncScene("strict_text", checked),
+        "Adds 'spelled exactly, sharp, preserve caps/punctuation' to text elements.",
+    );
+    const reinforceTextField = makeCheckboxField(
+        "Reinforce text (“reads ...”)",
+        widget(node, "reinforce_text")?.value ?? true,
+        (checked) => syncScene("reinforce_text", checked),
+        "Off = compact JSON: rely on the text field without repeating it in desc.",
+    );
+    // Map each toggle widget to its checkbox so presets can refresh the view.
+    const toggleInputs = {
+        include_global_palette: includePaletteField.querySelector("input"),
+        strict_text: strictTextField.querySelector("input"),
+        reinforce_text: reinforceTextField.querySelector("input"),
+    };
+    outputOptions.append(includePaletteField, strictTextField, reinforceTextField);
+    scene.append(outputTitle, outputOptions);
+
+    // ----- Layout templates (seed a starting set of boxes) -----
+    function applyTemplate(elementSeeds) {
+        elements = elementSeeds.map((seed, index) => normalizeElement(seed, index));
+        selectedIndex = elements.length ? 0 : -1;
+        syncElements();
+        renderElementPanel();
+        draw();
+    }
+    const templateField = makeSelectField(
+        "Layout template",
+        LAYOUT_TEMPLATES.map(([name]) => [name, name]),
+        LAYOUT_TEMPLATES[0][0],
+        (name) => {
+            const tpl = LAYOUT_TEMPLATES.find(([n]) => n === name);
+            if (!tpl || !tpl[1]) return;
+            const ok = !elements.length || window.confirm("Replace the current boxes with this template?");
+            if (ok) applyTemplate(tpl[1]);
+            // Reset back to the placeholder option so re-picking the same template works.
+            templateField.querySelector("select").value = LAYOUT_TEMPLATES[0][0];
+        },
+    );
+    const templateTitle = document.createElement("div");
+    templateTitle.className = "section-title";
+    templateTitle.textContent = "Start";
+    scene.prepend(templateTitle, templateField);
+
     const presetLabel = document.createElement("label");
     const presetTitle = document.createElement("span");
     const presetSelect = document.createElement("select");
@@ -941,11 +1153,84 @@ function installEditor(node) {
     sideTitle.textContent = "Info";
     const countReadout = document.createElement("div");
     countReadout.className = "count-readout";
-    sideInfo.append(sideTitle, countReadout, bboxReadout);
+    const layerTitle = document.createElement("div");
+    layerTitle.className = "section-title";
+    layerTitle.textContent = "Layers";
+    const layerList = document.createElement("div");
+    layerList.className = "layer-list";
+    sideInfo.append(sideTitle, countReadout, bboxReadout, layerTitle, layerList);
     updateCount = () => {
         countReadout.textContent = `${elements.length} box(es)`;
     };
     updateCount();
+
+    // Top-most box is drawn last (highest index); show the list top-to-bottom in
+    // that visual stacking order so clicking a row picks even an occluded box.
+    function renderLayerList() {
+        if (!layerList) return;
+        layerList.replaceChildren();
+        if (!elements.length) {
+            const empty = document.createElement("div");
+            empty.className = "panel-empty";
+            empty.textContent = "No boxes yet.";
+            layerList.appendChild(empty);
+            return;
+        }
+        for (let i = elements.length - 1; i >= 0; i--) {
+            const el = elements[i];
+            const row = document.createElement("div");
+            row.className = "layer-row" + (i === selectedIndex ? " active" : "");
+
+            const isText = !!(el.text && el.text.trim());
+            const label = `${isText ? "T" : "□"} ${el.text || el.desc || `Element ${i + 1}`}`;
+            const name = makeButton(label, "Select this box", () => {
+                selectedIndex = i;
+                renderElementPanel();
+            });
+            name.classList.add("layer-name");
+
+            const raise = makeButton("▲", "Bring forward", () => raiseElement(i));
+            const lower = makeButton("▼", "Send backward", () => lowerElement(i));
+            const del = makeButton("✕", "Delete this box", () => {
+                selectedIndex = i;
+                deleteElement();
+            });
+            for (const b of [raise, lower, del]) b.classList.add("layer-btn");
+            if (i === elements.length - 1) raise.disabled = true;
+            if (i === 0) lower.disabled = true;
+
+            row.append(name, raise, lower, del);
+            layerList.appendChild(row);
+        }
+    }
+
+    // z-order helpers: swapping array position changes draw/hit-test stacking.
+    function swapElements(a, b) {
+        if (a < 0 || b < 0 || a >= elements.length || b >= elements.length) return;
+        [elements[a], elements[b]] = [elements[b], elements[a]];
+        if (selectedIndex === a) selectedIndex = b;
+        else if (selectedIndex === b) selectedIndex = a;
+        syncElements();
+        renderElementPanel();
+        draw();
+    }
+    function raiseElement(i) { swapElements(i, i + 1); }
+    function lowerElement(i) { swapElements(i, i - 1); }
+
+    // Nudge the selected box by (dx, dy), keeping its size and staying in bounds.
+    function nudgeSelected(dx, dy) {
+        const el = selected();
+        if (!el) return;
+        const w = el.bbox[2] - el.bbox[0];
+        const h = el.bbox[3] - el.bbox[1];
+        el.bbox[0] = clamp(el.bbox[0] + dx, 0, CANVAS_SIZE - w);
+        el.bbox[1] = clamp(el.bbox[1] + dy, 0, CANVAS_SIZE - h);
+        el.bbox[2] = el.bbox[0] + w;
+        el.bbox[3] = el.bbox[1] + h;
+        bboxReadout.textContent = `bbox: [${el.bbox.join(", ")}]`;
+        syncElements();
+        draw();
+    }
 
     // ----- Presets (saved in the browser via localStorage) -----
     const PRESET_STORE_KEY = "toobusy.ideogram.presets";
@@ -994,6 +1279,9 @@ function installEditor(node) {
             medium: widget(node, "medium")?.value || "",
             global_palette: widget(node, "global_palette")?.value || "",
             background: widget(node, "background")?.value || "",
+            include_global_palette: widget(node, "include_global_palette")?.value ?? true,
+            strict_text: widget(node, "strict_text")?.value ?? true,
+            reinforce_text: widget(node, "reinforce_text")?.value ?? true,
             elements: JSON.parse(JSON.stringify(elements)),
             resolution: { ...resolution },
         };
@@ -1023,6 +1311,16 @@ function installEditor(node) {
                 sw.dataset.color = c;
             });
         }
+
+        const setToggle = (name, value) => {
+            if (value === undefined) return;
+            syncScene(name, !!value);
+            const input = toggleInputs[name];
+            if (input) input.checked = !!value;
+        };
+        setToggle("include_global_palette", state.include_global_palette);
+        setToggle("strict_text", state.strict_text);
+        setToggle("reinforce_text", state.reinforce_text);
 
         if (Array.isArray(state.elements)) {
             elements = state.elements.map(normalizeElement);
@@ -1075,7 +1373,12 @@ function installEditor(node) {
 
     const DRAG_THRESHOLD = 28; // normalized units before an empty-canvas drag becomes a new box
 
+    // Make the canvas focusable so it can receive keyboard shortcuts.
+    canvas.tabIndex = 0;
+    canvas.style.outline = "none";
+
     canvas.addEventListener("pointerdown", (event) => {
+        canvas.focus();
         const pos = point(event);
         const hit = hitTest(pos);
         if (hit.index >= 0) {
@@ -1178,6 +1481,34 @@ function installEditor(node) {
         } else if (mode === "create") {
             syncElements();
             renderElementPanel();
+        }
+    });
+
+    // Keyboard shortcuts while the canvas is focused: Delete/Backspace removes
+    // the selected box, arrows nudge it (Shift = larger step), Esc deselects.
+    canvas.addEventListener("keydown", (event) => {
+        if (event.key === "Delete" || event.key === "Backspace") {
+            if (selectedIndex < 0) return;
+            event.preventDefault();
+            deleteElement();
+            return;
+        }
+        if (event.key === "Escape") {
+            if (selectedIndex < 0) return;
+            event.preventDefault();
+            selectedIndex = -1;
+            renderElementPanel();
+            return;
+        }
+        const step = event.shiftKey ? 20 : 5;
+        const nudges = {
+            ArrowUp: [0, -step], ArrowDown: [0, step],
+            ArrowLeft: [-step, 0], ArrowRight: [step, 0],
+        };
+        if (nudges[event.key]) {
+            if (selectedIndex < 0) return;
+            event.preventDefault();
+            nudgeSelected(nudges[event.key][0], nudges[event.key][1]);
         }
     });
 
