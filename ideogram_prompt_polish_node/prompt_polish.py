@@ -110,7 +110,11 @@ def _build_prompt(scene, style_mode, language, preserve_intent, fill_missing, ex
     else:
         lines.append(f"The scene is written in {language}; output English.")
     if preserve_intent:
-        lines.append("Stay faithful to the user's intent. Do not introduce a different subject; only add detail needed for clarity.")
+        lines.append(
+            "Stay faithful to the user's intent. Do not introduce a different subject; only add detail needed for clarity. "
+            "Preserve the original mood, emotional tone, and relationships — especially subtle nuance in Korean input. "
+            "Translate the user's meaning so Ideogram understands it; do NOT flatten it into generic Western stock-photo phrasing."
+        )
     if fill_missing:
         lines.append("Fill any missing fields with sensible defaults consistent with the scene.")
 
