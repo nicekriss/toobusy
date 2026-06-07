@@ -12,7 +12,8 @@
 
 ## 권장 목록 (before → after를 가장 잘 보여주는 순서)
 
-- [ ] `z_image_turbo.json` — t2i 그래프 ~10노드 → 1노드
+- [ ] `z_image_turbo.json` — t2i 그래프 ~10노드 → 1노드 (flagship)
+- [ ] `korean_scene_to_ideogram4.json` — 한국어 장면 → Prompt Polish → Ideogram4 T2I (번역+구조화를 접는 흐름)
 - [ ] `ltx_compact_av_sampler.json` — 샘플링 블록 8노드 → 1노드
 - [ ] `keyframe_maker.json` — 5단계 기획 → 1노드 (텍스트 생성 CLIP 연결 포함)
 - [ ] `storyboard_board.json` — 인라인 보드 → IMAGE export
