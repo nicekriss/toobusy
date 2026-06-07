@@ -4,6 +4,11 @@
 
 ## [0.2.4] - 2026-06-07
 
+### Added
+- 예제 워크플로우 `docs/workflows/korean_scene_to_ideogram4.json` — 한국어 장면 →
+  Prompt Polish → (Import polished로) Layout Builder → Ideogram4 T2I 흐름. 운영자가
+  실제로 돌려 검증한 flagship 워크플로우. README/예제 문서에서 링크.
+
 ### Changed
 - Keyframe Maker에 `keyframe_prompt_line` 리스트 출력을 추가했습니다. 기존
   `keyframe_prompts` 여러 줄 텍스트를 앞뒤 공백 제거 + 빈 줄 제거 후 한 줄씩
