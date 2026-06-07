@@ -152,6 +152,16 @@ app.registerExtension({
         nodeType.prototype.onNodeCreated = function () {
             onNodeCreated?.apply(this, arguments);
 
+            // Transparency: show what this one node folds, so intermediate users
+            // can see inside the "black box" instead of distrusting it.
+            this.addWidget(
+                "text",
+                "folds",
+                "Folds ~10 nodes: UNET+CLIP+VAE +(LoRA) → AuraFlow → Encode×2 → EmptyLatent → KSampler → Decode",
+                () => {},
+                { serialize: false },
+            );
+
             // Always-visible resolution readout (sits right after the inputs,
             // above the LoRA/advanced buttons).
             this.addWidget("text", "resolution_readout", "", () => {}, { serialize: false });

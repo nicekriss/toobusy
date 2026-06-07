@@ -3,7 +3,7 @@
 **번거로운 여러 단계를 노드 하나로 접어버리는** ComfyUI 커스텀 노드 모음입니다.
 12개 노드를 일일이 배선하기 귀찮은 사람을 위해, 한 노드가 체인 전체를 삼킵니다.
 
-> Fold tedious multi-step ComfyUI workflows into a single node.
+> **Fold the graph.** — toobusy folds tedious multi-step ComfyUI workflows into single production nodes.
 
 노드는 세 갈래로 접혀 있습니다:
 

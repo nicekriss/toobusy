@@ -57,6 +57,13 @@ def _default_sampler_name(sampler_names):
 
 
 class LTX23CompactAVSampler:
+    """Folds the LTX 2.3 audio+video sampling block into one node.
+
+    Replaces: RandomNoise + LTXVConcatAVLatent + CFGGuider + KSamplerSelect +
+    ManualSigmas + SamplerCustomAdvanced + LTXVSeparateAVLatent + LTXVCropGuides
+    (8 nodes -> 1). Requires the LTX 2.3 (LTXV*) node set installed.
+    """
+
     @classmethod
     def INPUT_TYPES(cls):
         sampler_names = _sampler_names()

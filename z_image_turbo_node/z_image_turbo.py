@@ -97,6 +97,14 @@ def _resolution_from_megapixels(ratio_preset, megapixels, divisible_by):
 
 
 class ToobusyZImageTurbo:
+    """Folds a full Z-Image Turbo text-to-image graph into one node.
+
+    Replaces, in order: UNETLoader + CLIPLoader + VAELoader + (optional
+    LoraLoader chain) + ModelSamplingAuraFlow + CLIPTextEncode x2 +
+    EmptyLatentImage + KSampler + VAEDecode (~10 nodes -> 1).
+    Needs Z-Image Turbo model + lumina2 text encoder + VAE in your model folders.
+    """
+
     @classmethod
     def INPUT_TYPES(cls):
         model_names = _model_names()
