@@ -2,6 +2,15 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [0.2.3] - 2026-06-07
+
+### Changed
+- Layout Builder의 **`Import polished`** 흐름을 한 줄 `window.prompt()`에서 큰
+  붙여넣기 모달로 개선했습니다. Prompt Polish / Ideogram JSON을 넉넉한 textarea에
+  붙여넣고, JSON 파싱 오류와 payload 형식 오류를 인라인으로 확인한 뒤, 유효할 때만
+  scene·요소 수 미리보기를 보고 `Apply`할 수 있습니다. `Apply` 전에는 현재 캔버스와
+  scene/style/background/palette 필드를 교체하지 않습니다.
+
 ## [0.2.2] - 2026-06-07
 
 ### Added

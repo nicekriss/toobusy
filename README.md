@@ -359,7 +359,10 @@ RandomNoise -> LTXVConcatAVLatent -> CFGGuider -> KSamplerSelect -> ManualSigmas
   반복 — 끄면 컴팩트 JSON), `include_global_palette`(전역 팔레트를 생략해 색을
   열어둠). 편집 보조로 **레이어 리스트**(가려진 박스도 클릭해 선택 + 앞/뒤 순서
   변경 + 삭제)와 **키보드 단축키**(캔버스 포커스 상태에서 Delete/Backspace 삭제,
-  방향키 이동 · Shift로 크게 이동, Esc 선택 해제)를 제공합니다.
+  방향키 이동 · Shift로 크게 이동, Esc 선택 해제)를 제공합니다. **Import polished**는
+  Prompt Polish의 `ideogram_json`을 큰 붙여넣기 모달에서 JSON 파싱/형식 검증과
+  scene·요소 수 미리보기까지 확인한 뒤, `Apply`를 눌렀을 때만 현재 캔버스와
+  scene/style/background/palette 필드를 교체합니다.
 - `ideogram4_t2i_node` (`toobusy Ideogram4 T2I`) — 프롬프트로부터 로컬 Ideogram 4
   모델(CLIP `ideogram4`, `Ideogram4Scheduler`)을 실행합니다. Layout Builder의 JSON
   프롬프트와 `width`/`height`를 그대로 받습니다.

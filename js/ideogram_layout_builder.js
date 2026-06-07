@@ -610,6 +610,76 @@ function installEditor(node) {
                 cursor: pointer;
             }
             .toobusy-ideogram button:hover { background: #303844; }
+            .toobusy-ideogram button:disabled {
+                opacity: 0.45;
+                cursor: default;
+            }
+            .toobusy-ideogram button:disabled:hover { background: #252b33; }
+            .toobusy-ideogram .import-modal-backdrop {
+                position: fixed;
+                inset: 0;
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 24px;
+                background: rgba(3, 6, 10, 0.66);
+            }
+            .toobusy-ideogram .import-modal-backdrop[hidden] { display: none; }
+            .toobusy-ideogram .import-modal {
+                width: min(720px, 92vw);
+                max-height: 86vh;
+                overflow: auto;
+                border: 1px solid #596574;
+                border-radius: 8px;
+                background: #11171f;
+                box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+                padding: 14px;
+                user-select: text;
+            }
+            .toobusy-ideogram .import-modal-head,
+            .toobusy-ideogram .import-modal-actions {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+            }
+            .toobusy-ideogram .import-modal-title {
+                font-size: 13px;
+                font-weight: 700;
+                color: #edf2f7;
+            }
+            .toobusy-ideogram .import-modal-subtitle {
+                margin: 4px 0 10px;
+                color: #9fb0c0;
+                font-size: 11px;
+            }
+            .toobusy-ideogram .import-modal textarea {
+                min-height: 260px;
+                resize: vertical;
+                font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+                font-size: 11px;
+                line-height: 1.45;
+            }
+            .toobusy-ideogram .import-modal-status {
+                min-height: 52px;
+                margin: 10px 0;
+                padding: 9px;
+                border: 1px solid #35404b;
+                border-radius: 6px;
+                background: #0d1218;
+                color: #cbd5df;
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+            }
+            .toobusy-ideogram .import-modal-status.error {
+                border-color: #7d3d44;
+                color: #ffb8c1;
+                background: #1a1013;
+            }
+            .toobusy-ideogram .import-modal-actions {
+                justify-content: flex-end;
+            }
             .toobusy-ideogram .element {
                 display: flex;
                 flex-direction: column;
@@ -1388,28 +1458,117 @@ function installEditor(node) {
         };
     }
 
+    let importDialog = null;
+    function openImportPolishedDialog() {
+        if (!importDialog) {
+            const backdrop = document.createElement("div");
+            backdrop.className = "import-modal-backdrop";
+            backdrop.hidden = true;
+
+            const modal = document.createElement("div");
+            modal.className = "import-modal";
+            modal.addEventListener("pointerdown", (event) => event.stopPropagation());
+            modal.addEventListener("pointerup", (event) => event.stopPropagation());
+
+            const head = document.createElement("div");
+            head.className = "import-modal-head";
+            const title = document.createElement("div");
+            title.className = "import-modal-title";
+            title.textContent = "Import polished";
+            const closeButton = makeButton("Close", "Close without changing the layout", () => close());
+            head.append(title, closeButton);
+
+            const subtitle = document.createElement("div");
+            subtitle.className = "import-modal-subtitle";
+            subtitle.textContent = "Paste Prompt Polish ideogram_json. Nothing changes until Apply.";
+
+            const textarea = document.createElement("textarea");
+            textarea.spellcheck = false;
+            textarea.placeholder = "{\n  \"high_level_description\": \"...\",\n  \"compositional_deconstruction\": { \"elements\": [...] }\n}";
+
+            const status = document.createElement("div");
+            status.className = "import-modal-status";
+
+            const actions = document.createElement("div");
+            actions.className = "import-modal-actions";
+            const cancelButton = makeButton("Cancel", "Close without changing the layout", () => close());
+            const applyButton = makeButton("Apply", "Replace the current layout with this parsed payload", () => {
+                if (!importDialog.state) return;
+                applyState(importDialog.state);
+                close();
+            });
+            applyButton.disabled = true;
+            actions.append(cancelButton, applyButton);
+
+            modal.append(head, subtitle, textarea, status, actions);
+            backdrop.appendChild(modal);
+            root.appendChild(backdrop);
+
+            const setStatus = (message, isError = false) => {
+                status.textContent = message;
+                status.classList.toggle("error", isError);
+            };
+            const validate = () => {
+                const raw = textarea.value.trim();
+                importDialog.state = null;
+                applyButton.disabled = true;
+                if (!raw) {
+                    setStatus("Paste ideogram_json to preview the scene and element count.", false);
+                    return;
+                }
+                let parsed;
+                try {
+                    parsed = JSON.parse(raw);
+                } catch (err) {
+                    setStatus(`JSON parse error: ${err.message}`, true);
+                    return;
+                }
+                const state = payloadToState(parsed);
+                if (!state) {
+                    setStatus("Ideogram payload shape not recognized. Expected high_level_description and/or compositional_deconstruction.elements.", true);
+                    return;
+                }
+                importDialog.state = state;
+                applyButton.disabled = false;
+                const scenePreview = state.high_level_description || "(no scene)";
+                const fields = [
+                    `Elements: ${state.elements.length}`,
+                    `Scene: ${scenePreview}`,
+                    state.background ? `Background: ${state.background}` : "",
+                    state.global_palette ? `Palette: ${state.global_palette}` : "",
+                ].filter(Boolean);
+                setStatus(`${fields.join("\n")}\n\nApply will replace the current canvas boxes and scene/style fields.`, false);
+            };
+            textarea.addEventListener("input", validate);
+
+            const close = () => {
+                backdrop.hidden = true;
+                importDialog.state = null;
+            };
+            const open = () => {
+                textarea.value = "";
+                validate();
+                backdrop.hidden = false;
+                setTimeout(() => textarea.focus(), 0);
+            };
+            backdrop.addEventListener("pointerdown", (event) => {
+                if (event.target === backdrop) close();
+            });
+            root.addEventListener("keydown", (event) => {
+                if (!backdrop.hidden && event.key === "Escape") {
+                    event.preventDefault();
+                    close();
+                }
+            });
+            importDialog = { open, state: null };
+        }
+        importDialog.open();
+    }
+
     presetBar.append(
         presetBarTitle,
         presetSelectEl,
-        makeButton("Import polished", "Paste a Prompt Polish / Ideogram JSON to load it (preview before it replaces the layout)", () => {
-            const raw = window.prompt("Paste the Prompt Polish output (ideogram_json):", "");
-            if (!raw || !raw.trim()) return;
-            let parsed;
-            try {
-                parsed = JSON.parse(raw);
-            } catch {
-                window.alert("유효한 JSON이 아닙니다.");
-                return;
-            }
-            const state = payloadToState(parsed);
-            if (!state) {
-                window.alert("Ideogram payload 형식이 아닙니다 (high_level_description / compositional_deconstruction 필요).");
-                return;
-            }
-            const scenePreview = (state.high_level_description || "(없음)").slice(0, 50);
-            const ok = window.confirm(`요소 ${state.elements.length}개 · scene: "${scenePreview}"\n\n현재 레이아웃을 이걸로 교체할까요? (지금 값은 교체 전까지 보존됩니다)`);
-            if (ok) applyState(state);
-        }),
+        makeButton("Import polished", "Paste a Prompt Polish / Ideogram JSON to load it (preview before it replaces the layout)", openImportPolishedDialog),
         makeButton("Save", "Save current layout as a named preset", () => {
             const name = (window.prompt("Preset name:") || "").trim();
             if (!name) return;

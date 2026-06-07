@@ -5,5 +5,6 @@ __pycache__/
 .vscode/
 .idea/
 
-# Private local mailbox for Crux <-> Coda notes (never published).
+# Private local Crux <-> Coda collaboration notes (never published).
 AGENT_MAILBOX.md
+CODA_HANDOFF.md
