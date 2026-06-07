@@ -7,7 +7,7 @@
 
 노드는 세 갈래로 접혀 있습니다:
 
-- **`toobusy/Plan`** — 기획·연출·프롬프트를 접는다: Keyframe Maker, Storyboard Board, Prompt Lines, Ideogram Layout Builder
+- **`toobusy/Plan`** — 기획·연출·프롬프트를 접는다: Keyframe Maker, Storyboard Board, Prompt Lines, Ideogram Layout Builder, Ideogram Prompt Polish
 - **`toobusy/Make`** — 생성 파이프라인을 접는다: Z-Image Turbo, Ideogram4 T2I, LTX2.3 3종
 - **`toobusy/Setup`** — 셋업을 접는다: HF Model Auto Loader
 
@@ -34,6 +34,7 @@
 | **Keyframe Maker** | 브리프 → 샷 비트 → 비주얼 앵커 → 키프레임 → 스토리, 5단계 수동 프롬프팅 | **1 노드** |
 | **Storyboard Board** | 외부 화이트보드 앱 + 캡처 + 임포트 | **노드 안에서 바로** |
 | **Ideogram Layout Builder** | 구조화 프롬프트 JSON을 손으로 작성 | **캔버스에 박스 드래그** |
+| **Ideogram Prompt Polish** | 한국어 장면 작성 → 영어 번역 → Ideogram 구조화, 매번 머릿속 멀티스텝 | **1 노드** (장면만 한국어로 쓰면 끝) |
 
 > 새 노드 추가 기준도 동일합니다: **"이게 귀찮은 여러 단계를 하나로 접나?"** — Yes만 들어옵니다.
 
