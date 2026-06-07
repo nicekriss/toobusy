@@ -52,6 +52,12 @@
 
 > 모델 파일은 저장소에 포함하지 않습니다. 각 모델은 ComfyUI의 해당 폴더(`diffusion_models`/`text_encoders`/`vae`/`loras`)에 직접 두세요.
 
+## 예제 워크플로우
+
+`docs/workflows/`에 "열면 돌아가는" 워크플로우를 둡니다.
+
+- [`korean_scene_to_ideogram4.json`](docs/workflows/korean_scene_to_ideogram4.json) — **한국어 장면 → Prompt Polish → (Import polished로) Layout Builder → Ideogram4 T2I.** 한국어 한 줄이 영어 구조화 프롬프트 + 레이아웃 + 이미지로 흐르는 흐름입니다. 필요한 모델 링크는 워크플로우 안 Note 노드에 있습니다.
+
 ## 설치
 
 이 저장소를 `ComfyUI/custom_nodes` 아래에 `toobusy`라는 이름으로 클론한 뒤 ComfyUI를 재시작하세요.

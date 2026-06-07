@@ -1,0 +1,481 @@
+{
+  "id": "fdcfc2b2-168f-4f3d-a1d0-6986b802fce5",
+  "revision": 0,
+  "last_node_id": 218,
+  "last_link_id": 310,
+  "nodes": [
+    {
+      "id": 99,
+      "type": "MarkdownNote",
+      "pos": [
+        4570,
+        530
+      ],
+      "size": [
+        530,
+        990
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "Note: Model link",
+      "properties": {},
+      "widgets_values": [
+        "Guide: [Subgraph](https://docs.comfy.org/interface/features/subgraph)\n\n## Model Links (for Local Users)\n\n**vae**\n\n- [flux2-vae.safetensors](https://huggingface.co/Comfy-Org/flux2-dev/resolve/main/split_files/vae/flux2-vae.safetensors)\n\n**diffusion_models**\n\n- [ideogram4_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/diffusion_models/ideogram4_fp8_scaled.safetensors)\n- [ideogram4_unconditional_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/diffusion_models/ideogram4_unconditional_fp8_scaled.safetensors)\n\n**text_encoders**\n\n- [qwen3vl_8b_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Qwen3-VL/resolve/main/text_encoders/qwen3vl_8b_fp8_scaled.safetensors)\n- [gemma4_e4b_it_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/gemma-4/resolve/main/text_encoders/gemma4_e4b_it_fp8_scaled.safetensors)\n\n\n## Model Storage Location\n\n```\n📂 ComfyUI/\n├── 📂 models/\n│   ├── 📂 vae/\n│   │   └── flux2-vae.safetensors\n│   ├── 📂 diffusion_models/\n│   │   ├── ideogram4_fp8_scaled.safetensors\n│   │   └── ideogram4_unconditional_fp8_scaled.safetensors\n│   └── 📂 text_encoders/\n│       ├── qwen3vl_8b_fp8_scaled.safetensors\n│       └── gemma4_e4b_it_fp8_scaled.safetensors\n```\n\n## Report Issue\n\nNote: Please update ComfyUI first ([guide](https://docs.comfy.org/installation/update_comfyui)) and prepare required models. Desktop/Cloud updates follow stable releases, so some nightly-supported models may not be available yet.\n\n- Cannot run / runtime errors: [ComfyUI/issues](https://github.com/comfyanonymous/ComfyUI/issues)\n- UI / frontend issues: [ComfyUI_frontend/issues](https://github.com/Comfy-Org/ComfyUI_frontend/issues)\n- Workflow issues: [workflow_templates/issues](https://github.com/Comfy-Org/workflow_templates/issues)\n"
+      ],
+      "color": "#222",
+      "bgcolor": "#000"
+    },
+    {
+      "id": 100,
+      "type": "MarkdownNote",
+      "pos": [
+        4500.194658834783,
+        -577.9874629085717
+      ],
+      "size": [
+        640,
+        990
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "Note: Ideogram 4.0",
+      "properties": {},
+      "widgets_values": [
+        "### About the model\n\nThe model is trained on **structured JSON captions** (scene summary, style block, background, and optional per-object descriptions with bounding boxes and hex color palettes). Official inference validates prompts against that schema. Guidance uses **flow-matching** with **asymmetric classifier-free guidance** (the unconditional pass drops text tokens)—not a separate negative prompt string.\n\n**NOTE: If you see \"Image blocked by safety filter\" it is because of safety training in the model itself, ComfyUI does not have any safety filter.**\n---\n\n### How to build prompts here\n\n**(a) Raw input**: Paste or type directly into the subgraph. You may use plain natural language, but **structured JSON** (as in the subgraph default) gives the most predictable layout and style control.\n\n**(b) Model-assisted (LLM):** Use the **Ideogram4 Caption Prompt Template** output with any LLM tools to obtain the JSON format prompt"
+      ],
+      "color": "#222",
+      "bgcolor": "#000"
+    },
+    {
+      "id": 218,
+      "type": "IdeogramLayoutBuilder",
+      "pos": [
+        5250,
+        -570
+      ],
+      "size": [
+        980,
+        1062
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "ideogram_json",
+          "type": "STRING",
+          "links": [
+            307,
+            310
+          ]
+        },
+        {
+          "name": "width",
+          "type": "INT",
+          "links": [
+            308
+          ]
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "links": [
+            309
+          ]
+        }
+      ],
+      "properties": {
+        "ideogram_layout_resolution": {
+          "preset": "landscape_16_9",
+          "width": 1792,
+          "height": 1024
+        },
+        "Node name for S&R": "IdeogramLayoutBuilder"
+      },
+      "widgets_values": [
+        "",
+        "A powerful samurai executing an incredible swordsmanship technique, enveloped by an ethereal aura of unknown light, with visible sword energy manifesting at the blade tip like ancient script.",
+        "cinematic composition, dramatic mood, high contrast, filmic color",
+        "dramatic cinematic key light with subtle rim light",
+        "professional portrait photography, 50mm lens, shallow depth of field",
+        "digital illustration",
+        "#000000, #FFFFFF, #A0A0FF, #FFD700",
+        true,
+        true,
+        true,
+        "Dark, atmospheric setting, perhaps a misty training ground or ancient ruins, providing depth against the bright energy.",
+        "[\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      0,\n      50,\n      1000,\n      1000\n    ],\n    \"text\": \"\",\n    \"desc\": \"An intense, luminous, and otherworldly aura surrounding the samurai, suggesting immense spiritual or magical power.\",\n    \"role\": \"\",\n    \"color_palette\": []\n  },\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      297,\n      316,\n      734,\n      838\n    ],\n    \"text\": \"\",\n    \"desc\": \"The samurai's katana blade, emanating visible, intricate sword energy that resembles glowing, ancient, runic script.\",\n    \"role\": \"\",\n    \"color_palette\": []\n  },\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      445,\n      100,\n      750,\n      949\n    ],\n    \"text\": \"\",\n    \"desc\": \"A formidable samurai warrior in dynamic motion, mid-strike, embodying intense focus and power.\",\n    \"role\": \"\",\n    \"color_palette\": []\n  },\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      5,\n      3,\n      1000,\n      430\n    ],\n    \"text\": \"\",\n    \"desc\": \"Night sky, falling stars\",\n    \"role\": \"\",\n    \"color_palette\": []\n  },\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      0,\n      387,\n      466,\n      991\n    ],\n    \"text\": \"\",\n    \"desc\": \"bodies\",\n    \"role\": \"\",\n    \"color_palette\": []\n  }\n]",
+        1792,
+        1024
+      ]
+    },
+    {
+      "id": 212,
+      "type": "PreviewAny",
+      "pos": [
+        5250,
+        540
+      ],
+      "size": [
+        957.9756240086808,
+        970.7416311879113
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "source",
+          "type": "*",
+          "link": 310
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewAny"
+      },
+      "widgets_values": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "id": 208,
+      "type": "ToobusyIdeogram4T2I",
+      "pos": [
+        6291.605511785023,
+        -553.8257714211953
+      ],
+      "size": [
+        400,
+        812
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "prompt",
+          "type": "STRING",
+          "widget": {
+            "name": "prompt"
+          },
+          "link": 307
+        },
+        {
+          "name": "width",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "width"
+          },
+          "link": 308
+        },
+        {
+          "name": "height",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": 309
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            287
+          ]
+        },
+        {
+          "name": "latent",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "width",
+          "type": "INT",
+          "links": []
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ToobusyIdeogram4T2I"
+      },
+      "widgets_values": [
+        "ideogram4_fp8_scaled.safetensors",
+        "ideogram4_unconditional_fp8_scaled.safetensors",
+        "qwen3vl_8b_fp8_scaled.safetensors",
+        "FLUX2\\flux2-vae.safetensors",
+        "{\n  \"high_level_description\": \"\",\n  \"style_description\": {\n    \"aesthetics\": \"\",\n    \"lighting\": \"\",\n    \"photo\": \"\",\n    \"medium\": \"photography\",\n    \"color_palette\": []\n  },\n  \"compositional_deconstruction\": {\n    \"background\": \"\",\n    \"elements\": []\n  }\n}",
+        "Quality",
+        0,
+        "3:4",
+        1,
+        235085806502615,
+        "randomize",
+        "res_multistep",
+        7,
+        0,
+        0,
+        0.5,
+        1.75,
+        3,
+        0.9,
+        1
+      ]
+    },
+    {
+      "id": 215,
+      "type": "CLIPLoader",
+      "pos": [
+        6292.9861360380755,
+        330.0126924284177
+      ],
+      "size": [
+        270,
+        106
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            301
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPLoader"
+      },
+      "widgets_values": [
+        "gemma4_e4b_it_fp8_scaled.safetensors",
+        "stable_diffusion",
+        "default"
+      ]
+    },
+    {
+      "id": 214,
+      "type": "ToobusyIdeogramPromptPolish",
+      "pos": [
+        6591.263955555564,
+        333.3694000000015
+      ],
+      "size": [
+        400,
+        306
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 301
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ideogram_json",
+          "type": "STRING",
+          "links": [
+            302
+          ]
+        },
+        {
+          "name": "llm_raw",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ToobusyIdeogramPromptPolish"
+      },
+      "widgets_values": [
+        "엄청난 검술을 펼치는 무사의 주변에 알수없는 빛의 오오라가 흐르고 무사의 칼끝에 검기가 고대언어처럼 펼쳐진다. ",
+        "Cinematic",
+        "Auto",
+        true,
+        true,
+        1,
+        "fixed",
+        ""
+      ]
+    },
+    {
+      "id": 216,
+      "type": "PreviewAny",
+      "pos": [
+        7035.710289940785,
+        333.61428199932845
+      ],
+      "size": [
+        957.9756240086808,
+        970.7416311879113
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "source",
+          "type": "*",
+          "link": 302
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewAny"
+      },
+      "widgets_values": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "id": 209,
+      "type": "SaveImage",
+      "pos": [
+        6726.42860692004,
+        -552.4739670256928
+      ],
+      "size": [
+        1267.8652379956884,
+        836.2614672094887
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 287
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveImage",
+        "enableTabs": false,
+        "tabWidth": 65,
+        "tabXOffset": 10,
+        "hasSecondTab": false,
+        "secondTabText": "Send Back",
+        "secondTabOffset": 80,
+        "secondTabWidth": 65,
+        "cnr_id": "comfy-core",
+        "ver": "0.24.0"
+      },
+      "widgets_values": [
+        "Ideogram_4.0"
+      ]
+    }
+  ],
+  "links": [
+    [
+      287,
+      208,
+      0,
+      209,
+      0,
+      "IMAGE"
+    ],
+    [
+      301,
+      215,
+      0,
+      214,
+      0,
+      "CLIP"
+    ],
+    [
+      302,
+      214,
+      0,
+      216,
+      0,
+      "STRING"
+    ],
+    [
+      307,
+      218,
+      0,
+      208,
+      0,
+      "STRING"
+    ],
+    [
+      308,
+      218,
+      1,
+      208,
+      1,
+      "INT"
+    ],
+    [
+      309,
+      218,
+      2,
+      208,
+      2,
+      "INT"
+    ],
+    [
+      310,
+      218,
+      0,
+      212,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.6588450000000047,
+      "offset": [
+        -4366.548669858685,
+        851.9851623514767
+      ]
+    },
+    "frontendVersion": "1.44.19",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
