@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python-compile:
+    name: Python compile (node registration / syntax)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Byte-compile all node packages
+        run: |
+          python -m compileall -q \
+            __init__.py \
+            hf_model_auto_loader \
+            ideogram4_t2i_node \
+            ideogram_layout_builder \
+            keyframe_maker_node \
+            ltx23_compact_sampler_node \
+            prompt_lines_node \
+            storyboard_board_node \
+            z_image_turbo_node
+
+  js-syntax:
+    name: Frontend JS syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Parse every frontend module (ESM syntax check)
+        run: npx --yes esbuild js/*.js --outdir=/tmp/esbuild-check --format=esm --log-level=warning

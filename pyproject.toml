@@ -1,0 +1,46 @@
+[project]
+name = "toobusy"
+description = "Fold tedious multi-step ComfyUI workflows into a single node — pre-production, storyboard, keyframe, and structured-prompt nodes for video generation."
+version = "0.1.0"
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "너무바쁜베짱이 (toobusy)" }]
+keywords = [
+    "comfyui",
+    "comfyui-nodes",
+    "comfyui-custom-nodes",
+    "workflow",
+    "fold",
+    "pre-production",
+    "storyboard",
+    "keyframe",
+    "shot-planning",
+    "prompt",
+    "ideogram",
+    "layout",
+    "ltx",
+    "ltx-video",
+    "z-image",
+    "video",
+    "direction",
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+# huggingface_hub is only needed by the HF Model Auto Loader's download path and
+# is handled gracefully when absent, but it ships with most ComfyUI installs;
+# list it so that path works out of the box.
+dependencies = [
+    "huggingface_hub",
+]
+
+[project.urls]
+Repository = "https://github.com/nicekriss/toobusy"
+"Bug Tracker" = "https://github.com/nicekriss/toobusy/issues"
+
+[tool.comfy]
+PublisherId = "nicekriss"
+DisplayName = "toobusy · 너무바쁜베짱이"
+Repository = "https://github.com/nicekriss/toobusy"

@@ -88,6 +88,14 @@ def _resolution(ratio_preset, megapixels):
 
 
 class ToobusyIdeogram4T2I:
+    """Folded text-to-image sampler for a LOCAL Ideogram 4 model in ComfyUI.
+
+    This is NOT the Ideogram web API. It runs a local Ideogram 4 checkpoint
+    (CLIP type `ideogram4`, `Ideogram4Scheduler`) through the whole
+    load -> encode -> sample -> decode chain as a single node, and accepts the
+    Layout Builder's structured-prompt JSON as its prompt.
+    """
+
     @classmethod
     def INPUT_TYPES(cls):
         diffusion_names = _diffusion_model_names()
@@ -250,7 +258,7 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "ToobusyIdeogram4T2I": "toobusy Ideogram4 T2I",
+    "ToobusyIdeogram4T2I": "toobusy Ideogram4 T2I (local model)",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
