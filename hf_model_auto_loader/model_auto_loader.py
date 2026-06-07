@@ -71,7 +71,7 @@ class HFModelAutoLoader:
     RETURN_TYPES = ("STRING", "BOOLEAN", "STRING", "STRING")
     RETURN_NAMES = ("resolved_model_path", "found", "status", "download_url")
     FUNCTION = "scan_and_resolve"
-    CATEGORY = "toobusy/loaders"
+    CATEGORY = "toobusy/Setup"
 
     @staticmethod
     def _list_model_files(category: str) -> List[str]:

@@ -259,7 +259,7 @@ class IdeogramLayoutBuilder:
     RETURN_TYPES = ("STRING", "INT", "INT")
     RETURN_NAMES = ("ideogram_json", "width", "height")
     FUNCTION = "build"
-    CATEGORY = "toobusy/ideogram"
+    CATEGORY = "toobusy/Plan"
 
     def build(
         self,

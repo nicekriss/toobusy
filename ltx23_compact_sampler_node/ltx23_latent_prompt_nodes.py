@@ -106,7 +106,7 @@ class LTX23EmptyAVLatents:
         "height",
     )
     FUNCTION = "create"
-    CATEGORY = "toobusy/LTXV"
+    CATEGORY = "toobusy/Make"
 
     def create(
         self,
@@ -195,7 +195,7 @@ class LTX23PromptGuide:
     RETURN_TYPES = ("CONDITIONING", "CONDITIONING", "INT", "FLOAT", "INT")
     RETURN_NAMES = ("positive", "negative", "frame_rate_int", "frame_rate_float", "length")
     FUNCTION = "encode"
-    CATEGORY = "toobusy/LTXV"
+    CATEGORY = "toobusy/Make"
 
     def encode(
         self,
