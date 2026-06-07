@@ -37,6 +37,22 @@
 
 > 새 노드 추가 기준도 동일합니다: **"이게 귀찮은 여러 단계를 하나로 접나?"** — Yes만 들어옵니다.
 
+## 필요한 것 & 제약 (솔직하게)
+
+완벽한 척보다 **"이 조건에서 검증됨"** 을 적습니다. 접기 노드는 내부에서 여러 ComfyUI 노드/모델을 호출하므로, 그 전제가 갖춰져야 동작합니다.
+
+| 노드 | 필요한 것 | 제약 / 검증 조건 |
+|---|---|---|
+| **Keyframe Maker** | `clip`에 **텍스트 생성 가능한 모델**(Gemma/LTX 등) + ComfyUI `TextGenerate` 노드 | 출력 품질은 연결한 LLM에 좌우됩니다. 내부에서 `seed`~`seed+4`를 사용 |
+| **Z-Image Turbo** | Z-Image Turbo 디퓨전 모델 + `lumina2` 텍스트 인코더 + VAE | 해당 모델 파일이 모델 폴더에 있어야 합니다 |
+| **Ideogram4 T2I** | **로컬 Ideogram 4 모델** + ComfyUI의 Ideogram4 지원 노드(`Ideogram4Scheduler`/`CFGOverride`/`DualModelGuider` 등) + UNET 2개(model/uncond) + `ideogram4` CLIP | **웹 API가 아닙니다.** Ideogram4 미지원 빌드에선 실행 시점에 실패합니다 |
+| **LTX2.3 (3종)** | ComfyUI에 LTX 2.3 노드셋(`LTXV*`) 설치 + LTX 모델/VAE/텍스트 인코더 | LTX 지원이 없는 환경에선 실행 시점에 실패합니다 |
+| **Storyboard Board** | (코어만) Pillow·numpy·torch | 드롭한 이미지는 `board_data`에 임베드 → 이미지가 많으면 그래프 JSON이 커집니다. 폰트는 arial→기본 폴백 |
+| **Prompt Lines** | 없음 (순수 텍스트) | — |
+| **HF Model Auto Loader** | repo id 다운로드 시 `huggingface_hub` (전체 URL 다운로드는 불필요) | `download_if_missing` 기본 꺼짐 — 켜야 실제 네트워크 다운로드가 일어납니다 |
+
+> 모델 파일은 저장소에 포함하지 않습니다. 각 모델은 ComfyUI의 해당 폴더(`diffusion_models`/`text_encoders`/`vae`/`loras`)에 직접 두세요.
+
 ## 설치
 
 이 저장소를 `ComfyUI/custom_nodes` 아래에 `toobusy`라는 이름으로 클론한 뒤 ComfyUI를 재시작하세요.
