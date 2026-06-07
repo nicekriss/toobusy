@@ -316,9 +316,29 @@ function installEditor(node) {
             .toobusy-ideogram .preset-bar select { flex: 1; min-width: 0; }
             .toobusy-ideogram .editor {
                 display: grid;
-                grid-template-columns: 240px minmax(320px, 1fr) 250px;
+                grid-template-columns: 0.8fr minmax(300px, 1fr) 0.25fr;
                 gap: 14px;
                 align-items: start;
+            }
+            .toobusy-ideogram .section-title {
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: #7f8b99;
+                border-bottom: 1px solid #2a323b;
+                padding-bottom: 3px;
+                margin: 2px 0 4px;
+            }
+            .toobusy-ideogram .panel-empty { color: #7f8b99; font-size: 11px; }
+            .toobusy-ideogram .side-info { display: flex; flex-direction: column; gap: 4px; }
+            .toobusy-ideogram .icon-btn {
+                width: 32px;
+                height: 30px;
+                padding: 0;
+                font-size: 15px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
             .toobusy-ideogram .col-left,
             .toobusy-ideogram .col-right {
@@ -353,7 +373,6 @@ function installEditor(node) {
                 align-items: center;
             }
             .toobusy-ideogram .count-readout {
-                margin-left: auto;
                 color: #9fb0c0;
                 font-size: 11px;
             }
@@ -493,16 +512,17 @@ function installEditor(node) {
         <div class="editor">
             <div class="col-left">
                 <div class="scene"></div>
+                <div class="element"></div>
             </div>
             <div class="col-center">
-                <div class="toolbar"></div>
                 <div class="canvas-frame">
                     <canvas width="1000" height="1000"></canvas>
                 </div>
                 <div class="resolution"></div>
             </div>
             <div class="col-right">
-                <div class="element"></div>
+                <div class="toolbar"></div>
+                <div class="side-info"></div>
             </div>
         </div>
     `;
@@ -510,6 +530,7 @@ function installEditor(node) {
     const scene = root.querySelector(".scene");
     const resolutionBar = root.querySelector(".resolution");
     const toolbar = root.querySelector(".toolbar");
+    const sideInfo = root.querySelector(".side-info");
     const canvas = root.querySelector("canvas");
     const elementPanel = root.querySelector(".element");
     const bboxReadout = document.createElement("div");
@@ -671,11 +692,18 @@ function installEditor(node) {
 
     function renderElementPanel() {
         elementPanel.replaceChildren();
+        const heading = document.createElement("div");
+        heading.className = "section-title";
+        heading.textContent = "Selected element";
+        elementPanel.appendChild(heading);
+
         const element = selected();
         if (!element) {
             const empty = document.createElement("div");
+            empty.className = "panel-empty";
             empty.textContent = "Drag on the canvas to draw a box, or click an existing one.";
             elementPanel.appendChild(empty);
+            bboxReadout.textContent = "bbox: —";
             draw();
             return;
         }
@@ -727,7 +755,6 @@ function installEditor(node) {
                 "What this region shows (e.g. 'a woman in a red top').",
             ),
             elementPalette.root,
-            bboxReadout,
         );
         bboxReadout.textContent = `bbox: [${element.bbox.join(", ")}]`;
         draw();
@@ -781,27 +808,43 @@ function installEditor(node) {
         renderElementPanel();
     }
 
-    const sceneField = makeField("Scene", widget(node, "high_level_description")?.value, true, (value) => syncScene("high_level_description", value));
+    const sceneField = makeField(
+        "Scene · whole image",
+        widget(node, "high_level_description")?.value,
+        true,
+        (value) => syncScene("high_level_description", value),
+        "One-line summary of the entire image: subject, mood, setting.",
+    );
+    const backgroundField = makeField(
+        "Background · behind subject",
+        widget(node, "background")?.value,
+        true,
+        (value) => syncScene("background", value),
+        "Only the environment behind/around the subjects (not the boxes).",
+    );
     const styleField = makeSelectField("Style", STYLE_PRESETS, widget(node, "aesthetics")?.value, (value) => syncScene("aesthetics", value));
     const outputField = makeSelectField("Output type", MEDIUM_PRESETS, widget(node, "medium")?.value, (value) => syncScene("medium", value));
     const lightingField = makeSelectField("Lighting", LIGHTING_PRESETS, widget(node, "lighting")?.value, (value) => syncScene("lighting", value));
     const cameraField = makeSelectField("Camera", CAMERA_PRESETS, widget(node, "photo")?.value, (value) => syncScene("photo", value));
-    const backgroundField = makeField("Background", widget(node, "background")?.value, true, (value) => syncScene("background", value));
-    sceneField.classList.add("full");
-    backgroundField.classList.add("full");
 
     // Map scene widget names to their DOM input so presets can refresh the view.
     const sceneInputs = {
         high_level_description: sceneField.querySelector("textarea, input"),
+        background: backgroundField.querySelector("textarea, input"),
         aesthetics: styleField.querySelector("select"),
         medium: outputField.querySelector("select"),
         lighting: lightingField.querySelector("select"),
         photo: cameraField.querySelector("select"),
-        background: backgroundField.querySelector("textarea, input"),
     };
 
-    // Full-width text areas, then the four preset selects in a tidy 2x2 grid.
-    scene.append(sceneField, styleField, outputField, lightingField, cameraField, backgroundField);
+    // Scene + Background grouped together, then the look/style dropdowns.
+    const describeTitle = document.createElement("div");
+    describeTitle.className = "section-title";
+    describeTitle.textContent = "Describe";
+    const styleTitle = document.createElement("div");
+    styleTitle.className = "section-title";
+    styleTitle.textContent = "Look";
+    scene.append(describeTitle, sceneField, backgroundField, styleTitle, styleField, outputField, lightingField, cameraField);
 
     const palettePresetWrap = document.createElement("div");
     palettePresetWrap.className = "palette-preset";
@@ -885,17 +928,22 @@ function installEditor(node) {
 
     resolutionBar.append(presetLabel, widthLabel, heightLabel, resolutionReadout);
 
-    toolbar.append(
-        makeButton("+ Element", "Add element", addElement),
-        makeButton("Duplicate", "Duplicate selected element", duplicateElement),
-        makeButton("Delete", "Delete selected element", deleteElement),
-    );
+    // Compact icon buttons in the narrow right column.
+    const iconAdd = makeButton("＋", "Add element", addElement);
+    const iconDup = makeButton("⧉", "Duplicate selected element", duplicateElement);
+    const iconDel = makeButton("🗑", "Delete selected element", deleteElement);
+    for (const b of [iconAdd, iconDup, iconDel]) b.classList.add("icon-btn");
+    toolbar.append(iconAdd, iconDup, iconDel);
 
-    const countReadout = document.createElement("span");
+    // Small info block (count + bbox) lives in the right column.
+    const sideTitle = document.createElement("div");
+    sideTitle.className = "section-title";
+    sideTitle.textContent = "Info";
+    const countReadout = document.createElement("div");
     countReadout.className = "count-readout";
-    toolbar.appendChild(countReadout);
+    sideInfo.append(sideTitle, countReadout, bboxReadout);
     updateCount = () => {
-        countReadout.textContent = `${elements.length} element(s)`;
+        countReadout.textContent = `${elements.length} box(es)`;
     };
     updateCount();
 
@@ -1138,26 +1186,27 @@ function installEditor(node) {
     renderElementPanel();
     applyResolution();
 
-    // Two-column layout: preferred size is wider and shorter. The root scrolls
-    // internally so the user can still shrink the node without clipping.
-    const PREFERRED_WIDTH = 880;
-    const PREFERRED_HEIGHT = 600;
-    root.style.overflowY = "auto";
+    const PREFERRED_WIDTH = 860;
+    const MIN_WIDTH = 820;
+    root.style.overflowY = "visible";
+
+    // Height tracks the actual content so the node fits snugly (no empty gap or
+    // inner scrollbar).
+    const measuredHeight = () => Math.max(300, Math.ceil(root.scrollHeight) + 8);
 
     const domWidget = node.addDOMWidget("layout_editor", "toobusy_ideogram_layout", root, {
-        getMinHeight: () => 320,
-        getMaxHeight: () => 1400,
-        getHeight: () => PREFERRED_HEIGHT,
+        getMinHeight: measuredHeight,
+        getMaxHeight: () => 1600,
+        getHeight: measuredHeight,
     });
 
     if (domWidget && node.widgets?.includes(domWidget)) {
         node.widgets = [domWidget, ...node.widgets.filter((item) => item !== domWidget)];
     }
 
-    const MIN_WIDTH = 820;
     const originalComputeSize = node.computeSize;
     node.computeSize = function computeSize(out) {
-        const size = originalComputeSize?.call(this, out) || [MIN_WIDTH, 320];
+        const size = originalComputeSize?.call(this, out) || [MIN_WIDTH, measuredHeight()];
         return [Math.max(size[0], MIN_WIDTH), size[1]];
     };
 
@@ -1166,13 +1215,10 @@ function installEditor(node) {
 
     const ensurePreferredSize = () => {
         const w = Math.max(node.size?.[0] || 0, PREFERRED_WIDTH);
-        const h = Math.max(node.size?.[1] || 0, PREFERRED_HEIGHT);
-        node.setSize([w, h]);
+        node.setSize([w, node.computeSize()[1]]);
         node.setDirtyCanvas(true, true);
     };
 
-    // Apply the preferred size on first mount and again after ComfyUI restores a
-    // saved (possibly too-short) size when loading a workflow.
     requestAnimationFrame(() => { applyResolution(); ensurePreferredSize(); });
     setTimeout(ensurePreferredSize, 50);
 
