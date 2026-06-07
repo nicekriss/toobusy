@@ -389,7 +389,7 @@ function installEditor(node) {
             .toobusy-ideogram {
                 box-sizing: border-box;
                 width: 100%;
-                min-width: 820px;
+                min-width: 900px;
                 color: #e9edf1;
                 font: 12px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
                 user-select: none;
@@ -405,7 +405,7 @@ function installEditor(node) {
             .toobusy-ideogram .preset-bar select { flex: 1; min-width: 0; }
             .toobusy-ideogram .editor {
                 display: grid;
-                grid-template-columns: 0.8fr minmax(300px, 1fr) 0.25fr;
+                grid-template-columns: minmax(0, 0.62fr) minmax(420px, 1.35fr) minmax(150px, 0.36fr);
                 gap: 14px;
                 align-items: start;
             }
@@ -503,7 +503,9 @@ function installEditor(node) {
             .toobusy-ideogram .layer-btn:disabled { opacity: 0.35; cursor: default; }
             .toobusy-ideogram .canvas-frame {
                 width: 100%;
-                height: 360px;
+                aspect-ratio: 1 / 1;
+                max-height: 620px;
+                min-height: 320px;
                 border: 1px solid #58616d;
                 border-radius: 6px;
                 background: #0e1319;
@@ -654,13 +656,13 @@ function installEditor(node) {
         <div class="editor">
             <div class="col-left">
                 <div class="scene"></div>
-                <div class="element"></div>
             </div>
             <div class="col-center">
                 <div class="canvas-frame">
                     <canvas width="1000" height="1000"></canvas>
                 </div>
                 <div class="resolution"></div>
+                <div class="element"></div>
             </div>
             <div class="col-right">
                 <div class="toolbar"></div>
@@ -1517,8 +1519,8 @@ function installEditor(node) {
     renderElementPanel();
     applyResolution();
 
-    const PREFERRED_WIDTH = 860;
-    const MIN_WIDTH = 820;
+    const PREFERRED_WIDTH = 980;
+    const MIN_WIDTH = 900;
     root.style.overflowY = "visible";
 
     // Height tracks the actual content so the node fits snugly (no empty gap or
