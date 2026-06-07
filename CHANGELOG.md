@@ -14,6 +14,11 @@
   Cinematic/Product/Character/Poster), 언어(Auto/Korean/English), `preserve_intent`,
   `fill_missing_fields` 옵션.
 
+## [0.1.1] - 2026-06-07
+
+### Changed
+- ComfyUI Registry에 `neobabae` 퍼블리셔로 첫 발행 (`[tool.comfy].PublisherId`).
+
 ## [0.1.0] - 2026-06-07
 
 첫 패키징 릴리스. 정체성을 **"번거로운 멀티스텝을 노드 하나로 접는다"**로 정하고,
