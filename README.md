@@ -87,6 +87,8 @@ product_image + mode -> 참조 브리프
 
 프런트엔드는 텍스트 입력 후에도 노드가 읽기 쉽도록 toobusy 색조의 입력 가이드와 요약 패널을 덧붙입니다.
 
+실행 후에는 `Use generated brief as override` / `Use generated shot beats as override` 버튼으로 방금 생성된 브리프·샷 비트를 해당 오버라이드 칸에 그대로 복사할 수 있습니다. 비싼 초기 단계를 고정해두고 이후 단계만 다시 생성하며 반복 작업할 때 유용합니다.
+
 ### toobusy Prompt Lines
 
 카테고리:
@@ -136,6 +138,14 @@ ComfyUI 안에서 영상 아이디어, 스토리라인, 비주얼 참조, 샷 �
 - 보드 위 항목을 자유롭게 선택·드래그.
 - 노드를 큐에 올리면 현재 보드를 이미지로 내보냅니다.
 
+편집 기능:
+
+- **텍스트 사후 편집**: 텍스트 아이템을 더블클릭하거나, 선택 후 속성 바의 `Edit text` 버튼.
+- **리사이즈**: 사각형/타원/이미지/텍스트는 코너 핸들, 화살표/선은 양 끝점 핸들을 드래그.
+- **속성 바**(선택 아이템): 색상, 채움 + `no fill`(사각형/타원), 선 두께, 폰트 크기(텍스트), `Front`/`Back`(앞/뒤 순서), `Duplicate`(복제).
+- **Undo/Redo**: 툴바 버튼 또는 Ctrl/Cmd+Z, Shift+Z(되돌리기 취소) / +Y. 캔버스 포커스 상태에서 Delete/Backspace로 선택 삭제.
+- 인라인 캔버스의 텍스트는 익스포트(파이썬 렌더)와 **같은 방식으로 박스 폭에 맞춰 줄바꿈**되어, 미리보기와 출력 이미지의 줄나눔이 일치합니다.
+
 출력:
 
 - `image`: 렌더링된 보드 이미지.
@@ -178,6 +188,12 @@ LoRA 동작:
 - ComfyUI 내장 `LoraLoader`를 사용하므로 rgthree의 Power Lora Loader가 필요 없습니다.
 - 활성화된 슬롯은 슬롯 순서대로 적용됩니다.
 - 비활성화된 슬롯과 `None`으로 설정된 슬롯은 건너뜁니다.
+
+Basic / Advanced:
+
+- 기본은 **Basic 화면**으로, 자주 쓰는 입력만 보입니다: `positive`, `negative`, `ratio_preset`, `megapixels`, `batch_size`, `seed`, `steps`.
+- `Show advanced settings` 버튼을 누르면 expert 컨트롤(`model_name`, `clip_name`, `vae_name`, `divisible_by`, `cfg`, `sampler_name`, `scheduler`, `denoise`, `aura_shift`)과 LoRA 슬롯/버튼이 나타납니다. 상태는 노드에 저장되어 그래프를 다시 열어도 유지됩니다.
+- **해상도 미리보기**: `ratio_preset @ megapixels -> 가로 x 세로` 표시 위젯이 항상 보여, 큐에 올리기 전에 실제 생성 크기를 확인할 수 있습니다.
 
 출력:
 
@@ -243,6 +259,11 @@ toobusy/LTXV
 LTXVAudioVAEEncode -> SolidMask(0) -> SetLatentNoiseMask
 ```
 
+미리보기 readout:
+
+- 노드에 요약 위젯이 표시됩니다 — `종횡비 @ MP -> 가로 x 세로`, `길이(프레임) @ fps -> ~초`, 그리고 커스텀 오디오 상태.
+- `use_custom_audio`가 켜졌는데 `audio` 입력이 연결되지 않았으면 **경고**를 표시합니다(런타임 에러 전에 미리 확인). 연결을 바꾸면 자동 갱신됩니다.
+
 ### toobusy LTX2.3 Compact AV Sampler
 
 카테고리:
@@ -272,13 +293,19 @@ RandomNoise -> LTXVConcatAVLatent -> CFGGuider -> KSamplerSelect -> ManualSigmas
 
 `sigmas`가 연결되어 있으면 주입된 시그마 스케줄을 사용하고, 그렇지 않으면 `manual_sigmas`를 사용합니다.
 
+`manual_sigmas`는 전문가용 컨트롤이라 기본적으로 숨겨져 있습니다. `Show advanced settings` 버튼으로 펼칠 수 있고, `sigmas` 입력이 연결되면(= `manual_sigmas`를 덮어쓰므로) 자동으로 숨겨지며 현재 시그마 소스를 알려주는 표시가 나타납니다.
+
 노드는 샘플링 후 항상 `LTXVCropGuides`를 실행하여 latent이 이어지기 전에 가이드 프레임을 제거합니다.
 
 ## 추가 / 실험적 노드
 
 아래 노드들도 `NODE_CLASS_MAPPINGS`를 통해 등록되어 있어 노드 메뉴에 나타나지만, 위의 핵심 노드들보다는 완성도가 낮습니다:
 
-- `hf_model_auto_loader` — Hugging Face 모델 파일을 자동으로 찾아주거나 다운로드합니다.
+- `hf_model_auto_loader` — ComfyUI 모델 폴더에서 요청한 모델을 찾고, 없으면 선택적으로
+  Hugging Face에서 내려받습니다. `download_if_missing`은 **기본값이 꺼짐(False)** 이라
+  평소엔 스캔/리포트만 하며, 켜면 큐 실행 시 `hf_source`에서 **실제 네트워크 다운로드**가
+  일어납니다(repo id 또는 전체 파일 URL). `Open on Hugging Face` 버튼은 `hf_source`의
+  소스 페이지를 브라우저로 엽니다.
 - `ideogram_layout_builder` (`toobusy Ideogram Layout Builder`) — Ideogram 4
   구조화 프롬프트 JSON과 `width`/`height`를 출력하는 시각적 bbox 편집기입니다.
   캔버스에 영역을 그리고, 각 영역을 텍스트 또는 오브젝트로 지정하고, 전역/요소별
