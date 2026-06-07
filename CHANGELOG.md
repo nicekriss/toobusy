@@ -2,6 +2,19 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [0.2.1] - 2026-06-07
+
+### Added
+- **Plan 파이프라인 연결**: Ideogram Layout Builder가 이제 Prompt Polish의 전체
+  Ideogram payload(`compositional_deconstruction.elements`)를 입력으로 받아들이고,
+  bbox를 Ideogram 순서 `[y,x,y,x]` → 캔버스 순서 `[x,y,x,y]`로 올바르게 변환합니다.
+  덕분에 `Prompt Polish → Layout Builder → Ideogram4 T2I`가 좌표까지 정확히 연결됩니다
+  (한국어 장면 → 구조화 레이아웃 → 이미지). 기존 입력 형식(배열, `{elements}`)은 그대로 동작.
+
+### Changed
+- Prompt Polish: `preserve_intent`가 켜졌을 때 한국어의 정서·분위기·관계성 뉘앙스를
+  보존하고 서구식 stock 프롬프트로 평탄화하지 않도록 지시를 강화.
+
 ## [0.2.0] - 2026-06-07
 
 ### Added

@@ -133,6 +133,19 @@ def _element_type(text, desc):
     return "text" if text else "obj"
 
 
+def _from_ideogram_element(element):
+    # A full Ideogram payload (e.g. from Prompt Polish) stores bbox in Ideogram
+    # order [y_min, x_min, y_max, x_max]; the builder works in canvas order
+    # [x_min, y_min, x_max, y_max], so swap it back when ingesting one.
+    if not isinstance(element, dict):
+        return element
+    bbox = element.get("bbox")
+    if isinstance(bbox, list) and len(bbox) == 4:
+        y_min, x_min, y_max, x_max = bbox
+        return {**element, "bbox": [x_min, y_min, x_max, y_max]}
+    return element
+
+
 def _load_elements(elements_json):
     if not elements_json.strip():
         return []
@@ -144,12 +157,19 @@ def _load_elements(elements_json):
         # default centered subject.
         print("[toobusy ideogram] elements_json is not valid JSON; ignoring it.")
         return []
+    if isinstance(data, list):
+        return data
     if isinstance(data, dict):
-        data = data.get("elements", [])
-    if not isinstance(data, list):
-        print("[toobusy ideogram] elements_json must be a JSON array or an object with an 'elements' array; ignoring it.")
-        return []
-    return data
+        # Plain {"elements": [...]} (already canvas-order bbox).
+        if isinstance(data.get("elements"), list):
+            return data["elements"]
+        # Full Ideogram payload (e.g. piped from Prompt Polish): pull the elements
+        # out of compositional_deconstruction and convert bbox order back.
+        comp = data.get("compositional_deconstruction")
+        if isinstance(comp, dict) and isinstance(comp.get("elements"), list):
+            return [_from_ideogram_element(item) for item in comp["elements"]]
+    print("[toobusy ideogram] elements_json must be a JSON array, an object with an 'elements' array, or a full Ideogram payload; ignoring it.")
+    return []
 
 
 class IdeogramLayoutBuilder:

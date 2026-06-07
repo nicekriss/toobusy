@@ -154,8 +154,22 @@ function clamp(value, min = 0, max = CANVAS_SIZE) {
 function parseElements(value) {
     try {
         const parsed = JSON.parse(value || "[]");
-        const elements = Array.isArray(parsed) ? parsed : parsed.elements;
-        return Array.isArray(elements) ? elements : [];
+        if (Array.isArray(parsed)) return parsed;
+        if (parsed && Array.isArray(parsed.elements)) return parsed.elements;
+        // Full Ideogram payload (e.g. piped from Prompt Polish): pull elements
+        // out of compositional_deconstruction and swap bbox from Ideogram order
+        // [y,x,y,x] back to canvas order [x,y,x,y].
+        const comp = parsed && parsed.compositional_deconstruction;
+        if (comp && Array.isArray(comp.elements)) {
+            return comp.elements.map((el) => {
+                if (el && Array.isArray(el.bbox) && el.bbox.length === 4) {
+                    const [y1, x1, y2, x2] = el.bbox;
+                    return { ...el, bbox: [x1, y1, x2, y2] };
+                }
+                return el;
+            });
+        }
+        return [];
     } catch {
         return [];
     }
