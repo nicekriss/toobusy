@@ -283,7 +283,13 @@ the node menu), but are less polished than the core set above:
 - `ideogram_layout_builder` (`toobusy Ideogram Layout Builder`) — a visual bbox
   editor that emits an Ideogram 4 structured-prompt JSON plus `width`/`height`.
   Draw regions on the canvas, mark each as text or object, set global/per-element
-  palettes, and wire the JSON into a text encoder.
+  palettes, and wire the JSON into a text encoder. Per-element **roles**
+  (headline / subtitle / footer / product label / sign / logo …) expand into
+  description hints, **layout templates** (poster, product ad, packaging, UI,
+  infographic) seed a starting set of boxes, and three toggles control the
+  output: `strict_text` (faithful spelling hints), `reinforce_text` (repeat the
+  literal text in `desc`, off = compact JSON), and `include_global_palette`
+  (omit the global palette to leave color open).
 - `ideogram4_t2i_node` (`toobusy Ideogram4 T2I`) — runs a local Ideogram 4 model
   (CLIP `ideogram4`, `Ideogram4Scheduler`) from a prompt; accepts the Layout
   Builder's JSON prompt and `width`/`height` directly.

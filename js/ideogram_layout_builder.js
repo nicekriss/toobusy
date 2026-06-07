@@ -61,6 +61,62 @@ const PALETTE_PRESETS = [
     ["High contrast", ["#000000", "#FFFFFF", "#FF3B30", "#FFD60A", "#0A84FF"]],
 ];
 
+// Text element roles. Value is sent as `role` on each element; the Python node
+// expands it into a description hint (keep keys in sync with ROLE_HINTS).
+const ROLE_PRESETS = [
+    ["None", ""],
+    ["Headline", "headline"],
+    ["Subtitle", "subtitle"],
+    ["Body", "body"],
+    ["Footer", "footer"],
+    ["Product label", "product label"],
+    ["Sign", "sign"],
+    ["UI label", "ui label"],
+    ["Logo / wordmark", "logo"],
+];
+
+// One-click starting layouts. bbox is [x_min, y_min, x_max, y_max] on the
+// 0-1000 canvas; text + role + desc seed each region (desc left blank so the
+// user fills the specifics).
+const LAYOUT_TEMPLATES = [
+    ["(template…)", null],
+    ["Poster", [
+        { bbox: [120, 90, 880, 240], text: "HEADLINE", role: "headline" },
+        { bbox: [120, 250, 880, 340], text: "Subtitle goes here", role: "subtitle" },
+        { bbox: [200, 380, 800, 820], text: "", role: "", desc: "hero subject" },
+        { bbox: [120, 900, 880, 960], text: "footer / website", role: "footer" },
+    ]],
+    ["Product ad", [
+        { bbox: [300, 120, 700, 620], text: "", role: "", desc: "hero product" },
+        { bbox: [100, 660, 900, 780], text: "HEADLINE", role: "headline" },
+        { bbox: [150, 790, 850, 860], text: "supporting claim", role: "subtitle" },
+        { bbox: [410, 890, 590, 960], text: "LOGO", role: "logo" },
+    ]],
+    ["Packaging label", [
+        { bbox: [380, 80, 620, 200], text: "LOGO", role: "logo" },
+        { bbox: [120, 240, 880, 380], text: "PRODUCT TITLE", role: "headline" },
+        { bbox: [160, 410, 840, 520], text: "descriptor", role: "subtitle" },
+        { bbox: [380, 820, 620, 920], text: "500ml", role: "product label" },
+    ]],
+    ["UI screenshot", [
+        { bbox: [40, 40, 240, 960], text: "", role: "", desc: "sidebar navigation" },
+        { bbox: [280, 40, 960, 130], text: "Dashboard", role: "ui label" },
+        { bbox: [280, 160, 470, 360], text: "", role: "", desc: "KPI card" },
+        { bbox: [500, 160, 690, 360], text: "", role: "", desc: "KPI card" },
+        { bbox: [720, 160, 960, 360], text: "", role: "", desc: "KPI card" },
+        { bbox: [280, 390, 960, 760], text: "", role: "", desc: "main graph" },
+        { bbox: [280, 790, 960, 960], text: "", role: "", desc: "activity panel" },
+    ]],
+    ["Infographic", [
+        { bbox: [120, 70, 880, 190], text: "TITLE", role: "headline" },
+        { bbox: [60, 260, 250, 520], text: "Step 1", role: "subtitle" },
+        { bbox: [280, 260, 470, 520], text: "Step 2", role: "subtitle" },
+        { bbox: [500, 260, 690, 520], text: "Step 3", role: "subtitle" },
+        { bbox: [720, 260, 940, 520], text: "Step 4", role: "subtitle" },
+        { bbox: [120, 600, 880, 920], text: "", role: "", desc: "summary / chart" },
+    ]],
+];
+
 const COLOR_CHOICES = [
     "#000000",
     "#111111",
@@ -121,6 +177,7 @@ function normalizeElement(element = {}, index = 0) {
         bbox,
         text: element.text || "",
         desc: element.desc || "",
+        role: typeof element.role === "string" ? element.role : "",
         color_palette: Array.isArray(element.color_palette) ? element.color_palette : [],
     };
 }
@@ -208,6 +265,23 @@ function makeSelectField(labelText, options, currentValue, onInput) {
     select.value = currentValue || options[0][1];
     select.addEventListener("change", () => onInput(select.value));
     label.append(span, select);
+    return label;
+}
+
+function makeCheckboxField(labelText, checked, onInput, title = "") {
+    const label = document.createElement("label");
+    label.className = "checkbox-field";
+    if (title) label.title = title;
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.id = uid("check");
+    input.name = input.id;
+    input.checked = !!checked;
+    const span = document.createElement("span");
+    span.textContent = labelText;
+    span.htmlFor = input.id;
+    input.addEventListener("change", () => onInput(input.checked));
+    label.append(input, span);
     return label;
 }
 
@@ -417,6 +491,23 @@ function installEditor(node) {
                 gap: 3px;
                 color: #aeb8c4;
                 min-width: 0;
+            }
+            .toobusy-ideogram label.checkbox-field {
+                flex-direction: row;
+                align-items: center;
+                gap: 7px;
+                cursor: pointer;
+            }
+            .toobusy-ideogram label.checkbox-field input {
+                width: auto;
+                flex: 0 0 auto;
+                margin: 0;
+                cursor: pointer;
+            }
+            .toobusy-ideogram .output-options {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
             }
             .toobusy-ideogram input,
             .toobusy-ideogram select,
@@ -758,6 +849,16 @@ function installEditor(node) {
                 },
                 "Type to render this box as text. Leave blank for an object.",
             ),
+            makeSelectField(
+                "Role (text hint)",
+                ROLE_PRESETS,
+                element.role || "",
+                (value) => {
+                    element.role = value;
+                    syncElements();
+                    draw();
+                },
+            ),
             makeField(
                 "Description",
                 element.desc,
@@ -896,6 +997,65 @@ function installEditor(node) {
     palettePresetWrap.append(palettePresetLabel, globalPalette.root);
     scene.appendChild(palettePresetWrap);
 
+    // ----- Output / text options (drive the hidden BOOLEAN widgets) -----
+    const outputTitle = document.createElement("div");
+    outputTitle.className = "section-title";
+    outputTitle.textContent = "Text & output";
+    const outputOptions = document.createElement("div");
+    outputOptions.className = "output-options";
+    const includePaletteField = makeCheckboxField(
+        "Include global palette",
+        widget(node, "include_global_palette")?.value ?? true,
+        (checked) => syncScene("include_global_palette", checked),
+        "When off, the global color_palette is omitted so color is left open.",
+    );
+    const strictTextField = makeCheckboxField(
+        "Strict text rendering",
+        widget(node, "strict_text")?.value ?? true,
+        (checked) => syncScene("strict_text", checked),
+        "Adds 'spelled exactly, sharp, preserve caps/punctuation' to text elements.",
+    );
+    const reinforceTextField = makeCheckboxField(
+        "Reinforce text (“reads ...”)",
+        widget(node, "reinforce_text")?.value ?? true,
+        (checked) => syncScene("reinforce_text", checked),
+        "Off = compact JSON: rely on the text field without repeating it in desc.",
+    );
+    // Map each toggle widget to its checkbox so presets can refresh the view.
+    const toggleInputs = {
+        include_global_palette: includePaletteField.querySelector("input"),
+        strict_text: strictTextField.querySelector("input"),
+        reinforce_text: reinforceTextField.querySelector("input"),
+    };
+    outputOptions.append(includePaletteField, strictTextField, reinforceTextField);
+    scene.append(outputTitle, outputOptions);
+
+    // ----- Layout templates (seed a starting set of boxes) -----
+    function applyTemplate(elementSeeds) {
+        elements = elementSeeds.map((seed, index) => normalizeElement(seed, index));
+        selectedIndex = elements.length ? 0 : -1;
+        syncElements();
+        renderElementPanel();
+        draw();
+    }
+    const templateField = makeSelectField(
+        "Layout template",
+        LAYOUT_TEMPLATES.map(([name]) => [name, name]),
+        LAYOUT_TEMPLATES[0][0],
+        (name) => {
+            const tpl = LAYOUT_TEMPLATES.find(([n]) => n === name);
+            if (!tpl || !tpl[1]) return;
+            const ok = !elements.length || window.confirm("Replace the current boxes with this template?");
+            if (ok) applyTemplate(tpl[1]);
+            // Reset back to the placeholder option so re-picking the same template works.
+            templateField.querySelector("select").value = LAYOUT_TEMPLATES[0][0];
+        },
+    );
+    const templateTitle = document.createElement("div");
+    templateTitle.className = "section-title";
+    templateTitle.textContent = "Start";
+    scene.prepend(templateTitle, templateField);
+
     const presetLabel = document.createElement("label");
     const presetTitle = document.createElement("span");
     const presetSelect = document.createElement("select");
@@ -1009,6 +1169,9 @@ function installEditor(node) {
             medium: widget(node, "medium")?.value || "",
             global_palette: widget(node, "global_palette")?.value || "",
             background: widget(node, "background")?.value || "",
+            include_global_palette: widget(node, "include_global_palette")?.value ?? true,
+            strict_text: widget(node, "strict_text")?.value ?? true,
+            reinforce_text: widget(node, "reinforce_text")?.value ?? true,
             elements: JSON.parse(JSON.stringify(elements)),
             resolution: { ...resolution },
         };
@@ -1038,6 +1201,16 @@ function installEditor(node) {
                 sw.dataset.color = c;
             });
         }
+
+        const setToggle = (name, value) => {
+            if (value === undefined) return;
+            syncScene(name, !!value);
+            const input = toggleInputs[name];
+            if (input) input.checked = !!value;
+        };
+        setToggle("include_global_palette", state.include_global_palette);
+        setToggle("strict_text", state.strict_text);
+        setToggle("reinforce_text", state.reinforce_text);
 
         if (Array.isArray(state.elements)) {
             elements = state.elements.map(normalizeElement);

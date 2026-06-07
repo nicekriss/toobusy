@@ -10,6 +10,25 @@ STYLE_PALETTE_MAX = 16
 ELEMENT_PALETTE_MAX = 5
 PLACEHOLDER_DESCS = {"", "new layout element", "layout element", "duplicated layout element"}
 
+# Optional role hint appended to an element's description. Keep keys in sync with
+# ROLE_PRESETS in js/ideogram_layout_builder.js.
+ROLE_HINTS = {
+    "headline": "large bold headline typography, dominant in the layout",
+    "subtitle": "secondary subtitle text, smaller than the headline",
+    "body": "body copy, evenly spaced and comfortably readable",
+    "footer": "small footer text near the edge of the composition",
+    "product label": "label text printed on the product surface",
+    "sign": "sign text, legible despite perspective and reflections",
+    "ui label": "small UI label text, crisp and precisely aligned",
+    "logo": "logo / wordmark, clean and balanced",
+}
+
+# Appended to text elements when strict_text is on, to push faithful rendering.
+STRICT_TEXT_HINTS = (
+    "spelled exactly as written, sharp and readable, no extra or missing "
+    "letters, preserve capitalization and punctuation"
+)
+
 
 def _parse_palette(value, fallback=None, limit=ELEMENT_PALETTE_MAX):
     fallback = fallback or []
@@ -74,14 +93,40 @@ def _is_placeholder_element(text, desc, bbox):
     return not has_content and is_tiny
 
 
-def _build_desc(text, desc):
+def _build_desc(text, desc, role="", strict_text=False, reinforce_text=True):
     if desc.lower() in PLACEHOLDER_DESCS:
         desc = ""
-    if text and desc:
-        return desc if text.lower() in desc.lower() else f"{desc} Text reads '{text}'."
-    if text:
-        return f"clean rendered text integrated into the composition, text reads '{text}'"
-    return desc or "layout element"
+    role_hint = ROLE_HINTS.get(role.strip().lower(), "") if role else ""
+
+    if not text:
+        # Object element: description plus an optional role hint (e.g. a logo
+        # placed as an object rather than literal text).
+        clauses = [c for c in (desc, role_hint) if c]
+        return ". ".join(clauses) if clauses else "layout element"
+
+    # Text element.
+    clauses = []
+    if desc and text.lower() in desc.lower():
+        # The user already wrote the literal text into the description; trust it
+        # and only layer on the role hint.
+        clauses.append(desc)
+        if role_hint:
+            clauses.append(role_hint)
+    else:
+        if desc:
+            clauses.append(desc)
+        if role_hint:
+            clauses.append(role_hint)
+        if reinforce_text:
+            clauses.append(f"text reads '{text}'")
+    if not clauses:
+        base = "clean rendered text integrated into the composition"
+        if reinforce_text:
+            base += f", text reads '{text}'"
+        clauses.append(base)
+    if strict_text:
+        clauses.append(STRICT_TEXT_HINTS)
+    return ". ".join(clauses)
 
 
 def _element_type(text, desc):
@@ -152,6 +197,30 @@ class IdeogramLayoutBuilder:
                         "default": "#111111, #FFFFFF, #D8C7A3",
                     },
                 ),
+                "include_global_palette": (
+                    "BOOLEAN",
+                    {
+                        "default": True,
+                        "label_on": "use global palette",
+                        "label_off": "omit global palette",
+                    },
+                ),
+                "strict_text": (
+                    "BOOLEAN",
+                    {
+                        "default": True,
+                        "label_on": "strict text rendering",
+                        "label_off": "relaxed text",
+                    },
+                ),
+                "reinforce_text": (
+                    "BOOLEAN",
+                    {
+                        "default": True,
+                        "label_on": "reinforce text (reads '...')",
+                        "label_off": "compact JSON",
+                    },
+                ),
                 "background": (
                     "STRING",
                     {
@@ -204,6 +273,9 @@ class IdeogramLayoutBuilder:
         elements_json,
         width,
         height,
+        include_global_palette=True,
+        strict_text=True,
+        reinforce_text=True,
     ):
         elements = []
         for item in _load_elements(elements_json):
@@ -212,6 +284,7 @@ class IdeogramLayoutBuilder:
             bbox = _normalize_bbox(item.get("bbox"))
             text = str(item.get("text", "")).strip()
             desc = str(item.get("desc", "")).strip()
+            role = str(item.get("role", "")).strip()
             if _is_placeholder_element(text, desc, bbox):
                 continue
 
@@ -228,7 +301,9 @@ class IdeogramLayoutBuilder:
             element = {"type": element_type, "bbox": ideogram_bbox}
             if element_type == "text":
                 element["text"] = text
-            element["desc"] = _build_desc(text, desc)
+            element["desc"] = _build_desc(
+                text, desc, role=role, strict_text=strict_text, reinforce_text=reinforce_text
+            )
             if palette:
                 element["color_palette"] = palette
             elements.append(element)
@@ -247,17 +322,23 @@ class IdeogramLayoutBuilder:
                 }
             )
 
+        style_description = {
+            "aesthetics": aesthetics.strip(),
+            "lighting": lighting.strip(),
+            "photo": photo.strip(),
+            "medium": medium.strip(),
+        }
+        # Only attach a global color_palette when the user opted in. Omitting it
+        # lets color conditioning be left intentionally open (color_palette is
+        # the last key, so dropping it keeps the documented key order intact).
+        if include_global_palette:
+            style_description["color_palette"] = _parse_palette(
+                global_palette, ["#111111", "#FFFFFF", "#D8C7A3"], limit=STYLE_PALETTE_MAX
+            )
+
         payload = {
             "high_level_description": high_level_description.strip(),
-            "style_description": {
-                "aesthetics": aesthetics.strip(),
-                "lighting": lighting.strip(),
-                "photo": photo.strip(),
-                "medium": medium.strip(),
-                "color_palette": _parse_palette(
-                    global_palette, ["#111111", "#FFFFFF", "#D8C7A3"], limit=STYLE_PALETTE_MAX
-                ),
-            },
+            "style_description": style_description,
             "compositional_deconstruction": {
                 "background": background.strip(),
                 "elements": elements,
