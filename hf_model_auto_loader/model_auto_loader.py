@@ -32,7 +32,17 @@ class HFModelAutoLoader:
             "required": {
                 "model_name": ("STRING", {"default": "example.safetensors"}),
                 "model_category": (list(cls.CATEGORY_FOLDERS.keys()),),
-                "download_if_missing": ("BOOLEAN", {"default": True}),
+                "download_if_missing": (
+                    "BOOLEAN",
+                    {
+                        "default": False,
+                        "tooltip": (
+                            "When on, a missing model is actually downloaded from "
+                            "hf_source (a real network download on queue), not just "
+                            "located. Off by default so the node only scans/reports."
+                        ),
+                    },
+                ),
                 "hf_source": (
                     "STRING",
                     {
