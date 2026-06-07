@@ -10,7 +10,7 @@ The current public focus is:
 - `toobusy LTX2.3` compact workflow nodes
 - `toobusy Z-Image Turbo`
 
-Experimental older nodes are kept in the repository for reference, but are not registered by default right now.
+A few additional/experimental nodes (including the Ideogram Layout Builder and Ideogram4 T2I) are also registered — see [Additional / Experimental Nodes](#additional--experimental-nodes).
 
 ## Install
 
@@ -274,14 +274,19 @@ If `sigmas` is connected, the node uses that injected sigma schedule. Otherwise 
 
 The node always runs `LTXVCropGuides` after sampling so guide frames are removed before the latent continues.
 
-## Hidden Experimental Nodes
+## Additional / Experimental Nodes
 
-These folders are currently kept in the repository but are not exposed through `NODE_CLASS_MAPPINGS`:
+These nodes are also registered through `NODE_CLASS_MAPPINGS` (so they appear in
+the node menu), but are less polished than the core set above:
 
-- `hf_model_auto_loader`
-- `ideogram_layout_builder`
-
-They may come back later, but they are hidden for now to keep the public node list focused.
+- `hf_model_auto_loader` — auto-resolves/downloads Hugging Face model files.
+- `ideogram_layout_builder` (`toobusy Ideogram Layout Builder`) — a visual bbox
+  editor that emits an Ideogram 4 structured-prompt JSON plus `width`/`height`.
+  Draw regions on the canvas, mark each as text or object, set global/per-element
+  palettes, and wire the JSON into a text encoder.
+- `ideogram4_t2i_node` (`toobusy Ideogram4 T2I`) — runs a local Ideogram 4 model
+  (CLIP `ideogram4`, `Ideogram4Scheduler`) from a prompt; accepts the Layout
+  Builder's JSON prompt and `width`/`height` directly.
 
 ## Roadmap
 

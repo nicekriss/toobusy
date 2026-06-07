@@ -220,7 +220,22 @@ function makeNumberInput(value, onInput) {
     input.max = "2048";
     input.step = "1";
     input.value = String(value);
-    input.addEventListener("input", () => onInput(clamp(input.value, 256, 2048)));
+    // Clamp on commit (blur / Enter), not on every keystroke: clamping mid-typing
+    // turns a partial "1" into 256, flips the preset to custom, and triggers a
+    // canvas redraw on each character. On commit, also write the clamped value
+    // back so the field never shows an out-of-range number.
+    const commit = () => {
+        const clamped = clamp(input.value, 256, 2048);
+        input.value = String(clamped);
+        onInput(clamped);
+    };
+    input.addEventListener("change", commit);
+    input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            input.blur();
+        }
+    });
     return input;
 }
 

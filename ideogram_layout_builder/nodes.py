@@ -3,10 +3,9 @@ import re
 
 
 HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
+# Keep in sync with MIN_BOX_SIZE in js/ideogram_layout_builder.js: the UI never
+# lets a box get smaller than this, so anything at this size is a real box.
 MIN_BOX_SIZE = 40
-# Boxes smaller than this in both dimensions are treated as stray/degenerate
-# (e.g. an accidental click box) and dropped from the output.
-DEGENERATE_BOX_SIZE = 48
 STYLE_PALETTE_MAX = 16
 ELEMENT_PALETTE_MAX = 5
 PLACEHOLDER_DESCS = {"", "new layout element", "layout element", "duplicated layout element"}
@@ -66,12 +65,13 @@ def _to_ideogram_bbox(value):
 def _is_placeholder_element(text, desc, bbox):
     width = bbox[2] - bbox[0]
     height = bbox[3] - bbox[1]
-    # Drop stray/degenerate boxes (tiny in both dimensions), e.g. an accidental
-    # click box that was never dragged into a real region.
-    if width < DEGENERATE_BOX_SIZE and height < DEGENERATE_BOX_SIZE:
-        return True
-    is_tiny_corner = bbox[0] == 0 and bbox[1] == 0 and width <= MIN_BOX_SIZE and height <= MIN_BOX_SIZE
-    return not text and desc.lower() in PLACEHOLDER_DESCS and is_tiny_corner
+    has_content = bool(text) or desc.lower() not in PLACEHOLDER_DESCS
+    # A box is "stray" only when it carries no real content AND is tiny in both
+    # dimensions (e.g. an accidental click box, or an empty default element that
+    # was never positioned). bbox is already grown to MIN_BOX_SIZE by
+    # _normalize_bbox, so a described box at the UI minimum is always kept.
+    is_tiny = width <= MIN_BOX_SIZE and height <= MIN_BOX_SIZE
+    return not has_content and is_tiny
 
 
 def _build_desc(text, desc):
@@ -91,11 +91,19 @@ def _element_type(text, desc):
 def _load_elements(elements_json):
     if not elements_json.strip():
         return []
-    data = json.loads(elements_json)
+    try:
+        data = json.loads(elements_json)
+    except (ValueError, TypeError):
+        # Malformed JSON (hand-edited or fed from another node) should not abort
+        # the whole graph; fall back to "no elements" and let build() emit its
+        # default centered subject.
+        print("[toobusy ideogram] elements_json is not valid JSON; ignoring it.")
+        return []
     if isinstance(data, dict):
         data = data.get("elements", [])
     if not isinstance(data, list):
-        raise ValueError("elements_json must be a JSON array or an object with an elements array.")
+        print("[toobusy ideogram] elements_json must be a JSON array or an object with an 'elements' array; ignoring it.")
+        return []
     return data
 
 
