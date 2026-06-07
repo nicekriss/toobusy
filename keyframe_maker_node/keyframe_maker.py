@@ -278,6 +278,12 @@ def _line_count(text):
     return len([line for line in str(text).splitlines() if line.strip()])
 
 
+def _prompt_lines(text):
+    lines = [line.strip() for line in str(text or "").splitlines()]
+    lines = [line for line in lines if line]
+    return lines or [""]
+
+
 def _cut_list(shot_count):
     return "\n".join(f"{index}컷: ..." for index in range(1, int(shot_count) + 1))
 
@@ -363,8 +369,16 @@ class ToobusyKeyframeMaker:
             },
         }
 
-    RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING", "STRING")
-    RETURN_NAMES = ("product_brief", "shot_beats", "visual_anchor", "keyframe_prompts", "korean_story")
+    RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING", "STRING", "STRING")
+    RETURN_NAMES = (
+        "product_brief",
+        "shot_beats",
+        "visual_anchor",
+        "keyframe_prompts",
+        "keyframe_prompt_line",
+        "korean_story",
+    )
+    OUTPUT_IS_LIST = (False, False, False, False, True, False)
     FUNCTION = "make"
     CATEGORY = "toobusy/Plan"
 
@@ -435,6 +449,7 @@ class ToobusyKeyframeMaker:
             FIXED=fixed_elements,
         )
         keyframe_prompts = _generate_text(clip, keyframe_prompt, max_length=2048, seed=seed + 3).strip()
+        keyframe_prompt_lines = _prompt_lines(keyframe_prompts)
 
         korean_story_prompt = _format_template(
             KOREAN_STORY_TEMPLATE,
@@ -463,9 +478,11 @@ class ToobusyKeyframeMaker:
                     korean_story,
                     "Effective shot count:",
                     str(effective_shot_count),
+                    "Keyframe prompt line count:",
+                    str(len([line for line in keyframe_prompt_lines if line])),
                 ]
             },
-            "result": (product_brief, shot_beats, anchor, keyframe_prompts, korean_story),
+            "result": (product_brief, shot_beats, anchor, keyframe_prompts, keyframe_prompt_lines, korean_story),
         }
 
 

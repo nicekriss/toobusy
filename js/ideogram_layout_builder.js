@@ -61,6 +61,27 @@ const PALETTE_PRESETS = [
     ["High contrast", ["#000000", "#FFFFFF", "#FF3B30", "#FFD60A", "#0A84FF"]],
 ];
 
+// Keep these defaults in sync with ideogram_layout_builder/nodes.py so Reset
+// matches the state of a freshly-created node.
+const DEFAULT_LAYOUT_STATE = {
+    high_level_description: "A clean editorial poster with deliberate layout.",
+    aesthetics: "clean commercial design, sharp focus, balanced negative space",
+    lighting: "soft studio lighting with gentle shadows",
+    photo: "professional product photography, 85mm lens",
+    medium: "photography",
+    global_palette: "#111111, #FFFFFF, #D8C7A3",
+    background: "minimal studio background with subtle depth and a clean surface",
+    include_global_palette: true,
+    strict_text: true,
+    reinforce_text: true,
+    elements: [],
+    resolution: {
+        preset: "square_1024",
+        width: 1024,
+        height: 1024,
+    },
+};
+
 // Text element roles. Value is sent as `role` on each element; the Python node
 // expands it into a description hint (keep keys in sync with ROLE_HINTS).
 const ROLE_PRESETS = [
@@ -1458,6 +1479,12 @@ function installEditor(node) {
         };
     }
 
+    function resetLayout() {
+        const ok = window.confirm("Reset this Layout Builder to the default empty layout?");
+        if (!ok) return;
+        applyState(JSON.parse(JSON.stringify(DEFAULT_LAYOUT_STATE)));
+    }
+
     let importDialog = null;
     function openImportPolishedDialog() {
         if (!importDialog) {
@@ -1569,6 +1596,7 @@ function installEditor(node) {
         presetBarTitle,
         presetSelectEl,
         makeButton("Import polished", "Paste a Prompt Polish / Ideogram JSON to load it (preview before it replaces the layout)", openImportPolishedDialog),
+        makeButton("Reset", "Reset this builder to a fresh empty layout", resetLayout),
         makeButton("Save", "Save current layout as a named preset", () => {
             const name = (window.prompt("Preset name:") || "").trim();
             if (!name) return;

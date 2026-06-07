@@ -7,14 +7,13 @@
 
 노드는 세 갈래로 접혀 있습니다:
 
-- **`toobusy/Plan`** — 기획·연출·프롬프트를 접는다: Keyframe Maker, Storyboard Board, Prompt Lines, Ideogram Layout Builder, Ideogram Prompt Polish
+- **`toobusy/Plan`** — 기획·연출·프롬프트를 접는다: Keyframe Maker, Storyboard Board, Ideogram Layout Builder, Ideogram Prompt Polish
 - **`toobusy/Make`** — 생성 파이프라인을 접는다: Z-Image Turbo, Ideogram4 T2I, LTX2.3 3종
 - **`toobusy/Setup`** — 셋업을 접는다: HF Model Auto Loader
 
 현재 공개 중점 노드:
 
 - `toobusy Keyframe Maker`
-- `toobusy Prompt Lines`
 - `toobusy Storyboard Board`
 - `toobusy LTX2.3` 컴팩트 워크플로우 노드들
 - `toobusy Z-Image Turbo`
@@ -49,7 +48,6 @@
 | **Ideogram4 T2I** | **로컬 Ideogram 4 모델** + ComfyUI의 Ideogram4 지원 노드(`Ideogram4Scheduler`/`CFGOverride`/`DualModelGuider` 등) + UNET 2개(model/uncond) + `ideogram4` CLIP | **웹 API가 아닙니다.** Ideogram4 미지원 빌드에선 실행 시점에 실패합니다 |
 | **LTX2.3 (3종)** | ComfyUI에 LTX 2.3 노드셋(`LTXV*`) 설치 + LTX 모델/VAE/텍스트 인코더 | LTX 지원이 없는 환경에선 실행 시점에 실패합니다 |
 | **Storyboard Board** | (코어만) Pillow·numpy·torch | 드롭한 이미지는 `board_data`에 임베드 → 이미지가 많으면 그래프 JSON이 커집니다. 폰트는 arial→기본 폴백 |
-| **Prompt Lines** | 없음 (순수 텍스트) | — |
 | **HF Model Auto Loader** | repo id 다운로드 시 `huggingface_hub` (전체 URL 다운로드는 불필요) | `download_if_missing` 기본 꺼짐 — 켜야 실제 네트워크 다운로드가 일어납니다 |
 
 > 모델 파일은 저장소에 포함하지 않습니다. 각 모델은 ComfyUI의 해당 폴더(`diffusion_models`/`text_encoders`/`vae`/`loras`)에 직접 두세요.
@@ -108,7 +106,9 @@ toobusy/Plan
 
 - `product_brief`: 생성된 참조 브리프의 호환용 이름. 제품 모드가 아닐 때는 인물/비주얼 브리프입니다.
 - `shot_beats`
+- `visual_anchor`
 - `keyframe_prompts`
+- `keyframe_prompt_line`: `keyframe_prompts`를 줄 단위로 나눈 리스트 출력입니다. 앞뒤 공백과 빈 줄은 기본으로 제거되며, 프롬프트/문자열 입력에 연결하면 한 줄씩 하위 노드를 실행합니다.
 - `korean_story`
 
 내부 흐름:
@@ -130,30 +130,6 @@ product_image + mode -> 참조 브리프
 프런트엔드는 텍스트 입력 후에도 노드가 읽기 쉽도록 toobusy 색조의 입력 가이드와 요약 패널을 덧붙입니다.
 
 실행 후에는 `Use generated brief as override` / `Use generated shot beats as override` 버튼으로 방금 생성된 브리프·샷 비트를 해당 오버라이드 칸에 그대로 복사할 수 있습니다. 비싼 초기 단계를 고정해두고 이후 단계만 다시 생성하며 반복 작업할 때 유용합니다.
-
-### toobusy Prompt Lines
-
-카테고리:
-
-```text
-toobusy/Plan
-```
-
-여러 줄 텍스트를 한 줄씩 프롬프트 항목으로 분리합니다. 덕분에 별도의 PromptLine 류 커스텀 노드 없이도 `toobusy Keyframe Maker.keyframe_prompts`를 바로 사용할 수 있습니다.
-
-입력:
-
-- `source`: 분리할 여러 줄 텍스트.
-- `start_index`: 사용할 첫 줄 인덱스(0부터 시작).
-- `max_rows`: 출력할 최대 줄 수.
-- `remove_empty_lines`: 슬라이싱 전에 빈 줄을 제거합니다.
-- `strip_lines`: 각 줄의 앞뒤 공백을 제거합니다.
-
-출력:
-
-- `line`: 리스트 출력. 프롬프트/문자열 입력에 연결하면 선택된 각 줄마다 하위 노드를 한 번씩 실행합니다.
-- `text`: 선택된 줄들을 다시 하나의 여러 줄 문자열로 합친 값.
-- `count`: 선택된 비어 있지 않은 줄 수.
 
 ### toobusy Storyboard Board
 

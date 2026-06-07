@@ -2,6 +2,17 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [0.2.4] - 2026-06-07
+
+### Changed
+- Keyframe Maker에 `keyframe_prompt_line` 리스트 출력을 추가했습니다. 기존
+  `keyframe_prompts` 여러 줄 텍스트를 앞뒤 공백 제거 + 빈 줄 제거 후 한 줄씩
+  하위 노드로 보낼 수 있습니다.
+- 별도 splitter였던 `toobusy Prompt Lines` 노드는 제거했습니다. 키프레임 프롬프트
+  분배까지 Keyframe Maker 안으로 접어, Plan 흐름의 노드 수를 줄였습니다.
+- Layout Builder에 현재 캔버스/scene/style/palette/해상도를 새 노드 기본 상태로
+  되돌리는 `Reset` 버튼을 추가했습니다. 저장된 preset은 지우지 않습니다.
+
 ## [0.2.3] - 2026-06-07
 
 ### Changed
