@@ -1,6 +1,6 @@
 [project]
 name = "toobusy"
-description = "Fold tedious multi-step ComfyUI workflows into a single node — pre-production, storyboard, keyframe, and structured-prompt nodes for video generation."
+description = "toobusy folds tedious multi-step ComfyUI workflows into single production nodes."
 version = "0.1.0"
 license = { file = "LICENSE" }
 readme = "README.md"

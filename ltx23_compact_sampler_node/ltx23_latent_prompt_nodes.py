@@ -77,6 +77,13 @@ def _ltx_length(duration_seconds, frame_rate):
 
 
 class LTX23EmptyAVLatents:
+    """Folds LTX 2.3 empty audio+video latent setup into one node.
+
+    Replaces EmptyLTXVLatentVideo + LTXVEmptyLatentAudio (and, for custom audio,
+    LTXVAudioVAEEncode + SolidMask + SetLatentNoiseMask). Requires the LTX 2.3
+    (LTXV*) node set installed.
+    """
+
     @classmethod
     def INPUT_TYPES(cls):
         return {
