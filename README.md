@@ -21,6 +21,22 @@
 
 이 외에도 몇 개의 추가/실험적 노드(Ideogram Layout Builder, Ideogram4 T2I 포함)가 함께 등록되어 있습니다 — [추가 / 실험적 노드](#추가--실험적-노드) 참고.
 
+## 왜 "접기"인가 — Before → After
+
+설치하면 **기존 그래프가 짧아집니다.** 그게 toobusy의 약속입니다.
+
+| 노드 | Before (직접 배선) | After |
+|---|---|---|
+| **Z-Image Turbo** | UNET·CLIP·VAE 로더 + (LoRA×N) + ModelSamplingAuraFlow + CLIPTextEncode×2 + EmptyLatentImage + KSampler + VAEDecode — 약 10노드 | **1 노드** |
+| **Ideogram4 T2I** | 로더 4 + 인코딩 + ConditioningZeroOut + CFGOverride + DualModelGuider + RandomNoise + KSamplerSelect + Ideogram4Scheduler + EmptyLatent + SamplerCustomAdvanced + VAEDecode — 약 13노드 | **1 노드** |
+| **LTX2.3 Compact AV Sampler** | RandomNoise + ConcatAVLatent + CFGGuider + KSamplerSelect + ManualSigmas + SamplerCustomAdvanced + SeparateAVLatent + CropGuides — 8노드 | **1 노드** |
+| **LTX2.3 Empty AV Latents** | EmptyLTXVLatentVideo + LTXVEmptyLatentAudio (+커스텀 오디오: AudioVAEEncode + SolidMask + SetLatentNoiseMask) | **1 노드** |
+| **Keyframe Maker** | 브리프 → 샷 비트 → 비주얼 앵커 → 키프레임 → 스토리, 5단계 수동 프롬프팅 | **1 노드** |
+| **Storyboard Board** | 외부 화이트보드 앱 + 캡처 + 임포트 | **노드 안에서 바로** |
+| **Ideogram Layout Builder** | 구조화 프롬프트 JSON을 손으로 작성 | **캔버스에 박스 드래그** |
+
+> 새 노드 추가 기준도 동일합니다: **"이게 귀찮은 여러 단계를 하나로 접나?"** — Yes만 들어옵니다.
+
 ## 설치
 
 이 저장소를 `ComfyUI/custom_nodes` 아래에 `toobusy`라는 이름으로 클론한 뒤 ComfyUI를 재시작하세요.
