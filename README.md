@@ -5,6 +5,18 @@
 
 > **Fold the graph.** — toobusy folds tedious multi-step ComfyUI workflows into single production nodes.
 
+<p align="center">
+  <img src="docs/workflows/korean_scene_to_ideogram4.png" width="100%" alt="toobusy 워크플로우 — 한국어 장면을 Prompt Polish → Layout Builder → Ideogram4 T2I로 접는 그래프">
+</p>
+
+<p align="center">
+  <a href="docs/workflows/sample1.jpg"><img src="docs/workflows/sample1.jpg" height="190"></a>
+  <a href="docs/workflows/sample2.jpg"><img src="docs/workflows/sample2.jpg" height="190"></a>
+  <a href="docs/workflows/sample3.jpg"><img src="docs/workflows/sample3.jpg" height="190"></a>
+  <a href="docs/workflows/sample4.jpg"><img src="docs/workflows/sample4.jpg" height="190"></a>
+</p>
+<p align="center"><sub>↑ toobusy 노드(Layout Builder · Prompt Polish · Ideogram4 T2I)로 만든 결과 — 클릭하면 원본. 워크플로우: <a href="docs/workflows/korean_scene_to_ideogram4.json">korean_scene_to_ideogram4.json</a></sub></p>
+
 노드는 세 갈래로 접혀 있습니다:
 
 - **`toobusy/Plan`** — 기획·연출·프롬프트를 접는다: Keyframe Maker, Storyboard Board, Ideogram Layout Builder, Ideogram Prompt Polish

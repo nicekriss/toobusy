@@ -17,3 +17,8 @@ Thumbs.db
 *.mp4
 *.mov
 *.psd
+
+# README/showcase images render on GitHub/Registry from the repo, so they don't
+# need to bloat the installed package (the example .json still ships).
+docs/workflows/*.png
+docs/workflows/*.jpg
