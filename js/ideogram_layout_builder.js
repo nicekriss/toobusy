@@ -465,6 +465,42 @@ function installEditor(node) {
                 color: #9fb0c0;
                 font-size: 11px;
             }
+            .toobusy-ideogram .layer-list {
+                display: flex;
+                flex-direction: column;
+                gap: 3px;
+                max-height: 220px;
+                overflow-y: auto;
+            }
+            .toobusy-ideogram .layer-row {
+                display: flex;
+                gap: 2px;
+                align-items: center;
+            }
+            .toobusy-ideogram .layer-row.active .layer-name {
+                border-color: #6f93c8;
+                background: #1d2733;
+                color: #ffffff;
+            }
+            .toobusy-ideogram .layer-name {
+                flex: 1 1 auto;
+                min-width: 0;
+                text-align: left;
+                padding: 3px 6px;
+                font-size: 11px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .toobusy-ideogram .layer-btn {
+                flex: 0 0 auto;
+                width: 22px;
+                height: 24px;
+                padding: 0;
+                font-size: 10px;
+                line-height: 1;
+            }
+            .toobusy-ideogram .layer-btn:disabled { opacity: 0.35; cursor: default; }
             .toobusy-ideogram .canvas-frame {
                 width: 100%;
                 height: 360px;
@@ -798,6 +834,7 @@ function installEditor(node) {
 
     function renderElementPanel() {
         elementPanel.replaceChildren();
+        renderLayerList();
         const heading = document.createElement("div");
         heading.className = "section-title";
         heading.textContent = "Selected element";
@@ -1116,11 +1153,84 @@ function installEditor(node) {
     sideTitle.textContent = "Info";
     const countReadout = document.createElement("div");
     countReadout.className = "count-readout";
-    sideInfo.append(sideTitle, countReadout, bboxReadout);
+    const layerTitle = document.createElement("div");
+    layerTitle.className = "section-title";
+    layerTitle.textContent = "Layers";
+    const layerList = document.createElement("div");
+    layerList.className = "layer-list";
+    sideInfo.append(sideTitle, countReadout, bboxReadout, layerTitle, layerList);
     updateCount = () => {
         countReadout.textContent = `${elements.length} box(es)`;
     };
     updateCount();
+
+    // Top-most box is drawn last (highest index); show the list top-to-bottom in
+    // that visual stacking order so clicking a row picks even an occluded box.
+    function renderLayerList() {
+        if (!layerList) return;
+        layerList.replaceChildren();
+        if (!elements.length) {
+            const empty = document.createElement("div");
+            empty.className = "panel-empty";
+            empty.textContent = "No boxes yet.";
+            layerList.appendChild(empty);
+            return;
+        }
+        for (let i = elements.length - 1; i >= 0; i--) {
+            const el = elements[i];
+            const row = document.createElement("div");
+            row.className = "layer-row" + (i === selectedIndex ? " active" : "");
+
+            const isText = !!(el.text && el.text.trim());
+            const label = `${isText ? "T" : "□"} ${el.text || el.desc || `Element ${i + 1}`}`;
+            const name = makeButton(label, "Select this box", () => {
+                selectedIndex = i;
+                renderElementPanel();
+            });
+            name.classList.add("layer-name");
+
+            const raise = makeButton("▲", "Bring forward", () => raiseElement(i));
+            const lower = makeButton("▼", "Send backward", () => lowerElement(i));
+            const del = makeButton("✕", "Delete this box", () => {
+                selectedIndex = i;
+                deleteElement();
+            });
+            for (const b of [raise, lower, del]) b.classList.add("layer-btn");
+            if (i === elements.length - 1) raise.disabled = true;
+            if (i === 0) lower.disabled = true;
+
+            row.append(name, raise, lower, del);
+            layerList.appendChild(row);
+        }
+    }
+
+    // z-order helpers: swapping array position changes draw/hit-test stacking.
+    function swapElements(a, b) {
+        if (a < 0 || b < 0 || a >= elements.length || b >= elements.length) return;
+        [elements[a], elements[b]] = [elements[b], elements[a]];
+        if (selectedIndex === a) selectedIndex = b;
+        else if (selectedIndex === b) selectedIndex = a;
+        syncElements();
+        renderElementPanel();
+        draw();
+    }
+    function raiseElement(i) { swapElements(i, i + 1); }
+    function lowerElement(i) { swapElements(i, i - 1); }
+
+    // Nudge the selected box by (dx, dy), keeping its size and staying in bounds.
+    function nudgeSelected(dx, dy) {
+        const el = selected();
+        if (!el) return;
+        const w = el.bbox[2] - el.bbox[0];
+        const h = el.bbox[3] - el.bbox[1];
+        el.bbox[0] = clamp(el.bbox[0] + dx, 0, CANVAS_SIZE - w);
+        el.bbox[1] = clamp(el.bbox[1] + dy, 0, CANVAS_SIZE - h);
+        el.bbox[2] = el.bbox[0] + w;
+        el.bbox[3] = el.bbox[1] + h;
+        bboxReadout.textContent = `bbox: [${el.bbox.join(", ")}]`;
+        syncElements();
+        draw();
+    }
 
     // ----- Presets (saved in the browser via localStorage) -----
     const PRESET_STORE_KEY = "toobusy.ideogram.presets";
@@ -1263,7 +1373,12 @@ function installEditor(node) {
 
     const DRAG_THRESHOLD = 28; // normalized units before an empty-canvas drag becomes a new box
 
+    // Make the canvas focusable so it can receive keyboard shortcuts.
+    canvas.tabIndex = 0;
+    canvas.style.outline = "none";
+
     canvas.addEventListener("pointerdown", (event) => {
+        canvas.focus();
         const pos = point(event);
         const hit = hitTest(pos);
         if (hit.index >= 0) {
@@ -1366,6 +1481,34 @@ function installEditor(node) {
         } else if (mode === "create") {
             syncElements();
             renderElementPanel();
+        }
+    });
+
+    // Keyboard shortcuts while the canvas is focused: Delete/Backspace removes
+    // the selected box, arrows nudge it (Shift = larger step), Esc deselects.
+    canvas.addEventListener("keydown", (event) => {
+        if (event.key === "Delete" || event.key === "Backspace") {
+            if (selectedIndex < 0) return;
+            event.preventDefault();
+            deleteElement();
+            return;
+        }
+        if (event.key === "Escape") {
+            if (selectedIndex < 0) return;
+            event.preventDefault();
+            selectedIndex = -1;
+            renderElementPanel();
+            return;
+        }
+        const step = event.shiftKey ? 20 : 5;
+        const nudges = {
+            ArrowUp: [0, -step], ArrowDown: [0, step],
+            ArrowLeft: [-step, 0], ArrowRight: [step, 0],
+        };
+        if (nudges[event.key]) {
+            if (selectedIndex < 0) return;
+            event.preventDefault();
+            nudgeSelected(nudges[event.key][0], nudges[event.key][1]);
         }
     });
 
