@@ -1359,9 +1359,57 @@ function installEditor(node) {
         applyResolution();
     }
 
+    // Convert a full Ideogram payload (e.g. Prompt Polish output) into the
+    // builder's internal state so it can be applied. bbox is swapped from
+    // Ideogram order [y,x,y,x] back to canvas order [x,y,x,y]. Returns null if
+    // the JSON is not a recognizable payload.
+    function payloadToState(payload) {
+        if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+        const style = payload.style_description && typeof payload.style_description === "object" ? payload.style_description : {};
+        const comp = payload.compositional_deconstruction && typeof payload.compositional_deconstruction === "object" ? payload.compositional_deconstruction : null;
+        if (!("high_level_description" in payload) && !comp) return null;
+        const rawElements = comp && Array.isArray(comp.elements) ? comp.elements : [];
+        const elements = rawElements.map((el) => {
+            if (el && Array.isArray(el.bbox) && el.bbox.length === 4) {
+                const [y1, x1, y2, x2] = el.bbox;
+                return { ...el, bbox: [x1, y1, x2, y2] };
+            }
+            return el;
+        });
+        return {
+            high_level_description: payload.high_level_description || "",
+            aesthetics: style.aesthetics || "",
+            lighting: style.lighting || "",
+            photo: style.photo || "",
+            medium: style.medium || "",
+            global_palette: Array.isArray(style.color_palette) ? style.color_palette.join(", ") : "",
+            background: (comp && comp.background) || "",
+            elements,
+        };
+    }
+
     presetBar.append(
         presetBarTitle,
         presetSelectEl,
+        makeButton("Import polished", "Paste a Prompt Polish / Ideogram JSON to load it (preview before it replaces the layout)", () => {
+            const raw = window.prompt("Paste the Prompt Polish output (ideogram_json):", "");
+            if (!raw || !raw.trim()) return;
+            let parsed;
+            try {
+                parsed = JSON.parse(raw);
+            } catch {
+                window.alert("유효한 JSON이 아닙니다.");
+                return;
+            }
+            const state = payloadToState(parsed);
+            if (!state) {
+                window.alert("Ideogram payload 형식이 아닙니다 (high_level_description / compositional_deconstruction 필요).");
+                return;
+            }
+            const scenePreview = (state.high_level_description || "(없음)").slice(0, 50);
+            const ok = window.confirm(`요소 ${state.elements.length}개 · scene: "${scenePreview}"\n\n현재 레이아웃을 이걸로 교체할까요? (지금 값은 교체 전까지 보존됩니다)`);
+            if (ok) applyState(state);
+        }),
         makeButton("Save", "Save current layout as a named preset", () => {
             const name = (window.prompt("Preset name:") || "").trim();
             if (!name) return;
