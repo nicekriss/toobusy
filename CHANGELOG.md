@@ -2,6 +2,13 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [Unreleased]
+
+### Added
+- `toobusy Ideogram4 T2I`에 Z-Image Turbo와 같은 최대 5개 **LoRA 슬롯**을 추가했습니다.
+  활성화된 슬롯은 `LoraLoader` 체인으로 conditional 모델과 CLIP에 순서대로 적용되며,
+  `ideogram4_unconditional` 모델은 원본 checkpoint를 유지합니다.
+
 ## [0.2.6] - 2026-06-08
 
 ### Fixed
