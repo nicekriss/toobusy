@@ -239,6 +239,7 @@ function makeButton(text, title, onClick) {
         event.stopPropagation();
         if (!armed) return;
         armed = false;
+        if (button.disabled) return;
         try {
             onClick();
         } catch (err) {
@@ -384,6 +385,7 @@ function makePaletteEditor(labelText, colors, onInput, count = 5, options = {}) 
     }
 
     function addSwatch(color) {
+        if (dynamic && swatches.length >= maxCount) return false;
         const wrap = document.createElement("div");
         wrap.className = "color-swatch-wrap";
         const swatch = document.createElement("input");
@@ -414,12 +416,14 @@ function makePaletteEditor(labelText, colors, onInput, count = 5, options = {}) 
         }
         row.appendChild(wrap);
         updateControls();
+        return true;
     }
 
     const addColor = dynamic
         ? makeButton("+", "Add an element color", () => {
-            addSwatch(swatches[swatches.length - 1]?.dataset.color || "#FFFFFF");
-            emit();
+            if (addSwatch(swatches[swatches.length - 1]?.dataset.color || "#FFFFFF")) {
+                emit();
+            }
             updateControls();
         })
         : null;
