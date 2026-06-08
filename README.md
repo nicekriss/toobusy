@@ -368,7 +368,10 @@ RandomNoise -> LTXVConcatAVLatent -> CFGGuider -> KSamplerSelect -> ManualSigmas
   방향키 이동 · Shift로 크게 이동, Esc 선택 해제)를 제공합니다. **Import polished**는
   Prompt Polish의 `ideogram_json`을 큰 붙여넣기 모달에서 JSON 파싱/형식 검증과
   scene·요소 수 미리보기까지 확인한 뒤, `Apply`를 눌렀을 때만 현재 캔버스와
-  scene/style/background/palette 필드를 교체합니다.
+  scene/style/background/palette 필드를 교체합니다. 같은 모달의 **Load PNG**는
+  ComfyUI PNG metadata(`prompt`/`workflow` 등)에 들어있는 Prompt Polish / Ideogram
+  JSON을 찾아 같은 preview→Apply 흐름으로 불러옵니다. 기본 캔버스는 Ideogram4
+  레이아웃 품질을 우선해 2K 정사각형(`2048 x 2048`)입니다.
 - `ideogram4_t2i_node` (`toobusy Ideogram4 T2I`) — 프롬프트로부터 로컬 Ideogram 4
   모델(CLIP `ideogram4`, `Ideogram4Scheduler`)을 실행합니다. Layout Builder의 JSON
   프롬프트와 `width`/`height`를 그대로 받습니다.

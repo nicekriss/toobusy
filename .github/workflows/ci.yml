@@ -23,7 +23,6 @@ jobs:
             ideogram_layout_builder \
             keyframe_maker_node \
             ltx23_compact_sampler_node \
-            prompt_lines_node \
             storyboard_board_node \
             z_image_turbo_node
 
