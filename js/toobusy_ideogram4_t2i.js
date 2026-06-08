@@ -26,6 +26,7 @@ function loraSlotWidgets(node, slot) {
         findWidget(node, `lora_${slot}_enable`),
         findWidget(node, `lora_${slot}_name`),
         findWidget(node, `lora_${slot}_strength`),
+        node[`_toobusyRemoveLora${slot}`],
     ];
 }
 
@@ -42,6 +43,43 @@ function setActiveSlotCount(node, count) {
     updateLoraSlots(node);
 }
 
+// Copy one slot's three values into another (used to compact slots upward when
+// a slot in the middle is removed).
+function copyLoraSlot(node, from, to) {
+    for (const field of ["enable", "name", "strength"]) {
+        const src = findWidget(node, `lora_${from}_${field}`);
+        const dst = findWidget(node, `lora_${to}_${field}`);
+        if (src && dst) {
+            dst.value = src.value;
+            dst.callback?.(dst.value);
+        }
+    }
+}
+
+function clearLoraSlot(node, slot) {
+    const defaults = { enable: false, name: "None", strength: 1.0 };
+    for (const [field, value] of Object.entries(defaults)) {
+        const widget = findWidget(node, `lora_${slot}_${field}`);
+        if (widget) {
+            widget.value = value;
+            widget.callback?.(value);
+        }
+    }
+}
+
+// Remove a specific slot: slots below it shift up to fill the gap, the freed
+// last slot is reset to defaults, and the active count drops by one. This makes
+// removal intuitive — you remove the LoRA you actually see, not just the last.
+function removeLoraSlot(node, slot) {
+    const count = activeSlotCount(node);
+    if (slot < 1 || slot > count) return;
+    for (let k = slot; k < count; k += 1) {
+        copyLoraSlot(node, k + 1, k);
+    }
+    clearLoraSlot(node, count);
+    setActiveSlotCount(node, count - 1);
+}
+
 function updateLoraSlots(node) {
     const count = activeSlotCount(node);
     for (let slot = 1; slot <= MAX_LORA_SLOTS; slot += 1) {
@@ -53,9 +91,6 @@ function updateLoraSlots(node) {
 
     if (node._toobusyAddLoraBtn) {
         node._toobusyAddLoraBtn.name = count >= MAX_LORA_SLOTS ? "LoRA slots full" : "Add LoRA slot";
-    }
-    if (node._toobusyRemoveLoraBtn) {
-        node._toobusyRemoveLoraBtn.name = count <= 0 ? "No LoRA slots" : "Remove LoRA slot";
     }
 
     node.setDirtyCanvas?.(true, true);
@@ -81,14 +116,27 @@ app.registerExtension({
                 };
             }
 
+            // A per-slot remove button placed directly under each slot, so you
+            // remove the LoRA you can see (not just the highest-numbered one).
+            for (let slot = 1; slot <= MAX_LORA_SLOTS; slot += 1) {
+                const button = this.addWidget("button", `✕ Remove LoRA ${slot}`, "remove", () => {
+                    removeLoraSlot(this, slot);
+                }, { serialize: false });
+                this[`_toobusyRemoveLora${slot}`] = button;
+                // addWidget appends to the end; move the button right after this
+                // slot's strength widget so it sits with its slot.
+                const widgets = this.widgets;
+                const fromIndex = widgets.indexOf(button);
+                if (fromIndex >= 0) widgets.splice(fromIndex, 1);
+                const strength = findWidget(this, `lora_${slot}_strength`);
+                const insertAt = strength ? widgets.indexOf(strength) + 1 : widgets.length;
+                widgets.splice(insertAt, 0, button);
+            }
+
+            // "Add LoRA slot" stays at the bottom of the LoRA stack.
             this._toobusyAddLoraBtn = this.addWidget("button", "Add LoRA slot", "add", () => {
                 if (activeSlotCount(this) >= MAX_LORA_SLOTS) return;
                 setActiveSlotCount(this, activeSlotCount(this) + 1);
-            }, { serialize: false });
-
-            this._toobusyRemoveLoraBtn = this.addWidget("button", "No LoRA slots", "remove", () => {
-                if (activeSlotCount(this) <= 0) return;
-                setActiveSlotCount(this, activeSlotCount(this) - 1);
             }, { serialize: false });
 
             updateLoraSlots(this);
