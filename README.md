@@ -42,14 +42,21 @@
 - **`toobusy/Make`** — 생성 파이프라인을 접는다: Z-Image Turbo, Ideogram4 T2I, LTX2.3 3종
 - **`toobusy/Setup`** — 셋업을 접는다: HF Model Auto Loader
 
-현재 공개 중점 노드:
+현재 대표 흐름:
+
+- `toobusy Ideogram Prompt Polish`
+- `toobusy Ideogram Layout Builder`
+- `toobusy Ideogram4 T2I`
+
+한국어 장면을 입력하면, Ideogram용 구조화 프롬프트로 정리하고, Layout Builder에서 박스와 구도를 확인한 뒤, 로컬 Ideogram4 모델로 이미지를 생성하는 흐름입니다.
+
+함께 쓰기 좋은 노드:
 
 - `toobusy Keyframe Maker`
 - `toobusy Storyboard Board`
-- `toobusy LTX2.3` 컴팩트 워크플로우 노드들
 - `toobusy Z-Image Turbo`
-
-이 외에도 몇 개의 추가/실험적 노드(Ideogram Layout Builder, Ideogram4 T2I 포함)가 함께 등록되어 있습니다 — [추가 / 실험적 노드](#추가--실험적-노드) 참고.
+- `toobusy LTX2.3` 컴팩트 노드들
+- `toobusy HF Model Auto Loader`
 
 ## 왜 "접기"인가 — Before → After
 
@@ -87,7 +94,7 @@
 
 `docs/workflows/`에 "열면 돌아가는" 워크플로우를 둡니다.
 
-- [`korean_scene_to_ideogram4.json`](docs/workflows/korean_scene_to_ideogram4.json) — **한국어 장면 → Prompt Polish → (Import polished로) Layout Builder → Ideogram4 T2I.** 한국어 한 줄이 영어 구조화 프롬프트 + 레이아웃 + 이미지로 흐르는 흐름입니다. 필요한 모델 링크는 워크플로우 안 Note 노드에 있습니다.
+- [`korean_scene_to_ideogram4.json`](docs/workflows/korean_scene_to_ideogram4.json) — **한국어 장면 → Prompt Polish → (Import polished로) Layout Builder → Ideogram4 T2I.** 한국어 한 줄이 영어 구조화 프롬프트 + 레이아웃 + 이미지로 흐르는 흐름입니다. 처음 사용자는 이 워크플로우를 먼저 열어 전체 흐름을 확인하는 것을 권장합니다. 필요한 모델 링크는 워크플로우 안 Note 노드에 있습니다.
 
 ## 설치
 
@@ -106,6 +113,29 @@ git pull
 ```
 
 프런트엔드(JS) 변경을 받은 뒤에는 ComfyUI를 재시작하고 브라우저를 강력 새로고침(hard refresh) 하세요.
+
+## 3분 첫 실행 루트
+
+처음 설치했다면 예제 워크플로우부터 여는 것을 추천합니다.
+
+1. ComfyUI에서 `docs/workflows/korean_scene_to_ideogram4.json`을 드래그해 엽니다.
+2. 워크플로우 안의 Note 노드에 적힌 모델 파일과 필요한 커스텀 노드를 준비합니다.
+3. `toobusy Ideogram Prompt Polish`에 한국어 장면을 입력합니다.
+4. 출력된 `ideogram_json`을 복사합니다.
+5. `Ideogram Layout Builder`의 `Import polished`를 눌러 붙여넣고, preview를 확인한 뒤 `Apply`합니다.
+6. 박스/색상/구도를 필요하면 수정합니다.
+7. `toobusy Ideogram4 T2I`로 이미지를 생성합니다.
+
+핵심 흐름은 이렇습니다:
+
+```text
+한국어 장면
+-> Ideogram용 구조화 프롬프트
+-> Layout Builder에서 구도 확인
+-> Ideogram4 이미지 생성
+```
+
+`Ideogram4 T2I`는 웹 API가 아니라 로컬 Ideogram4 모델용 노드입니다. 해당 모델과 ComfyUI의 Ideogram4 지원 노드가 준비되어 있어야 합니다.
 
 ## 활성 노드
 
@@ -352,9 +382,9 @@ RandomNoise -> LTXVConcatAVLatent -> CFGGuider -> KSamplerSelect -> ManualSigmas
 
 노드는 샘플링 후 항상 `LTXVCropGuides`를 실행하여 latent이 이어지기 전에 가이드 프레임을 제거합니다.
 
-## 추가 / 실험적 노드
+## 기타 노드 상세 메모
 
-아래 노드들도 `NODE_CLASS_MAPPINGS`를 통해 등록되어 있어 노드 메뉴에 나타나지만, 위의 핵심 노드들보다는 완성도가 낮습니다:
+아래는 설치하면 함께 등록되는 노드들의 상세 메모입니다. 상단 대표 흐름에서 바로 쓰는 노드와, 다른 흐름을 보조하는 노드를 함께 정리합니다:
 
 - `hf_model_auto_loader` — ComfyUI 모델 폴더에서 요청한 모델을 찾고, 없으면 선택적으로
   Hugging Face에서 내려받습니다. `download_if_missing`은 **기본값이 꺼짐(False)** 이라
