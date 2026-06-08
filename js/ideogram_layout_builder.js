@@ -1040,11 +1040,13 @@ function installEditor(node) {
         }
 
         const hasColors = Array.isArray(element.color_palette) && element.color_palette.length > 0;
+        let clearColors = null;
         const elementPalette = makePaletteEditor(
             hasColors ? "Element colors" : "Element colors (optional, unset)",
             parseColors(element.color_palette, []),
             (colors) => {
                 element.color_palette = colors;
+                if (clearColors) clearColors.disabled = colors.length === 0;
                 syncElements();
                 draw();
             },
@@ -1053,7 +1055,7 @@ function installEditor(node) {
         );
 
         // Reset this element's palette to "unset" (omitted from the output JSON).
-        const clearColors = makeButton("Clear colors", "Reset this element's colors to unset", () => {
+        clearColors = makeButton("Clear colors", "Reset this element's colors to unset", () => {
             element.color_palette = [];
             syncElements();
             renderElementPanel();
