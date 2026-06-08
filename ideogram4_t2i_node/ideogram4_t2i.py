@@ -15,6 +15,8 @@ RATIO_PRESETS = {
     "9:21": (9, 21),
 }
 
+MAX_LORA_SLOTS = 5
+
 # Ideogram 4 sampling presets (steps, mu, std) — values taken from the official
 # Ideogram4 text-to-image workflow's preset table.
 QUALITY_PRESETS = {
@@ -76,6 +78,10 @@ def _vae_names():
     return _folder_list("vae", ["flux2-vae.safetensors"])
 
 
+def _lora_names():
+    return ["None"] + _folder_list("loras", [])
+
+
 def _round_to_16(value):
     return max(256, min(2048, int(round(value / 16)) * 16))
 
@@ -101,9 +107,10 @@ class ToobusyIdeogram4T2I:
         diffusion_names = _diffusion_model_names()
         clip_names = _clip_names()
         vae_names = _vae_names()
+        lora_names = _lora_names()
         sampler_names = _sampler_names()
 
-        return {
+        inputs = {
             "required": {
                 "model_name": (
                     diffusion_names,
@@ -136,6 +143,7 @@ class ToobusyIdeogram4T2I:
                     {"default": "res_multistep" if "res_multistep" in sampler_names else sampler_names[0]},
                 ),
                 "cfg": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 100.0, "step": 0.1}),
+                "lora_slots": ("INT", {"default": 0, "min": 0, "max": MAX_LORA_SLOTS}),
             },
             "optional": {
                 "width": (
@@ -156,6 +164,17 @@ class ToobusyIdeogram4T2I:
             },
         }
 
+        required = inputs["required"]
+        for slot in range(1, MAX_LORA_SLOTS + 1):
+            required[f"lora_{slot}_enable"] = ("BOOLEAN", {"default": False})
+            required[f"lora_{slot}_name"] = (lora_names, {"default": "None"})
+            required[f"lora_{slot}_strength"] = (
+                "FLOAT",
+                {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01},
+            )
+
+        return inputs
+
     RETURN_TYPES = ("IMAGE", "LATENT", "INT", "INT")
     RETURN_NAMES = ("image", "latent", "width", "height")
     FUNCTION = "generate"
@@ -175,6 +194,7 @@ class ToobusyIdeogram4T2I:
         seed,
         sampler_name,
         cfg,
+        lora_slots,
         width=0,
         height=0,
         mu=0.5,
@@ -182,6 +202,7 @@ class ToobusyIdeogram4T2I:
         cfg_override=3.0,
         cfg_override_start=0.9,
         cfg_override_end=1.0,
+        **lora_kwargs,
     ):
         if quality == "Custom":
             preset_steps = int(steps) if int(steps) > 0 else 20
@@ -205,6 +226,21 @@ class ToobusyIdeogram4T2I:
         model_uncond = _call_node("UNETLoader", unet_name=unconditional_model_name, weight_dtype="default")[0]
         clip = _call_node("CLIPLoader", clip_name=clip_name, type="ideogram4", device="default")[0]
         vae = _call_node("VAELoader", vae_name=vae_name)[0]
+
+        lora_slots = max(0, min(MAX_LORA_SLOTS, int(lora_slots)))
+        for slot in range(1, lora_slots + 1):
+            enabled = lora_kwargs.get(f"lora_{slot}_enable", False)
+            lora_name = lora_kwargs.get(f"lora_{slot}_name", "None")
+            lora_strength = float(lora_kwargs.get(f"lora_{slot}_strength", 1.0))
+            if enabled and lora_name != "None":
+                model, clip = _call_node(
+                    "LoraLoader",
+                    model=model,
+                    clip=clip,
+                    lora_name=lora_name,
+                    strength_model=lora_strength,
+                    strength_clip=lora_strength,
+                )
 
         # Conditioning (asymmetric CFG: negative is a zeroed-out copy of positive)
         positive = _call_node("CLIPTextEncode", clip=clip, text=prompt)[0]

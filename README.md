@@ -51,7 +51,7 @@
 | 노드 | Before (직접 배선) | After |
 |---|---|---|
 | **Z-Image Turbo** | UNET·CLIP·VAE 로더 + (LoRA×N) + ModelSamplingAuraFlow + CLIPTextEncode×2 + EmptyLatentImage + KSampler + VAEDecode — 약 10노드 | **1 노드** |
-| **Ideogram4 T2I** | 로더 4 + 인코딩 + ConditioningZeroOut + CFGOverride + DualModelGuider + RandomNoise + KSamplerSelect + Ideogram4Scheduler + EmptyLatent + SamplerCustomAdvanced + VAEDecode — 약 13노드 | **1 노드** |
+| **Ideogram4 T2I** | 로더 4 + 선택적 LoRA 체인 + 인코딩 + ConditioningZeroOut + CFGOverride + DualModelGuider + RandomNoise + KSamplerSelect + Ideogram4Scheduler + EmptyLatent + SamplerCustomAdvanced + VAEDecode — 약 13노드+ | **1 노드** |
 | **LTX2.3 Compact AV Sampler** | RandomNoise + ConcatAVLatent + CFGGuider + KSamplerSelect + ManualSigmas + SamplerCustomAdvanced + SeparateAVLatent + CropGuides — 8노드 | **1 노드** |
 | **LTX2.3 Empty AV Latents** | EmptyLTXVLatentVideo + LTXVEmptyLatentAudio (+커스텀 오디오: AudioVAEEncode + SolidMask + SetLatentNoiseMask) | **1 노드** |
 | **Keyframe Maker** | 브리프 → 샷 비트 → 비주얼 앵커 → 키프레임 → 스토리, 5단계 수동 프롬프팅 | **1 노드** |
@@ -374,7 +374,10 @@ RandomNoise -> LTXVConcatAVLatent -> CFGGuider -> KSamplerSelect -> ManualSigmas
   레이아웃 품질을 우선해 2K 정사각형(`2048 x 2048`)입니다.
 - `ideogram4_t2i_node` (`toobusy Ideogram4 T2I`) — 프롬프트로부터 로컬 Ideogram 4
   모델(CLIP `ideogram4`, `Ideogram4Scheduler`)을 실행합니다. Layout Builder의 JSON
-  프롬프트와 `width`/`height`를 그대로 받습니다.
+  프롬프트와 `width`/`height`를 그대로 받습니다. Z-Image Turbo와 같은 방식의
+  **LoRA 슬롯**을 제공하며, `Add LoRA slot` / `Remove LoRA slot`으로 최대 5개까지
+  표시할 수 있습니다. 활성화된 슬롯은 conditional 모델과 CLIP에 순서대로 적용되고,
+  `ideogram4_unconditional` 모델은 원래 checkpoint를 유지합니다.
 
 ## 로드맵
 
