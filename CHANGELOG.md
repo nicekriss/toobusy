@@ -2,12 +2,27 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
-## [Unreleased]
+## [0.2.7] - 2026-06-08
 
 ### Added
 - `toobusy Ideogram4 T2I`에 Z-Image Turbo와 같은 최대 5개 **LoRA 슬롯**을 추가했습니다.
   활성화된 슬롯은 `LoraLoader` 체인으로 conditional 모델과 CLIP에 순서대로 적용되며,
   `ideogram4_unconditional` 모델은 원본 checkpoint를 유지합니다.
+
+### Changed
+- **LoRA 슬롯 삭제를 직관적으로** 개선했습니다(Ideogram4 T2I · Z-Image Turbo). 전역
+  `Remove LoRA slot`(항상 마지막 슬롯만 숨기고 값은 남김)을 **슬롯별 `✕ Remove LoRA N`**
+  버튼으로 교체 — 보고 있는 슬롯을 직접 삭제하면 아래 슬롯들이 위로 당겨지고 비워진
+  마지막 슬롯은 초기화됩니다. `Add LoRA slot`은 그대로 유지됩니다.
+- Layout Builder 요소별 색상 팔레트를 고정 3칸에서 **`+`로 최대 5색까지 동적 추가**하는
+  방식으로 바꿨습니다. 각 swatch에 제거 버튼을 제공하고, `Clear colors`는 전체 unset으로
+  되돌립니다.
+
+### Fixed
+- 요소 팔레트가 5색 한도에 도달했을 때 `+` 버튼이 비활성으로 보여도 계속 추가되던 문제를
+  막았습니다(`makeButton`의 `pointerup` 경로가 `disabled`를 존중).
+- 처음 unset 상태에서 색을 추가해도 `Clear colors`가 disabled로 남아있던 상태 갱신 버그를
+  수정했습니다.
 
 ## [0.2.6] - 2026-06-08
 
