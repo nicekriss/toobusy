@@ -9,12 +9,24 @@
   <img src="docs/workflows/korean_scene_to_ideogram4.png" width="100%" alt="toobusy 워크플로우 — 한국어 장면을 Prompt Polish → Layout Builder → Ideogram4 T2I로 접는 그래프">
 </p>
 
-<p align="center">
-  <a href="docs/workflows/sample1.jpg"><img src="docs/workflows/sample1.jpg" height="190"></a>
-  <a href="docs/workflows/sample2.jpg"><img src="docs/workflows/sample2.jpg" height="190"></a>
-  <a href="docs/workflows/sample3.jpg"><img src="docs/workflows/sample3.jpg" height="190"></a>
-  <a href="docs/workflows/sample4.jpg"><img src="docs/workflows/sample4.jpg" height="190"></a>
-</p>
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <a href="docs/workflows/sample1.jpg"><img src="docs/workflows/sample1.jpg" height="170" alt="Ideogram4 samurai action result made with toobusy"></a>
+    </td>
+    <td align="center" width="50%">
+      <a href="docs/workflows/sample2.jpg"><img src="docs/workflows/sample2.jpg" height="170" alt="Bold Korean typography result made with toobusy"></a>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <a href="docs/workflows/sample3.jpg"><img src="docs/workflows/sample3.jpg" height="170" alt="Magazine cover style result made with toobusy"></a>
+    </td>
+    <td align="center" width="50%">
+      <a href="docs/workflows/sample4.jpg"><img src="docs/workflows/sample4.jpg" height="170" alt="Game poster style result made with toobusy"></a>
+    </td>
+  </tr>
+</table>
 <p align="center"><sub>↑ toobusy 노드(Layout Builder · Prompt Polish · Ideogram4 T2I)로 만든 결과 — 클릭하면 원본. 워크플로우: <a href="docs/workflows/korean_scene_to_ideogram4.json">korean_scene_to_ideogram4.json</a></sub></p>
 
 노드는 세 갈래로 접혀 있습니다:
