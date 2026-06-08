@@ -2,6 +2,17 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [0.2.5] - 2026-06-08
+
+### Changed
+- Ideogram Layout Builder의 기본 캔버스 해상도를 `1024 x 1024`에서
+  `2048 x 2048`로 올렸습니다. 1K square preset은 보조 preset으로 남겼습니다.
+
+### Added
+- Layout Builder `Import polished` 모달에 **Load PNG**를 추가했습니다. ComfyUI PNG
+  metadata(`prompt`/`workflow` 등) 안의 Prompt Polish / Ideogram JSON payload를 찾아
+  기존 JSON 검증·미리보기·`Apply` 흐름으로 불러올 수 있습니다.
+
 ## [0.2.4] - 2026-06-07
 
 ### Added

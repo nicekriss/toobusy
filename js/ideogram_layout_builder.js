@@ -5,7 +5,8 @@ const CANVAS_SIZE = 1000;
 const MIN_BOX_SIZE = 40;
 
 const RESOLUTION_PRESETS = [
-    ["square_1024", "Square 1:1", 1024, 1024],
+    ["square_2048", "Square 2K", 2048, 2048],
+    ["square_1024", "Square 1K", 1024, 1024],
     ["portrait_9_16", "Portrait 9:16", 1024, 1792],
     ["portrait_3_4", "Portrait 3:4", 1024, 1365],
     ["portrait_2_3", "Portrait 2:3", 1024, 1536],
@@ -13,7 +14,7 @@ const RESOLUTION_PRESETS = [
     ["landscape_4_3", "Landscape 4:3", 1365, 1024],
     ["landscape_3_2", "Landscape 3:2", 1536, 1024],
     ["wide_21_9", "Wide 21:9", 2048, 878],
-    ["custom", "Custom", 1024, 1024],
+    ["custom", "Custom", 2048, 2048],
 ];
 
 const STYLE_PRESETS = [
@@ -76,9 +77,9 @@ const DEFAULT_LAYOUT_STATE = {
     reinforce_text: true,
     elements: [],
     resolution: {
-        preset: "square_1024",
-        width: 1024,
-        height: 1024,
+        preset: "square_2048",
+        width: 2048,
+        height: 2048,
     },
 };
 
@@ -412,9 +413,9 @@ function installEditor(node) {
     const widthWidget = widget(node, "width");
     const heightWidget = widget(node, "height");
     let resolution = {
-        preset: storedResolution.preset || "square_1024",
-        width: clamp(storedResolution.width || widthWidget?.value || 1024, 256, 2048),
-        height: clamp(storedResolution.height || heightWidget?.value || 1024, 256, 2048),
+        preset: storedResolution.preset || "square_2048",
+        width: clamp(storedResolution.width || widthWidget?.value || 2048, 256, 2048),
+        height: clamp(storedResolution.height || heightWidget?.value || 2048, 256, 2048),
     };
 
     const root = document.createElement("div");
@@ -700,6 +701,9 @@ function installEditor(node) {
             }
             .toobusy-ideogram .import-modal-actions {
                 justify-content: flex-end;
+            }
+            .toobusy-ideogram .import-file {
+                display: none;
             }
             .toobusy-ideogram .element {
                 display: flex;
@@ -1479,6 +1483,108 @@ function installEditor(node) {
         };
     }
 
+    function decodeBytes(bytes, encoding = "utf-8") {
+        try {
+            return new TextDecoder(encoding).decode(bytes);
+        } catch {
+            return String.fromCharCode(...bytes);
+        }
+    }
+
+    function readPngMetadata(arrayBuffer) {
+        const bytes = new Uint8Array(arrayBuffer);
+        const signature = [137, 80, 78, 71, 13, 10, 26, 10];
+        if (bytes.length < 8 || !signature.every((value, index) => bytes[index] === value)) {
+            throw new Error("PNG metadata import only supports PNG files.");
+        }
+
+        const view = new DataView(arrayBuffer);
+        const fields = [];
+        let offset = 8;
+        while (offset + 12 <= bytes.length) {
+            const length = view.getUint32(offset);
+            offset += 4;
+            const type = decodeBytes(bytes.slice(offset, offset + 4), "latin1");
+            offset += 4;
+            if (offset + length + 4 > bytes.length) break;
+            const data = bytes.slice(offset, offset + length);
+            offset += length + 4; // Skip CRC.
+
+            if (type === "tEXt") {
+                const sep = data.indexOf(0);
+                if (sep > 0) {
+                    fields.push({
+                        key: decodeBytes(data.slice(0, sep), "latin1"),
+                        value: decodeBytes(data.slice(sep + 1), "latin1"),
+                    });
+                }
+            } else if (type === "iTXt") {
+                let pos = data.indexOf(0);
+                if (pos > 0 && data[pos + 1] === 0) {
+                    const key = decodeBytes(data.slice(0, pos), "utf-8");
+                    pos += 3; // null + compression flag + compression method
+                    const languageEnd = data.indexOf(0, pos);
+                    if (languageEnd >= 0) {
+                        const translatedEnd = data.indexOf(0, languageEnd + 1);
+                        if (translatedEnd >= 0) {
+                            fields.push({
+                                key,
+                                value: decodeBytes(data.slice(translatedEnd + 1), "utf-8"),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        return fields;
+    }
+
+    function findPayloadInMetadata(value, seen = new WeakSet()) {
+        if (value && typeof value === "object") {
+            if (seen.has(value)) return null;
+            seen.add(value);
+            if (payloadToState(value)) return value;
+            const entries = Array.isArray(value) ? value : Object.values(value);
+            for (const item of entries) {
+                const found = findPayloadInMetadata(item, seen);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        if (typeof value !== "string") return null;
+        const trimmed = value.trim();
+        if (!trimmed) return null;
+        const candidates = [trimmed];
+        const firstBrace = trimmed.indexOf("{");
+        const lastBrace = trimmed.lastIndexOf("}");
+        if (firstBrace >= 0 && lastBrace > firstBrace) {
+            candidates.push(trimmed.slice(firstBrace, lastBrace + 1));
+        }
+
+        for (const candidate of candidates) {
+            try {
+                const parsed = JSON.parse(candidate);
+                const found = findPayloadInMetadata(parsed, seen);
+                if (found) return found;
+            } catch {}
+        }
+        return null;
+    }
+
+    function payloadFromPngMetadata(fields) {
+        const preferred = ["ideogram_json", "prompt", "workflow", "parameters"];
+        const ordered = [
+            ...preferred.flatMap((key) => fields.filter((field) => field.key === key)),
+            ...fields.filter((field) => !preferred.includes(field.key)),
+        ];
+        for (const field of ordered) {
+            const payload = findPayloadInMetadata(field.value);
+            if (payload) return { payload, source: field.key };
+        }
+        return null;
+    }
+
     function resetLayout() {
         const ok = window.confirm("Reset this Layout Builder to the default empty layout?");
         if (!ok) return;
@@ -1507,7 +1613,7 @@ function installEditor(node) {
 
             const subtitle = document.createElement("div");
             subtitle.className = "import-modal-subtitle";
-            subtitle.textContent = "Paste Prompt Polish ideogram_json. Nothing changes until Apply.";
+            subtitle.textContent = "Paste Prompt Polish ideogram_json, or load a PNG with ComfyUI metadata. Nothing changes until Apply.";
 
             const textarea = document.createElement("textarea");
             textarea.spellcheck = false;
@@ -1518,6 +1624,11 @@ function installEditor(node) {
 
             const actions = document.createElement("div");
             actions.className = "import-modal-actions";
+            const fileInput = document.createElement("input");
+            fileInput.type = "file";
+            fileInput.accept = "image/png";
+            fileInput.className = "import-file";
+            const imageButton = makeButton("Load PNG", "Read Ideogram JSON from PNG metadata", () => fileInput.click());
             const cancelButton = makeButton("Cancel", "Close without changing the layout", () => close());
             const applyButton = makeButton("Apply", "Replace the current layout with this parsed payload", () => {
                 if (!importDialog.state) return;
@@ -1525,9 +1636,9 @@ function installEditor(node) {
                 close();
             });
             applyButton.disabled = true;
-            actions.append(cancelButton, applyButton);
+            actions.append(imageButton, cancelButton, applyButton);
 
-            modal.append(head, subtitle, textarea, status, actions);
+            modal.append(head, subtitle, textarea, status, fileInput, actions);
             backdrop.appendChild(modal);
             root.appendChild(backdrop);
 
@@ -1567,6 +1678,26 @@ function installEditor(node) {
                 setStatus(`${fields.join("\n")}\n\nApply will replace the current canvas boxes and scene/style fields.`, false);
             };
             textarea.addEventListener("input", validate);
+            fileInput.addEventListener("change", async () => {
+                const file = fileInput.files && fileInput.files[0];
+                fileInput.value = "";
+                if (!file) return;
+                try {
+                    const fields = readPngMetadata(await file.arrayBuffer());
+                    const found = payloadFromPngMetadata(fields);
+                    if (!found) {
+                        setStatus("No Prompt Polish / Ideogram JSON payload found in this PNG metadata.", true);
+                        return;
+                    }
+                    textarea.value = JSON.stringify(found.payload, null, 2);
+                    validate();
+                    if (importDialog.state) {
+                        setStatus(`${status.textContent}\n\nLoaded from PNG metadata field: ${found.source}`, false);
+                    }
+                } catch (err) {
+                    setStatus(`Image metadata import error: ${err.message}`, true);
+                }
+            });
 
             const close = () => {
                 backdrop.hidden = true;

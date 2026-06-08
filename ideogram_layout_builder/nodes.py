@@ -258,7 +258,7 @@ class IdeogramLayoutBuilder:
                 "width": (
                     "INT",
                     {
-                        "default": 1024,
+                        "default": 2048,
                         "min": 256,
                         "max": 2048,
                         "step": 1,
@@ -267,7 +267,7 @@ class IdeogramLayoutBuilder:
                 "height": (
                     "INT",
                     {
-                        "default": 1024,
+                        "default": 2048,
                         "min": 256,
                         "max": 2048,
                         "step": 1,
