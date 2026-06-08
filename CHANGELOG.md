@@ -2,6 +2,18 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [0.2.6] - 2026-06-08
+
+### Fixed
+- Layout Builder **Load PNG**가 ComfyUI PNG metadata 전체를 재귀 검색하다가, 실제 생성에
+  연결되지 않은 예전 `PrimitiveStringMultiline` JSON을 먼저 불러올 수 있던 문제를
+  수정했습니다. 이제 ComfyUI `prompt` metadata에서는 `ToobusyIdeogram4T2I.prompt`에
+  연결된 `IdeogramLayoutBuilder` 상태를 우선 복원하고, 그 후에만 일반 JSON 탐색으로
+  fallback합니다.
+- ComfyUI에서 PNG/workflow를 열 때 저장된 Layout Builder `widgets_values`가 커스텀
+  에디터 UI에 늦게 반영되는 경우를 보완해, 캔버스 박스/scene/해상도가 저장 당시 상태로
+  다시 동기화되도록 했습니다.
+
 ## [0.2.5] - 2026-06-08
 
 ### Changed
