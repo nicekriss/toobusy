@@ -2,6 +2,7 @@ import { app } from "../../scripts/app.js";
 
 const NODE_CLASS = "IdeogramLayoutBuilder";
 const CANVAS_SIZE = 1000;
+const ELEMENT_PALETTE_MAX = 5;
 const MIN_BOX_SIZE = 40;
 
 const RESOLUTION_PRESETS = [
@@ -358,7 +359,7 @@ function parseColors(value, fallback) {
     return colors.length ? colors : fallback;
 }
 
-function makePaletteEditor(labelText, colors, onInput, count = 5) {
+function makePaletteEditor(labelText, colors, onInput, count = 5, options = {}) {
     // Use a div (not a label) so clicking empty space or the title does not
     // trigger the first color input.
     const root = document.createElement("div");
@@ -366,21 +367,31 @@ function makePaletteEditor(labelText, colors, onInput, count = 5) {
     const title = document.createElement("span");
     title.className = "palette-title";
     const row = document.createElement("div");
+    const controls = document.createElement("div");
     const swatches = [];
+    const maxCount = options.maxCount || count;
+    const dynamic = !!options.dynamic;
     title.textContent = labelText;
     row.className = "palette-row";
+    controls.className = "palette-controls";
 
     function emit() {
-        onInput(swatches.map((swatch) => swatch.dataset.color));
+        onInput(swatches.map((swatch) => swatch.dataset.color).filter(Boolean));
     }
 
-    for (let index = 0; index < count; index++) {
+    function updateControls() {
+        if (addColor) addColor.disabled = swatches.length >= maxCount;
+    }
+
+    function addSwatch(color) {
+        const wrap = document.createElement("div");
+        wrap.className = "color-swatch-wrap";
         const swatch = document.createElement("input");
         swatch.type = "color";
         swatch.id = uid("color");
         swatch.name = swatch.id;
         swatch.className = "color-swatch";
-        const initial = (colors[index] || colors[colors.length - 1] || "#FFFFFF").toUpperCase();
+        const initial = (color || colors[colors.length - 1] || "#FFFFFF").toUpperCase();
         swatch.value = initial;
         swatch.dataset.color = initial;
         swatch.title = "Pick color";
@@ -389,10 +400,43 @@ function makePaletteEditor(labelText, colors, onInput, count = 5) {
             emit();
         });
         swatches.push(swatch);
-        row.appendChild(swatch);
+        wrap.appendChild(swatch);
+        if (dynamic) {
+            const remove = makeButton("x", "Remove this color", () => {
+                const index = swatches.indexOf(swatch);
+                if (index >= 0) swatches.splice(index, 1);
+                wrap.remove();
+                emit();
+                updateControls();
+            });
+            remove.className = "color-remove";
+            wrap.appendChild(remove);
+        }
+        row.appendChild(wrap);
+        updateControls();
+    }
+
+    const addColor = dynamic
+        ? makeButton("+", "Add an element color", () => {
+            addSwatch(swatches[swatches.length - 1]?.dataset.color || "#FFFFFF");
+            emit();
+            updateControls();
+        })
+        : null;
+
+    const initialCount = dynamic ? Math.min(colors.length, maxCount) : count;
+    for (let index = 0; index < initialCount; index++) {
+        addSwatch(colors[index]);
+    }
+
+    if (dynamic) {
+        addColor.className = "palette-add";
+        controls.appendChild(addColor);
+        updateControls();
     }
 
     root.append(title, row);
+    if (dynamic) root.appendChild(controls);
     return { root, swatches };
 }
 
@@ -741,6 +785,16 @@ function installEditor(node) {
                 gap: 5px;
                 flex-wrap: wrap;
             }
+            .toobusy-ideogram .palette-controls {
+                display: flex;
+                gap: 5px;
+                align-items: center;
+            }
+            .toobusy-ideogram .color-swatch-wrap {
+                position: relative;
+                width: 34px;
+                height: 26px;
+            }
             .toobusy-ideogram .color-swatch {
                 width: 34px;
                 height: 26px;
@@ -754,6 +808,25 @@ function installEditor(node) {
             }
             .toobusy-ideogram .color-swatch::-webkit-color-swatch-wrapper { padding: 2px; }
             .toobusy-ideogram .color-swatch::-webkit-color-swatch { border: none; border-radius: 3px; }
+            .toobusy-ideogram .color-remove {
+                position: absolute;
+                top: -5px;
+                right: -5px;
+                width: 15px;
+                height: 15px;
+                padding: 0;
+                border-radius: 50%;
+                font-size: 10px;
+                line-height: 1;
+                background: #191f27;
+            }
+            .toobusy-ideogram .palette-add {
+                width: 28px;
+                height: 24px;
+                padding: 0;
+                font-size: 14px;
+                line-height: 1;
+            }
             .toobusy-ideogram .palette-preset {
                 display: grid;
                 grid-template-columns: 150px minmax(0, 1fr);
@@ -965,13 +1038,14 @@ function installEditor(node) {
         const hasColors = Array.isArray(element.color_palette) && element.color_palette.length > 0;
         const elementPalette = makePaletteEditor(
             hasColors ? "Element colors" : "Element colors (optional, unset)",
-            parseColors(element.color_palette, ["#8AB4F8", "#FFFFFF", "#111111"]),
+            parseColors(element.color_palette, []),
             (colors) => {
                 element.color_palette = colors;
                 syncElements();
                 draw();
             },
-            3,
+            0,
+            { dynamic: true, maxCount: ELEMENT_PALETTE_MAX },
         );
 
         // Reset this element's palette to "unset" (omitted from the output JSON).
