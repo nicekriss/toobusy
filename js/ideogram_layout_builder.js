@@ -1398,6 +1398,28 @@ function installEditor(node) {
         };
     }
 
+    function captureWidgetState() {
+        const stored = node.properties?.ideogram_layout_resolution || {};
+        return {
+            high_level_description: widget(node, "high_level_description")?.value || "",
+            aesthetics: widget(node, "aesthetics")?.value || "",
+            lighting: widget(node, "lighting")?.value || "",
+            photo: widget(node, "photo")?.value || "",
+            medium: widget(node, "medium")?.value || "",
+            global_palette: widget(node, "global_palette")?.value || "",
+            background: widget(node, "background")?.value || "",
+            include_global_palette: widget(node, "include_global_palette")?.value ?? true,
+            strict_text: widget(node, "strict_text")?.value ?? true,
+            reinforce_text: widget(node, "reinforce_text")?.value ?? true,
+            elements: parseElements(jsonWidget.value || "[]"),
+            resolution: {
+                preset: stored.preset || "custom",
+                width: stored.width || widthWidget?.value || DEFAULT_LAYOUT_STATE.resolution.width,
+                height: stored.height || heightWidget?.value || DEFAULT_LAYOUT_STATE.resolution.height,
+            },
+        };
+    }
+
     function applyState(state) {
         if (!state) return;
         const setScene = (name, value) => {
@@ -1454,6 +1476,12 @@ function installEditor(node) {
         applyResolution();
     }
 
+    function reloadFromWidgets() {
+        applyState(captureWidgetState());
+    }
+
+    node.__toobusyIdeogramReloadFromWidgets = reloadFromWidgets;
+
     // Convert a full Ideogram payload (e.g. Prompt Polish output) into the
     // builder's internal state so it can be applied. bbox is swapped from
     // Ideogram order [y,x,y,x] back to canvas order [x,y,x,y]. Returns null if
@@ -1480,6 +1508,55 @@ function installEditor(node) {
             global_palette: Array.isArray(style.color_palette) ? style.color_palette.join(", ") : "",
             background: (comp && comp.background) || "",
             elements,
+            resolution: payload.resolution || (payload.width && payload.height ? {
+                preset: payload.resolution_preset || "custom",
+                width: payload.width,
+                height: payload.height,
+            } : undefined),
+        };
+    }
+
+    function stateFromBuilderInputs(inputs = {}) {
+        return {
+            high_level_description: inputs.high_level_description || "",
+            aesthetics: inputs.aesthetics || "",
+            lighting: inputs.lighting || "",
+            photo: inputs.photo || "",
+            medium: inputs.medium || "",
+            global_palette: inputs.global_palette || "",
+            background: inputs.background || "",
+            include_global_palette: inputs.include_global_palette ?? true,
+            strict_text: inputs.strict_text ?? true,
+            reinforce_text: inputs.reinforce_text ?? true,
+            elements: parseElements(inputs.elements_json || "[]"),
+            resolution: {
+                preset: "custom",
+                width: inputs.width || DEFAULT_LAYOUT_STATE.resolution.width,
+                height: inputs.height || DEFAULT_LAYOUT_STATE.resolution.height,
+            },
+        };
+    }
+
+    function stateToIdeogramPayload(state) {
+        const elements = Array.isArray(state.elements) ? state.elements.map((el) => {
+            const normalized = normalizeElement(el);
+            const [x1, y1, x2, y2] = normalized.bbox;
+            return { ...normalized, bbox: [y1, x1, y2, x2] };
+        }) : [];
+        return {
+            high_level_description: state.high_level_description || "",
+            style_description: {
+                aesthetics: state.aesthetics || "",
+                lighting: state.lighting || "",
+                photo: state.photo || "",
+                medium: state.medium || "",
+                color_palette: parseColors(state.global_palette || "", []),
+            },
+            compositional_deconstruction: {
+                background: state.background || "",
+                elements,
+            },
+            resolution: state.resolution || undefined,
         };
     }
 
@@ -1539,6 +1616,100 @@ function installEditor(node) {
         return fields;
     }
 
+    function stateFromComfyPrompt(prompt) {
+        if (!prompt || typeof prompt !== "object" || Array.isArray(prompt)) return null;
+        const nodeById = prompt;
+        const builderFromInput = (input) => {
+            if (!Array.isArray(input) || input.length < 1) return null;
+            const linkedNode = nodeById[String(input[0])];
+            if (linkedNode && linkedNode.class_type === NODE_CLASS) {
+                return {
+                    state: stateFromBuilderInputs(linkedNode.inputs || {}),
+                    source: `prompt:${NODE_CLASS}#${input[0]}`,
+                };
+            }
+            return null;
+        };
+
+        for (const [nodeId, node] of Object.entries(nodeById)) {
+            if (node && node.class_type === "ToobusyIdeogram4T2I") {
+                const fromPrompt = builderFromInput(node.inputs && node.inputs.prompt);
+                if (fromPrompt) return fromPrompt;
+            }
+        }
+
+        const builders = Object.entries(nodeById)
+            .filter(([, node]) => node && node.class_type === NODE_CLASS);
+        if (builders.length === 1) {
+            const [nodeId, node] = builders[0];
+            return {
+                state: stateFromBuilderInputs(node.inputs || {}),
+                source: `prompt:${NODE_CLASS}#${nodeId}`,
+            };
+        }
+        return null;
+    }
+
+    function stateFromWorkflowBuilderNode(node) {
+        const values = Array.isArray(node.widgets_values) ? node.widgets_values : [];
+        const resolutionState = node.properties && node.properties.ideogram_layout_resolution;
+        return {
+            high_level_description: values[1] || "",
+            aesthetics: values[2] || "",
+            lighting: values[3] || "",
+            photo: values[4] || "",
+            medium: values[5] || "",
+            global_palette: values[6] || "",
+            include_global_palette: values[7] ?? true,
+            strict_text: values[8] ?? true,
+            reinforce_text: values[9] ?? true,
+            background: values[10] || "",
+            elements: parseElements(values[11] || "[]"),
+            resolution: {
+                preset: resolutionState?.preset || "custom",
+                width: values[12] || resolutionState?.width || DEFAULT_LAYOUT_STATE.resolution.width,
+                height: values[13] || resolutionState?.height || DEFAULT_LAYOUT_STATE.resolution.height,
+            },
+        };
+    }
+
+    function stateFromComfyWorkflow(workflow) {
+        if (!workflow || typeof workflow !== "object" || Array.isArray(workflow)) return null;
+        const nodes = Array.isArray(workflow.nodes) ? workflow.nodes : [];
+        const nodeById = Object.fromEntries(nodes.map((node) => [String(node.id), node]));
+        const links = Array.isArray(workflow.links) ? workflow.links : [];
+        const linkById = Object.fromEntries(links.map((link) => [String(link[0]), link]));
+        const builderFromInput = (input) => {
+            const link = input && input.link != null ? linkById[String(input.link)] : null;
+            const linkedNode = link ? nodeById[String(link[1])] : null;
+            if (linkedNode && linkedNode.type === NODE_CLASS) {
+                return {
+                    state: stateFromWorkflowBuilderNode(linkedNode),
+                    source: `workflow:${NODE_CLASS}#${linkedNode.id}`,
+                };
+            }
+            return null;
+        };
+
+        for (const node of nodes) {
+            if (node && node.type === "ToobusyIdeogram4T2I") {
+                const promptInput = (node.inputs || []).find((input) => input.name === "prompt");
+                const fromPrompt = builderFromInput(promptInput);
+                if (fromPrompt) return fromPrompt;
+            }
+        }
+
+        const builders = nodes.filter((node) => node && node.type === NODE_CLASS);
+        if (builders.length === 1) {
+            const node = builders[0];
+            return {
+                state: stateFromWorkflowBuilderNode(node),
+                source: `workflow:${NODE_CLASS}#${node.id}`,
+            };
+        }
+        return null;
+    }
+
     function findPayloadInMetadata(value, seen = new WeakSet()) {
         if (value && typeof value === "object") {
             if (seen.has(value)) return null;
@@ -1573,6 +1744,32 @@ function installEditor(node) {
     }
 
     function payloadFromPngMetadata(fields) {
+        for (const field of fields.filter((item) => item.key === "prompt")) {
+            try {
+                const prompt = JSON.parse(field.value);
+                const found = stateFromComfyPrompt(prompt);
+                if (found) {
+                    return {
+                        payload: stateToIdeogramPayload(found.state),
+                        source: found.source,
+                    };
+                }
+            } catch {}
+        }
+
+        for (const field of fields.filter((item) => item.key === "workflow")) {
+            try {
+                const workflow = JSON.parse(field.value);
+                const found = stateFromComfyWorkflow(workflow);
+                if (found) {
+                    return {
+                        payload: stateToIdeogramPayload(found.state),
+                        source: found.source,
+                    };
+                }
+            } catch {}
+        }
+
         const preferred = ["ideogram_json", "prompt", "workflow", "parameters"];
         const ordered = [
             ...preferred.flatMap((key) => fields.filter((field) => field.key === key)),
@@ -1938,9 +2135,14 @@ function installEditor(node) {
     const originalOnConfigure = node.onConfigure;
     node.onConfigure = function onConfigure() {
         const result = originalOnConfigure?.apply(this, arguments);
-        requestAnimationFrame(ensurePreferredSize);
+        requestAnimationFrame(() => {
+            reloadFromWidgets();
+            ensurePreferredSize();
+        });
         return result;
     };
+
+    setTimeout(reloadFromWidgets, 0);
 }
 
 app.registerExtension({
