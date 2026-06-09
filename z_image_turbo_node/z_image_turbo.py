@@ -155,7 +155,7 @@ class ToobusyZImageTurbo:
                 "scheduler": (scheduler_names, {"default": "simple" if "simple" in scheduler_names else scheduler_names[0]}),
                 "denoise": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "aura_shift": ("FLOAT", {"default": 3.0, "min": 0.0, "max": 20.0, "step": 0.1}),
-                "lora_slots": ("INT", {"default": 1, "min": 0, "max": MAX_LORA_SLOTS}),
+                "lora_slots": ("INT", {"default": 0, "min": 0, "max": MAX_LORA_SLOTS}),
             },
             "optional": {
                 "image": (
@@ -180,7 +180,10 @@ class ToobusyZImageTurbo:
 
         required = base["required"]
         for slot in range(1, MAX_LORA_SLOTS + 1):
-            required[f"lora_{slot}_enable"] = ("BOOLEAN", {"default": slot == 1})
+            # No LoRA auto-enabled: the node starts with zero active slots. Slot 1
+            # is still pre-filled with the recommended LoRA name so that *adding*
+            # a slot is one click, but nothing is applied until it's enabled.
+            required[f"lora_{slot}_enable"] = ("BOOLEAN", {"default": False})
             required[f"lora_{slot}_name"] = (
                 lora_names,
                 {"default": _default_lora_name(lora_names) if slot == 1 else "None"},

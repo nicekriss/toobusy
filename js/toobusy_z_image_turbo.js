@@ -311,7 +311,28 @@ app.registerExtension({
 
             // Always-visible resolution readout (sits right after the inputs,
             // above the LoRA/advanced buttons).
-            this.addWidget("text", "resolution_readout", "", () => {}, { serialize: false });
+            // Read-only resolution status line. Uses a customtext (DOM) widget
+            // with readOnly so clicking it does nothing — a plain "text" widget
+            // pops an edit prompt, which felt unfinished. Coloured to stand out
+            // as a status readout rather than an input.
+            const readout = this.addWidget("customtext", "resolution_readout", "", () => {}, { serialize: false });
+            if (readout.inputEl) {
+                const el = readout.inputEl;
+                el.readOnly = true;
+                el.style.fontSize = "12px";
+                el.style.fontWeight = "600";
+                el.style.color = "#7fc8ff";
+                el.style.textAlign = "center";
+                el.style.background = "transparent";
+                el.style.border = "none";
+                el.style.boxShadow = "none";
+                el.style.resize = "none";
+                el.style.overflow = "hidden";
+                el.style.cursor = "default";
+                el.style.minHeight = "0px";
+                el.style.height = "20px";
+                el.rows = 1;
+            }
             for (const name of ["ratio_preset", "megapixels", "divisible_by", "width", "height"]) {
                 hookReadout(this, name);
             }

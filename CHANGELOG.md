@@ -26,7 +26,13 @@
   바로 확인할 수 있게 했고(Advanced에 숨기지 않음), Advanced에는 expert 튜닝
   (`divisible_by`/`cfg`/`sampler_name`/`scheduler`/`denoise`/`aura_shift`)과 LoRA만 남겼습니다.
 - 항상 떠 있던 2줄 `folds` 설명 텍스트를 **노드 우상단 `i` info 배지 + 호버 툴팁**으로
-  교체했습니다(노드 화면을 덜 어지럽게).
+  교체했습니다(노드 화면을 덜 어지럽게). 툴팁은 노드 본문을 가리지 않도록 노드 **오른쪽
+  바깥**에 표시됩니다.
+- `toobusy Z-Image Turbo`가 더 이상 **LoRA를 자동으로 켜지 않습니다**(`lora_slots` 기본 0,
+  `lora_1_enable` 기본 False). 슬롯 1은 추천 LoRA 이름으로 미리 채워져 있어 `Add LoRA slot`
+  한 번이면 바로 쓸 수 있지만, 켜기 전에는 아무 LoRA도 적용되지 않습니다.
+- `resolution_readout`을 **클릭 불가한 표시 전용 + 강조 색**으로 바꿨습니다(클릭 시 편집
+  입력칸이 뜨던 미완성 느낌 제거).
 
 ### Fixed
 - CI byte-compile 목록에서 빠져 있던 `ideogram_prompt_polish_node`를 추가했습니다.

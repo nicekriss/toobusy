@@ -94,6 +94,12 @@ def test_exposes_image_width_height_inputs():
     assert optional["height"][0] == "INT"
 
 
+def test_no_lora_auto_enabled_by_default():
+    required = _zit.ToobusyZImageTurbo.INPUT_TYPES()["required"]
+    assert required["lora_slots"][1]["default"] == 0
+    assert required["lora_1_enable"][1]["default"] is False
+
+
 # --- text-to-image (no image) ---------------------------------------------
 
 def test_t2i_default_uses_empty_latent_from_ratio():
