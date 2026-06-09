@@ -2,6 +2,20 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [Unreleased]
+
+### Added
+- `toobusy Z-Image Turbo`와 `toobusy Ideogram4 T2I`에 **외부 모델 override 입력**을
+  추가했습니다(Z-Image: `model/clip/vae_override`, Ideogram4: `model/uncond_model/clip/vae_override`).
+  연결된 override는 해당 내부 로더(`UNETLoader`/`CLIPLoader`/`VAELoader`)를 건너뛰고,
+  비워 두면 기존처럼 이름 위젯으로 내부 로드합니다. GGUF 등 다른 로더의 MODEL/CLIP/VAE를
+  결합 없이 흘려보낼 수 있습니다. (PR #33)
+- override INPUT_TYPES 노출과 loader-skip 동작을 검증하는 회귀 테스트
+  `tests/test_model_overrides.py`를 추가하고 CI에서 실행합니다(ComfyUI 런타임 불필요).
+
+### Fixed
+- CI byte-compile 목록에서 빠져 있던 `ideogram_prompt_polish_node`를 추가했습니다.
+
 ## [0.2.7] - 2026-06-08
 
 ### Added
