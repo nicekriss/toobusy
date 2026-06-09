@@ -25,6 +25,9 @@
   (`model_name`/`clip_name`/`vae_name`)을 **기본 노출**해 초보자가 어떤 모델이 물렸는지
   바로 확인할 수 있게 했고(Advanced에 숨기지 않음), Advanced에는 expert 튜닝
   (`divisible_by`/`cfg`/`sampler_name`/`scheduler`/`denoise`/`aura_shift`)과 LoRA만 남겼습니다.
+- 모델 **override 입력 소켓**(`model_override`/`clip_override`/`vae_override`)을 Advanced에서만
+  노출하도록 바꿨습니다. 초보자에겐 불필요한 고급 입력이라 Basic에서는 숨기되, 이미 연결된
+  소켓은 절대 제거하지 않아 기존 그래프가 깨지지 않습니다. `image`(img2img) 입력은 그대로 노출.
 - 항상 떠 있던 2줄 `folds` 설명 텍스트를 **노드 우상단 `i` info 배지 + 호버 툴팁**으로
   교체했습니다(노드 화면을 덜 어지럽게). 툴팁은 노드 본문을 가리지 않도록 노드 **오른쪽
   바깥**에 표시됩니다.
