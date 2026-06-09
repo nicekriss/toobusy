@@ -142,6 +142,11 @@ class ToobusyZImageTurbo:
                 "aura_shift": ("FLOAT", {"default": 3.0, "min": 0.0, "max": 20.0, "step": 0.1}),
                 "lora_slots": ("INT", {"default": 1, "min": 0, "max": MAX_LORA_SLOTS}),
             },
+            "optional": {
+                "model_override": ("MODEL",),
+                "clip_override": ("CLIP",),
+                "vae_override": ("VAE",),
+            },
         }
 
         required = base["required"]
@@ -182,13 +187,33 @@ class ToobusyZImageTurbo:
         denoise,
         aura_shift,
         lora_slots,
+        model_override=None,
+        clip_override=None,
+        vae_override=None,
         **lora_kwargs,
     ):
         width, height = _resolution_from_megapixels(ratio_preset, megapixels, divisible_by)
 
-        model = _call_node("UNETLoader", unet_name=model_name, weight_dtype="default")[0]
-        clip = _call_node("CLIPLoader", clip_name=clip_name, type="lumina2", device="default")[0]
-        vae = _call_node("VAELoader", vae_name=vae_name)[0]
+        if model_override is not None:
+            print("[toobusy Z-Image Turbo] Using external MODEL override. Internal model loader ignored.")
+            model = model_override
+        else:
+            print("[toobusy Z-Image Turbo] Using internal MODEL loader.")
+            model = _call_node("UNETLoader", unet_name=model_name, weight_dtype="default")[0]
+
+        if clip_override is not None:
+            print("[toobusy Z-Image Turbo] Using external CLIP override. Internal CLIP loader ignored.")
+            clip = clip_override
+        else:
+            print("[toobusy Z-Image Turbo] Using internal CLIP loader.")
+            clip = _call_node("CLIPLoader", clip_name=clip_name, type="lumina2", device="default")[0]
+
+        if vae_override is not None:
+            print("[toobusy Z-Image Turbo] Using external VAE override. Internal VAE loader ignored.")
+            vae = vae_override
+        else:
+            print("[toobusy Z-Image Turbo] Using internal VAE loader.")
+            vae = _call_node("VAELoader", vae_name=vae_name)[0]
 
         lora_slots = max(0, min(MAX_LORA_SLOTS, int(lora_slots)))
         for slot in range(1, lora_slots + 1):

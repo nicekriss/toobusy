@@ -146,6 +146,10 @@ class ToobusyIdeogram4T2I:
                 "lora_slots": ("INT", {"default": 0, "min": 0, "max": MAX_LORA_SLOTS}),
             },
             "optional": {
+                "model_override": ("MODEL",),
+                "uncond_model_override": ("MODEL",),
+                "clip_override": ("CLIP",),
+                "vae_override": ("VAE",),
                 "width": (
                     "INT",
                     {"default": 0, "min": 0, "max": 2048, "step": 16,
@@ -202,6 +206,10 @@ class ToobusyIdeogram4T2I:
         cfg_override=3.0,
         cfg_override_start=0.9,
         cfg_override_end=1.0,
+        model_override=None,
+        uncond_model_override=None,
+        clip_override=None,
+        vae_override=None,
         **lora_kwargs,
     ):
         if quality == "Custom":
@@ -221,11 +229,35 @@ class ToobusyIdeogram4T2I:
         else:
             width, height = _resolution(ratio_preset, megapixels)
 
-        # Loaders
-        model = _call_node("UNETLoader", unet_name=model_name, weight_dtype="default")[0]
-        model_uncond = _call_node("UNETLoader", unet_name=unconditional_model_name, weight_dtype="default")[0]
-        clip = _call_node("CLIPLoader", clip_name=clip_name, type="ideogram4", device="default")[0]
-        vae = _call_node("VAELoader", vae_name=vae_name)[0]
+        # Loaders. External overrides let advanced users feed MODEL/CLIP/VAE
+        # objects from any compatible ComfyUI loader without coupling to it.
+        if model_override is not None:
+            print("[toobusy Ideogram4 T2I] Using external MODEL override. Internal model loader ignored.")
+            model = model_override
+        else:
+            print("[toobusy Ideogram4 T2I] Using internal MODEL loader.")
+            model = _call_node("UNETLoader", unet_name=model_name, weight_dtype="default")[0]
+
+        if uncond_model_override is not None:
+            print("[toobusy Ideogram4 T2I] Using external unconditional MODEL override. Internal unconditional model loader ignored.")
+            model_uncond = uncond_model_override
+        else:
+            print("[toobusy Ideogram4 T2I] Using internal unconditional MODEL loader.")
+            model_uncond = _call_node("UNETLoader", unet_name=unconditional_model_name, weight_dtype="default")[0]
+
+        if clip_override is not None:
+            print("[toobusy Ideogram4 T2I] Using external CLIP override. Internal CLIP loader ignored.")
+            clip = clip_override
+        else:
+            print("[toobusy Ideogram4 T2I] Using internal CLIP loader.")
+            clip = _call_node("CLIPLoader", clip_name=clip_name, type="ideogram4", device="default")[0]
+
+        if vae_override is not None:
+            print("[toobusy Ideogram4 T2I] Using external VAE override. Internal VAE loader ignored.")
+            vae = vae_override
+        else:
+            print("[toobusy Ideogram4 T2I] Using internal VAE loader.")
+            vae = _call_node("VAELoader", vae_name=vae_name)[0]
 
         lora_slots = max(0, min(MAX_LORA_SLOTS, int(lora_slots)))
         for slot in range(1, lora_slots + 1):
