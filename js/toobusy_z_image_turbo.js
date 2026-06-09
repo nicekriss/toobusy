@@ -18,12 +18,18 @@ const ADVANCED_WIDGETS = [
     "aura_shift",
 ];
 
-// Shown in the hover tooltip behind the top-right info badge (replaces the old
-// always-on "folds" text row).
+// toobusy signature accent — one calm blue tying the readout, the info badge,
+// and the tooltip title together so the node reads as one family.
+const ACCENT = "#7fc8ff";
+
+// Hover tooltip behind the top-right info badge (replaces the old always-on
+// "folds" text row): a title, the fold description, then a quiet signature.
+const INFO_TITLE = "toobusy · Z-Image Turbo";
 const INFO_TEXT =
     "Folds ~10 nodes into one: UNET + CLIP + VAE loaders + (LoRA) -> " +
     "ModelSamplingAuraFlow -> CLIPTextEncode x2 -> EmptyLatentImage " +
     "(or VAEEncode when an image is connected, i.e. img2img) -> KSampler -> VAEDecode.";
+const INFO_SIGNATURE = "fold the graph — 너무바쁜베짱이";
 
 // Mirror of z_image_turbo.py RATIO_PRESETS / _resolution_from_megapixels so the
 // node can show the dimensions it will generate before the graph is queued.
@@ -87,7 +93,7 @@ function drawInfoBadge(node, ctx) {
     ctx.save();
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = node._toobusyInfoHover ? "#5b9dff" : "#6b7785";
+    ctx.fillStyle = node._toobusyInfoHover ? ACCENT : "#6b7785";
     ctx.fill();
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 10px sans-serif";
@@ -101,16 +107,24 @@ function drawInfoBadge(node, ctx) {
     }
 
     ctx.save();
-    ctx.font = "11px sans-serif";
-    const pad = 8;
+    const pad = 9;
     const maxTextW = 250;
     const lineH = 15;
+    const titleH = 17;
+    const dividerGap = 9;
+    const footerH = 15;
+
+    ctx.font = "11px sans-serif";
     const lines = wrapText(ctx, INFO_TEXT, maxTextW);
     const boxW = maxTextW + pad * 2;
-    const boxH = lines.length * lineH + pad * 2;
-    let bx = cx + r - boxW;            // right-align the box under the badge
-    if (bx < 4) bx = 4;
-    const by = cy + r + 6;            // drop just below the badge into the body
+    const boxH = pad + titleH + lines.length * lineH + dividerGap + footerH + pad;
+
+    // Float the tooltip OUTSIDE the node — to the right of its right edge —
+    // so it never covers the node's own inputs/widgets. onDrawForeground is
+    // not clipped to the node body, so out-of-bounds coords render fine.
+    const bx = node.size[0] + 12;
+    const by = cy;                   // align the box top with the badge, extend down
+
     ctx.fillStyle = "rgba(20, 26, 32, 0.96)";
     ctx.strokeStyle = "#2d3642";
     ctx.lineWidth = 1;
@@ -122,10 +136,35 @@ function drawInfoBadge(node, ctx) {
     }
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = "#d6dde5";
+
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
-    lines.forEach((ln, i) => ctx.fillText(ln, bx + pad, by + pad + i * lineH));
+    let y = by + pad;
+
+    // Title (accent) — the node's name as a small header.
+    ctx.fillStyle = ACCENT;
+    ctx.font = "bold 11px sans-serif";
+    ctx.fillText(INFO_TITLE, bx + pad, y);
+    y += titleH;
+
+    // Body — what the one node folds.
+    ctx.fillStyle = "#cfd6de";
+    ctx.font = "11px sans-serif";
+    lines.forEach((ln, i) => ctx.fillText(ln, bx + pad, y + i * lineH));
+    y += lines.length * lineH + dividerGap * 0.5;
+
+    // Thin divider.
+    ctx.strokeStyle = "#2d3642";
+    ctx.beginPath();
+    ctx.moveTo(bx + pad, y);
+    ctx.lineTo(bx + boxW - pad, y);
+    ctx.stroke();
+    y += dividerGap * 0.5;
+
+    // Quiet signature — the toobusy identity, one line, dim.
+    ctx.fillStyle = "#6b7785";
+    ctx.font = "italic 10px sans-serif";
+    ctx.fillText(INFO_SIGNATURE, bx + pad, y);
     ctx.restore();
 }
 
@@ -309,7 +348,28 @@ app.registerExtension({
 
             // Always-visible resolution readout (sits right after the inputs,
             // above the LoRA/advanced buttons).
-            this.addWidget("text", "resolution_readout", "", () => {}, { serialize: false });
+            // Read-only resolution status line. Uses a customtext (DOM) widget
+            // with readOnly so clicking it does nothing — a plain "text" widget
+            // pops an edit prompt, which felt unfinished. Coloured to stand out
+            // as a status readout rather than an input.
+            const readout = this.addWidget("customtext", "resolution_readout", "", () => {}, { serialize: false });
+            if (readout.inputEl) {
+                const el = readout.inputEl;
+                el.readOnly = true;
+                el.style.fontSize = "12px";
+                el.style.fontWeight = "600";
+                el.style.color = ACCENT;
+                el.style.textAlign = "center";
+                el.style.background = "transparent";
+                el.style.border = "none";
+                el.style.boxShadow = "none";
+                el.style.resize = "none";
+                el.style.overflow = "hidden";
+                el.style.cursor = "default";
+                el.style.minHeight = "0px";
+                el.style.height = "20px";
+                el.rows = 1;
+            }
             for (const name of ["ratio_preset", "megapixels", "divisible_by", "width", "height"]) {
                 hookReadout(this, name);
             }
