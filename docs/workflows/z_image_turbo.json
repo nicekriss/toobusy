@@ -1,0 +1,221 @@
+{
+  "id": "30b8b0e3-b55f-4f21-8291-544840ecb571",
+  "revision": 0,
+  "last_node_id": 10,
+  "last_link_id": 9,
+  "nodes": [
+    {
+      "id": 2,
+      "type": "SaveImage",
+      "pos": [
+        8815.52909855564,
+        508.15618793120547
+      ],
+      "size": [
+        382.23593536726366,
+        506.4665508501121
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 8
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "ComfyUI"
+      ]
+    },
+    {
+      "id": 7,
+      "type": "ToobusyZImageTurbo",
+      "pos": [
+        8215.635207405114,
+        302.9116031586731
+      ],
+      "size": [
+        435.12282231445715,
+        984
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "model_override",
+          "type": "MODEL",
+          "link": null
+        },
+        {
+          "name": "clip_override",
+          "type": "CLIP",
+          "link": null
+        },
+        {
+          "name": "vae_override",
+          "type": "VAE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            8
+          ]
+        },
+        {
+          "name": "latent",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "width",
+          "type": "INT",
+          "links": null
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ToobusyZImageTurbo",
+        "toobusy_advanced": true
+      },
+      "widgets_values": [
+        "ZIT\\zImage_turbo.safetensors",
+        "ZIT\\zImage_textEncoder.safetensors",
+        "FLUX1\\ae.safetensors",
+        "blue sky,huge clouds is shape of text \"Z Image Turbo\"",
+        "",
+        "16:9",
+        1,
+        32,
+        1,
+        1,
+        "fixed",
+        8,
+        1,
+        "res_multistep",
+        "simple",
+        1,
+        3,
+        0,
+        false,
+        "None",
+        1,
+        "remove",
+        false,
+        "None",
+        1,
+        "remove",
+        false,
+        "None",
+        1,
+        "remove",
+        false,
+        "None",
+        1,
+        "remove",
+        false,
+        "None",
+        1,
+        "remove",
+        0,
+        0,
+        null,
+        "add",
+        "advanced"
+      ]
+    },
+    {
+      "id": 9,
+      "type": "MarkdownNote",
+      "pos": [
+        7550,
+        300
+      ],
+      "size": [
+        488.70248621737574,
+        618.6093882401201
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "## 모델 링크 - 로컬 사용자용\n\nZ-Image Turbo를 로컬 ComfyUI에서 사용하려면 아래 3개 모델 파일이 필요합니다.\n\n**text_encoders**\n\n* [qwen_3_4b.safetensors](https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors)\n\n**diffusion_models**\n\n* [z_image_turbo_bf16.safetensors](https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors)\n\n**vae**\n\n* [ae.safetensors](https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors)\n\n## 모델 저장 위치\n\n다운로드한 파일은 아래 경로에 넣어주세요.\n\n```\n📂 ComfyUI/\n├── 📂 models/\n│   ├── 📂 text_encoders/\n│   │   └── qwen_3_4b.safetensors\n│   ├── 📂 diffusion_models/\n│   │   └── z_image_turbo_bf16.safetensors\n│   └── 📂 vae/\n│       └── ae.safetensors\n```\n\n## 실행 전 확인사항\n\nZ-Image Turbo 관련 노드가 보이지 않거나 워크플로우가 정상적으로 실행되지 않는 경우, 먼저 ComfyUI를 최신 버전으로 업데이트해 주세요.\n\nComfyUI Desktop 또는 Cloud 버전은 안정화 릴리즈 기준으로 업데이트되기 때문에, 최신 Nightly 버전에서 먼저 지원되는 노드는 바로 보이지 않을 수 있습니다.\n\n* ComfyUI 업데이트 가이드: [Update ComfyUI](https://docs.comfy.org/installation/update_comfyui)\n* 실행 오류 / 런타임 오류: [ComfyUI Issues](https://github.com/comfyanonymous/ComfyUI/issues)\n* UI / 프론트엔드 오류: [ComfyUI Frontend Issues](https://github.com/Comfy-Org/ComfyUI_frontend/issues)\n* 워크플로우 템플릿 오류: [Workflow Templates Issues](https://github.com/Comfy-Org/workflow_templates/issues)\n"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 10,
+      "type": "MarkdownNote",
+      "pos": [
+        7550,
+        970
+      ],
+      "size": [
+        482.97622593019514,
+        422.11339534946524
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "### Z-Image Turbo 소개\n\nZ-Image Turbo는 Alibaba Tongyi Lab에서 공개한 Z-Image 계열의 빠른 이미지 생성 모델입니다.\n\n6B 파라미터 기반의 효율적인 이미지 생성 모델이며, Turbo 버전은 적은 스텝으로 빠르게 이미지를 생성하는 데 초점이 맞춰져 있습니다.\n\n### Toobusy Z-Image Turbo 노드\n\n`Toobusy Z-Image Turbo` 노드는 ComfyUI에서 Z-Image Turbo를 더 간단하게 사용할 수 있도록 만든 통합형 노드입니다.\n\n일반적인 Z-Image Turbo 워크플로우에서는 모델 로더, 텍스트 인코더, VAE, 샘플러, 디코더 등을 따로 연결해야 하지만, 이 노드는 복잡한 구성을 하나의 노드 안으로 접어서 빠르게 이미지를 생성할 수 있도록 도와줍니다.\n\n기본적으로 아래 3개 모델 파일을 사용합니다.\n\n* `z_image_turbo_bf16.safetensors`\n* `qwen_3_4b.safetensors`\n* `ae.safetensors`\n\n프롬프트를 입력하고 해상도, 시드, 샘플링 설정을 조정하면 Z-Image Turbo 기반 이미지를 바로 생성할 수 있습니다.\n\n### 참고\n\nZ-Image Turbo는 빠른 생성에 강점이 있는 모델입니다.\n다만 모델 특성상 프롬프트 해석, 인물 디테일, 문자 표현 결과는 설정과 프롬프트에 따라 달라질 수 있습니다.\n"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    }
+  ],
+  "links": [
+    [
+      8,
+      7,
+      0,
+      2,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.9646149645000026,
+      "offset": [
+        -7078.586818246765,
+        -146.23183344217497
+      ]
+    },
+    "frontendVersion": "1.44.19",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}

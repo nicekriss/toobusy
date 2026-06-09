@@ -97,6 +97,7 @@
 `docs/workflows/`에 "열면 돌아가는" 워크플로우를 둡니다.
 
 - [`korean_scene_to_ideogram4.json`](docs/workflows/korean_scene_to_ideogram4.json) — **한국어 장면 → Prompt Polish → (Import polished로) Layout Builder → Ideogram4 T2I.** 한국어 한 줄이 영어 구조화 프롬프트 + 레이아웃 + 이미지로 흐르는 흐름입니다. 처음 사용자는 이 워크플로우를 먼저 열어 전체 흐름을 확인하는 것을 권장합니다. 필요한 모델 링크는 워크플로우 안 Note 노드에 있습니다.
+- [`z_image_turbo.json`](docs/workflows/z_image_turbo.json) — **`toobusy Z-Image Turbo` 한 노드로 t2i 그래프(~10노드)를 접는 예제.** `image` 입력에 Load Image를 연결하면 자동으로 img2img로 전환됩니다. 필요한 모델 링크는 워크플로우 안 Note 노드에 있습니다(Comfy-Org Z-Image Turbo / Qwen3-4B / Flux VAE).
 
 ## 설치
 
@@ -247,6 +248,11 @@ toobusy/Make
 ```
 
 컴팩트한 Z-Image Turbo 텍스트→이미지 워크플로우를 하나의 노드로 묶었습니다(마지막 `SaveImage` 노드는 제외).
+
+<p align="center">
+  <a href="docs/workflows/z_image_turbo.json"><img src="docs/workflows/z_image_turbo.png" width="100%" alt="toobusy Z-Image Turbo 워크플로우 — Load Image + 한 노드 + Save Image"></a>
+</p>
+<p align="center"><sub>↑ <code>toobusy Z-Image Turbo</code> 한 노드로 접은 t2i 워크플로우. 워크플로우: <a href="docs/workflows/z_image_turbo.json">z_image_turbo.json</a> (열면 Note 노드에 모델 다운로드 링크 포함). 결과 예시 → <a href="docs/workflows/z_image_turbo_sample.png">z_image_turbo_sample.png</a></sub></p>
 
 내부 흐름:
 
