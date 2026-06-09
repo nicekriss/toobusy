@@ -87,6 +87,17 @@ def _round_to(value, divisible_by):
     return max(int(divisible_by), int(round(value / divisible_by)) * int(divisible_by))
 
 
+def _image_dims(image):
+    """Pixel (width, height) of a ComfyUI IMAGE tensor, cropped to the VAE's
+    factor of 8. IMAGE tensors are shaped [batch, height, width, channels]."""
+    try:
+        height = int(image.shape[1])
+        width = int(image.shape[2])
+    except (AttributeError, IndexError, TypeError):
+        return 0, 0
+    return (width // 8) * 8, (height // 8) * 8
+
+
 def _resolution_from_megapixels(ratio_preset, megapixels, divisible_by):
     ratio_w, ratio_h = RATIO_PRESETS.get(ratio_preset, RATIO_PRESETS["1:1"])
     pixels = max(0.01, float(megapixels)) * 1_000_000
@@ -102,6 +113,10 @@ class ToobusyZImageTurbo:
     Replaces, in order: UNETLoader + CLIPLoader + VAELoader + (optional
     LoraLoader chain) + ModelSamplingAuraFlow + CLIPTextEncode x2 +
     EmptyLatentImage + KSampler + VAEDecode (~10 nodes -> 1).
+    Connecting the optional `image` input auto-switches to img2img: the image
+    is VAE-encoded as the starting latent (EmptyLatentImage -> VAEEncode, with
+    an optional ImageScale when width/height are set) and `denoise` controls
+    the change strength.
     Needs Z-Image Turbo model + lumina2 text encoder + VAE in your model folders.
     """
 
@@ -143,6 +158,20 @@ class ToobusyZImageTurbo:
                 "lora_slots": ("INT", {"default": 1, "min": 0, "max": MAX_LORA_SLOTS}),
             },
             "optional": {
+                "image": (
+                    "IMAGE",
+                    {"tooltip": "Connect an image to switch this node to img2img. The image is VAE-encoded as the starting latent and 'denoise' becomes the change strength (lower = closer to the source). Leave unconnected for plain text-to-image."},
+                ),
+                "width": (
+                    "INT",
+                    {"default": 0, "min": 0, "max": 8192, "step": 8,
+                     "tooltip": "0 = use ratio_preset + megapixels. Set width AND height > 0 to enter the resolution directly (rounded to divisible_by). In img2img this scales the source image to the given size."},
+                ),
+                "height": (
+                    "INT",
+                    {"default": 0, "min": 0, "max": 8192, "step": 8,
+                     "tooltip": "0 = use ratio_preset + megapixels. Set width AND height > 0 to enter the resolution directly (rounded to divisible_by). In img2img this scales the source image to the given size."},
+                ),
                 "model_override": ("MODEL",),
                 "clip_override": ("CLIP",),
                 "vae_override": ("VAE",),
@@ -187,12 +216,21 @@ class ToobusyZImageTurbo:
         denoise,
         aura_shift,
         lora_slots,
+        image=None,
+        width=0,
+        height=0,
         model_override=None,
         clip_override=None,
         vae_override=None,
         **lora_kwargs,
     ):
-        width, height = _resolution_from_megapixels(ratio_preset, megapixels, divisible_by)
+        # Resolution: explicit width AND height win (rounded to divisible_by);
+        # otherwise derive from ratio_preset + megapixels.
+        if int(width) > 0 and int(height) > 0:
+            target_w = _round_to(int(width), divisible_by)
+            target_h = _round_to(int(height), divisible_by)
+        else:
+            target_w, target_h = _resolution_from_megapixels(ratio_preset, megapixels, divisible_by)
 
         if model_override is not None:
             print("[toobusy Z-Image Turbo] Using external MODEL override. Internal model loader ignored.")
@@ -233,12 +271,36 @@ class ToobusyZImageTurbo:
         model = _call_node("ModelSamplingAuraFlow", model=model, shift=aura_shift)[0]
         positive_cond = _call_node("CLIPTextEncode", clip=clip, text=positive)[0]
         negative_cond = _call_node("CLIPTextEncode", clip=clip, text=negative)[0]
-        latent_image = _call_node(
-            "EmptyLatentImage",
-            width=width,
-            height=height,
-            batch_size=batch_size,
-        )[0]
+
+        # Latent source. A connected image auto-switches the node to img2img:
+        # the image is VAE-encoded into the starting latent and 'denoise' acts
+        # as the change strength. Otherwise we start from an empty latent (t2i).
+        if image is not None:
+            explicit_size = int(width) > 0 and int(height) > 0
+            if explicit_size:
+                print(f"[toobusy Z-Image Turbo] Image input detected -> img2img. Scaling source to {target_w}x{target_h} (denoise = strength).")
+                pixels = _call_node(
+                    "ImageScale",
+                    image=image,
+                    upscale_method="lanczos",
+                    width=target_w,
+                    height=target_h,
+                    crop="center",
+                )[0]
+                width, height = target_w, target_h
+            else:
+                print("[toobusy Z-Image Turbo] Image input detected -> img2img. Using source image size (denoise = strength).")
+                pixels = image
+                width, height = _image_dims(image)
+            latent_image = _call_node("VAEEncode", pixels=pixels, vae=vae)[0]
+        else:
+            latent_image = _call_node(
+                "EmptyLatentImage",
+                width=target_w,
+                height=target_h,
+                batch_size=batch_size,
+            )[0]
+            width, height = target_w, target_h
 
         sampled = _call_node(
             "KSampler",

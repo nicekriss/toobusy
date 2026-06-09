@@ -26,8 +26,12 @@ jobs:
             ltx23_compact_sampler_node \
             storyboard_board_node \
             z_image_turbo_node
-      - name: Override input regression tests (no ComfyUI runtime)
-        run: python tests/test_model_overrides.py
+      - name: Node behaviour regression tests (no ComfyUI runtime)
+        run: |
+          for f in tests/test_*.py; do
+            echo "== $f =="
+            python "$f"
+          done
 
   js-syntax:
     name: Frontend JS syntax

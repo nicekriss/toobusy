@@ -255,7 +255,8 @@ UNETLoader + CLIPLoader + VAELoader
 -> 선택적 LoraLoader 슬롯 체인
 -> ModelSamplingAuraFlow
 -> CLIPTextEncode positive/negative
--> EmptyLatentImage
+-> EmptyLatentImage  (image 입력이 없을 때 · t2i)
+   또는 (선택) ImageScale -> VAEEncode  (image 입력이 있을 때 · img2img)
 -> KSampler
 -> VAEDecode
 ```
@@ -267,6 +268,8 @@ UNETLoader + CLIPLoader + VAELoader
 - `vae_name`: VAE 파일. 예: `FLUX1\ae.safetensors`.
 - `positive` / `negative`: 프롬프트 텍스트.
 - `ratio_preset`, `megapixels`, `divisible_by`: 종횡비와 목표 메가픽셀로부터 해상도를 계산합니다.
+- `width` / `height`(선택): 직접 입력 칸. 둘 다 `0`이면 위 `ratio_preset`+`megapixels`로 계산하고, 둘 다 `> 0`이면 그 해상도를 직접 사용합니다(`divisible_by`로 반올림). 해상도 미리보기 위젯에 `manual -> 가로 x 세로`로 표시됩니다.
+- `image`(선택, IMAGE 소켓): **연결하면 자동으로 img2img로 전환**됩니다. 이미지를 `VAEEncode`로 인코딩해 시작 latent으로 쓰고, `denoise`가 변환 강도가 됩니다(낮을수록 원본 보존). `width`/`height`를 지정하면 소스를 그 크기로 스케일(center crop)하고, 비워 두면 소스 이미지 크기를 그대로 따릅니다. 소켓을 비우면 기존 t2i로 동작합니다.
 - `seed`, `steps`, `cfg`, `sampler_name`, `scheduler`, `denoise`, `aura_shift`.
 - LoRA 슬롯: 프런트엔드에 `Add LoRA slot` / `Remove LoRA slot` 버튼이 추가됩니다. 최대 5개 슬롯까지 표시할 수 있으며, 각 슬롯은 자체 활성화 토글, LoRA 파일, 강도를 가집니다.
 - 외부 모델 override(선택): `model_override`(MODEL), `clip_override`(CLIP), `vae_override`(VAE) 입력 소켓입니다. 연결하면 해당 내부 로더(`UNETLoader`/`CLIPLoader`/`VAELoader`)를 건너뛰고 연결된 객체를 그대로 사용하고, 비워 두면 위의 `model_name`/`clip_name`/`vae_name`으로 내부 로드합니다. GGUF 등 다른 로더로 불러온 모델을 그대로 흘려보낼 때 유용합니다.
@@ -279,9 +282,10 @@ LoRA 동작:
 
 Basic / Advanced:
 
-- 기본은 **Basic 화면**으로, 자주 쓰는 입력만 보입니다: `positive`, `negative`, `ratio_preset`, `megapixels`, `batch_size`, `seed`, `steps`.
-- `Show advanced settings` 버튼을 누르면 expert 컨트롤(`model_name`, `clip_name`, `vae_name`, `divisible_by`, `cfg`, `sampler_name`, `scheduler`, `denoise`, `aura_shift`)과 LoRA 슬롯/버튼이 나타납니다. 상태는 노드에 저장되어 그래프를 다시 열어도 유지됩니다.
-- **해상도 미리보기**: `ratio_preset @ megapixels -> 가로 x 세로` 표시 위젯이 항상 보여, 큐에 올리기 전에 실제 생성 크기를 확인할 수 있습니다.
+- 기본은 **Basic 화면**으로, 자주 쓰는 입력이 보입니다: **`model_name`/`clip_name`/`vae_name`(모델 로드 슬롯)**, `positive`, `negative`, `ratio_preset`, `megapixels`, `width`, `height`, `batch_size`, `seed`, `steps`. 모델 로드 슬롯을 기본 노출해, 어떤 모델이 물려 있는지 바로 보고 고칠 수 있습니다(엉뚱한 모델로 헤매는 상황 방지).
+- `Show advanced settings` 버튼을 누르면 expert 튜닝 컨트롤(`divisible_by`, `cfg`, `sampler_name`, `scheduler`, `denoise`, `aura_shift`)과 LoRA 슬롯/버튼이 나타납니다. 상태는 노드에 저장되어 그래프를 다시 열어도 유지됩니다.
+- **info 배지**: 노드 우상단 모서리의 `i` 아이콘에 마우스를 올리면, 이 노드가 어떤 노드들을 접는지(t2i/img2img 흐름 포함) 설명 툴팁이 뜹니다.
+- **해상도 미리보기**: `ratio_preset @ megapixels -> 가로 x 세로`(직접 입력 시 `manual -> ...`, 이미지 연결 시 `img2img -> ...`) 표시 위젯이 항상 보여, 큐에 올리기 전에 실제 생성 크기를 확인할 수 있습니다.
 
 출력:
 
