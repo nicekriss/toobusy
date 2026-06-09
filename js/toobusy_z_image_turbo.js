@@ -40,14 +40,41 @@ function findWidget(node, name) {
     return node.widgets?.find((widget) => widget.name === name);
 }
 
+function imageInputConnected(node) {
+    const input = node.inputs?.find((i) => i.name === "image");
+    return !!(input && input.link != null);
+}
+
 function updateResolutionReadout(node) {
     const readout = findWidget(node, "resolution_readout");
     if (!readout) return;
-    const ratio = String(findWidget(node, "ratio_preset")?.value ?? "1:1");
-    const mp = Number(findWidget(node, "megapixels")?.value ?? 1);
     const div = Number(findWidget(node, "divisible_by")?.value ?? 32);
-    const [w, h] = resolutionFromMegapixels(ratio, mp, div);
-    readout.value = `${ratio} @ ${mp.toFixed(2)}MP -> ${w} x ${h}`;
+    const wv = Number(findWidget(node, "width")?.value ?? 0);
+    const hv = Number(findWidget(node, "height")?.value ?? 0);
+    const manual = wv > 0 && hv > 0;
+
+    let w;
+    let h;
+    let source;
+    if (manual) {
+        w = roundToMultiple(wv, div);
+        h = roundToMultiple(hv, div);
+        source = "manual";
+    } else {
+        const ratio = String(findWidget(node, "ratio_preset")?.value ?? "1:1");
+        const mp = Number(findWidget(node, "megapixels")?.value ?? 1);
+        [w, h] = resolutionFromMegapixels(ratio, mp, div);
+        source = `${ratio} @ ${mp.toFixed(2)}MP`;
+    }
+
+    if (imageInputConnected(node)) {
+        // img2img: a connected image drives the size unless width/height are set.
+        readout.value = manual
+            ? `img2img -> ${w} x ${h} (source scaled)`
+            : `img2img -> source image size`;
+    } else {
+        readout.value = `${source} -> ${w} x ${h}`;
+    }
     node.setDirtyCanvas?.(true, true);
 }
 
@@ -193,7 +220,7 @@ app.registerExtension({
             this.addWidget(
                 "text",
                 "folds",
-                "Folds ~10 nodes: UNET+CLIP+VAE +(LoRA) → AuraFlow → Encode×2 → EmptyLatent → KSampler → Decode",
+                "Folds ~10 nodes: UNET+CLIP+VAE +(LoRA) → AuraFlow → Encode×2 → EmptyLatent / VAEEncode(img2img) → KSampler → Decode",
                 () => {},
                 { serialize: false },
             );
@@ -201,7 +228,7 @@ app.registerExtension({
             // Always-visible resolution readout (sits right after the inputs,
             // above the LoRA/advanced buttons).
             this.addWidget("text", "resolution_readout", "", () => {}, { serialize: false });
-            for (const name of ["ratio_preset", "megapixels", "divisible_by"]) {
+            for (const name of ["ratio_preset", "megapixels", "divisible_by", "width", "height"]) {
                 hookReadout(this, name);
             }
 
@@ -250,6 +277,14 @@ app.registerExtension({
             onConfigure?.apply(this, arguments);
             applyAdvanced(this);
             updateResolutionReadout(this);
+        };
+
+        // Connecting/disconnecting the image input flips the t2i/img2img readout.
+        const onConnectionsChange = nodeType.prototype.onConnectionsChange;
+        nodeType.prototype.onConnectionsChange = function () {
+            const result = onConnectionsChange?.apply(this, arguments);
+            updateResolutionReadout(this);
+            return result;
         };
     },
 });

@@ -10,8 +10,15 @@
   연결된 override는 해당 내부 로더(`UNETLoader`/`CLIPLoader`/`VAELoader`)를 건너뛰고,
   비워 두면 기존처럼 이름 위젯으로 내부 로드합니다. GGUF 등 다른 로더의 MODEL/CLIP/VAE를
   결합 없이 흘려보낼 수 있습니다. (PR #33)
-- override INPUT_TYPES 노출과 loader-skip 동작을 검증하는 회귀 테스트
-  `tests/test_model_overrides.py`를 추가하고 CI에서 실행합니다(ComfyUI 런타임 불필요).
+- `toobusy Z-Image Turbo`에 **직접 해상도 입력**(`width`/`height`)을 추가했습니다. 둘 다
+  `> 0`이면 `ratio_preset`+`megapixels` 대신 그 값을 사용합니다(`divisible_by`로 반올림).
+- `toobusy Z-Image Turbo`에 **img2img 자동 전환**을 추가했습니다. 선택형 `image` 입력을
+  연결하면 `VAEEncode`로 시작 latent을 만들고(`EmptyLatentImage` 대신) `denoise`가 변환
+  강도가 됩니다. `width`/`height` 지정 시 소스를 그 크기로 스케일(center crop), 미지정 시
+  소스 크기를 따릅니다. 해상도 미리보기 위젯이 t2i/img2img·manual 상태를 표시합니다.
+- override / 해상도 / img2img 동작을 검증하는 회귀 테스트
+  `tests/test_model_overrides.py`, `tests/test_zimage_resolution_i2i.py`를 추가하고
+  CI에서 `tests/test_*.py`를 자동 검출해 실행합니다(ComfyUI 런타임 불필요).
 
 ### Fixed
 - CI byte-compile 목록에서 빠져 있던 `ideogram_prompt_polish_node`를 추가했습니다.
