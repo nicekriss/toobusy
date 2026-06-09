@@ -2,13 +2,14 @@ import { app } from "../../scripts/app.js";
 
 const MAX_LORA_SLOTS = 5;
 
-// Expert controls hidden by default (Basic view). Everything not listed here —
-// positive, negative, ratio_preset, megapixels, batch_size, seed, steps — plus
-// the LoRA controls (handled separately) make up the Basic surface.
+// Expert tuning hidden by default (Basic view). The model-load slots
+// (model_name / clip_name / vae_name) are intentionally NOT here: they stay
+// visible so a beginner can see and fix which model is loaded instead of
+// wiring the wrong file and wondering why nothing works. Everything not listed
+// here — model/clip/vae names, positive, negative, ratio_preset, megapixels,
+// width, height, batch_size, seed, steps — plus the LoRA controls (handled
+// separately) make up the Basic surface.
 const ADVANCED_WIDGETS = [
-    "model_name",
-    "clip_name",
-    "vae_name",
     "divisible_by",
     "cfg",
     "sampler_name",
@@ -16,6 +17,13 @@ const ADVANCED_WIDGETS = [
     "denoise",
     "aura_shift",
 ];
+
+// Shown in the hover tooltip behind the top-right info badge (replaces the old
+// always-on "folds" text row).
+const INFO_TEXT =
+    "Folds ~10 nodes into one: UNET + CLIP + VAE loaders + (LoRA) -> " +
+    "ModelSamplingAuraFlow -> CLIPTextEncode x2 -> EmptyLatentImage " +
+    "(or VAEEncode when an image is connected, i.e. img2img) -> KSampler -> VAEDecode.";
 
 // Mirror of z_image_turbo.py RATIO_PRESETS / _resolution_from_megapixels so the
 // node can show the dimensions it will generate before the graph is queued.
@@ -38,6 +46,87 @@ function resolutionFromMegapixels(ratioPreset, megapixels, divisibleBy) {
 
 function findWidget(node, name) {
     return node.widgets?.find((widget) => widget.name === name);
+}
+
+function titleHeight() {
+    return (typeof LiteGraph !== "undefined" && LiteGraph.NODE_TITLE_HEIGHT) || 30;
+}
+
+// Greedy word-wrap of `text` into lines no wider than `maxWidth` for `ctx`'s
+// current font.
+function wrapText(ctx, text, maxWidth) {
+    const lines = [];
+    let line = "";
+    for (const word of String(text).split(/\s+/)) {
+        const test = line ? `${line} ${word}` : word;
+        if (line && ctx.measureText(test).width > maxWidth) {
+            lines.push(line);
+            line = word;
+        } else {
+            line = test;
+        }
+    }
+    if (line) lines.push(line);
+    return lines;
+}
+
+// Draw a small "i" badge in the node's top-right title corner, and — while
+// hovered — a tooltip box with INFO_TEXT. Stores the badge's hit-circle on the
+// node so onMouseMove can detect hover. Guarded so a draw error can never break
+// the rest of the node.
+function drawInfoBadge(node, ctx) {
+    if (node.flags && node.flags.collapsed) {
+        node._toobusyInfoRect = null;
+        return;
+    }
+    const r = 7;
+    const cx = node.size[0] - 15;
+    const cy = -titleHeight() * 0.5;
+    node._toobusyInfoRect = { cx, cy, r };
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = node._toobusyInfoHover ? "#5b9dff" : "#6b7785";
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("i", cx, cy + 0.5);
+    ctx.restore();
+
+    if (!node._toobusyInfoHover) {
+        return;
+    }
+
+    ctx.save();
+    ctx.font = "11px sans-serif";
+    const pad = 8;
+    const maxTextW = 250;
+    const lineH = 15;
+    const lines = wrapText(ctx, INFO_TEXT, maxTextW);
+    const boxW = maxTextW + pad * 2;
+    const boxH = lines.length * lineH + pad * 2;
+    let bx = cx + r - boxW;            // right-align the box under the badge
+    if (bx < 4) bx = 4;
+    const by = cy + r + 6;            // drop just below the badge into the body
+    ctx.fillStyle = "rgba(20, 26, 32, 0.96)";
+    ctx.strokeStyle = "#2d3642";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    if (ctx.roundRect) {
+        ctx.roundRect(bx, by, boxW, boxH, 6);
+    } else {
+        ctx.rect(bx, by, boxW, boxH);
+    }
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#d6dde5";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    lines.forEach((ln, i) => ctx.fillText(ln, bx + pad, by + pad + i * lineH));
+    ctx.restore();
 }
 
 function imageInputConnected(node) {
@@ -215,15 +304,8 @@ app.registerExtension({
         nodeType.prototype.onNodeCreated = function () {
             onNodeCreated?.apply(this, arguments);
 
-            // Transparency: show what this one node folds, so intermediate users
-            // can see inside the "black box" instead of distrusting it.
-            this.addWidget(
-                "text",
-                "folds",
-                "Folds ~10 nodes: UNET+CLIP+VAE +(LoRA) → AuraFlow → Encode×2 → EmptyLatent / VAEEncode(img2img) → KSampler → Decode",
-                () => {},
-                { serialize: false },
-            );
+            // Transparency lives in the top-right "i" badge (hover for what this
+            // node folds) — see drawInfoBadge — instead of an always-on text row.
 
             // Always-visible resolution readout (sits right after the inputs,
             // above the LoRA/advanced buttons).
@@ -285,6 +367,33 @@ app.registerExtension({
             const result = onConnectionsChange?.apply(this, arguments);
             updateResolutionReadout(this);
             return result;
+        };
+
+        // Top-right info badge + hover tooltip.
+        const onDrawForeground = nodeType.prototype.onDrawForeground;
+        nodeType.prototype.onDrawForeground = function (ctx) {
+            onDrawForeground?.apply(this, arguments);
+            try {
+                drawInfoBadge(this, ctx);
+            } catch (err) {
+                // Never let a draw glitch break the node.
+            }
+        };
+
+        const onMouseMove = nodeType.prototype.onMouseMove;
+        nodeType.prototype.onMouseMove = function (event, pos) {
+            const rect = this._toobusyInfoRect;
+            let hover = false;
+            if (rect && Array.isArray(pos)) {
+                const dx = pos[0] - rect.cx;
+                const dy = pos[1] - rect.cy;
+                hover = dx * dx + dy * dy <= (rect.r + 4) * (rect.r + 4);
+            }
+            if (hover !== !!this._toobusyInfoHover) {
+                this._toobusyInfoHover = hover;
+                this.setDirtyCanvas?.(true, true);
+            }
+            return onMouseMove?.apply(this, arguments);
         };
     },
 });

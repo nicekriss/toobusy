@@ -20,6 +20,14 @@
   `tests/test_model_overrides.py`, `tests/test_zimage_resolution_i2i.py`를 추가하고
   CI에서 `tests/test_*.py`를 자동 검출해 실행합니다(ComfyUI 런타임 불필요).
 
+### Changed
+- `toobusy Z-Image Turbo`의 **Basic/Advanced 구성을 재정비**했습니다. 모델 로드 슬롯
+  (`model_name`/`clip_name`/`vae_name`)을 **기본 노출**해 초보자가 어떤 모델이 물렸는지
+  바로 확인할 수 있게 했고(Advanced에 숨기지 않음), Advanced에는 expert 튜닝
+  (`divisible_by`/`cfg`/`sampler_name`/`scheduler`/`denoise`/`aura_shift`)과 LoRA만 남겼습니다.
+- 항상 떠 있던 2줄 `folds` 설명 텍스트를 **노드 우상단 `i` info 배지 + 호버 툴팁**으로
+  교체했습니다(노드 화면을 덜 어지럽게).
+
 ### Fixed
 - CI byte-compile 목록에서 빠져 있던 `ideogram_prompt_polish_node`를 추가했습니다.
 

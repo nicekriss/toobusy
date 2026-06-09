@@ -282,9 +282,10 @@ LoRA 동작:
 
 Basic / Advanced:
 
-- 기본은 **Basic 화면**으로, 자주 쓰는 입력만 보입니다: `positive`, `negative`, `ratio_preset`, `megapixels`, `batch_size`, `seed`, `steps`.
-- `Show advanced settings` 버튼을 누르면 expert 컨트롤(`model_name`, `clip_name`, `vae_name`, `divisible_by`, `cfg`, `sampler_name`, `scheduler`, `denoise`, `aura_shift`)과 LoRA 슬롯/버튼이 나타납니다. 상태는 노드에 저장되어 그래프를 다시 열어도 유지됩니다.
-- **해상도 미리보기**: `ratio_preset @ megapixels -> 가로 x 세로` 표시 위젯이 항상 보여, 큐에 올리기 전에 실제 생성 크기를 확인할 수 있습니다.
+- 기본은 **Basic 화면**으로, 자주 쓰는 입력이 보입니다: **`model_name`/`clip_name`/`vae_name`(모델 로드 슬롯)**, `positive`, `negative`, `ratio_preset`, `megapixels`, `width`, `height`, `batch_size`, `seed`, `steps`. 모델 로드 슬롯을 기본 노출해, 어떤 모델이 물려 있는지 바로 보고 고칠 수 있습니다(엉뚱한 모델로 헤매는 상황 방지).
+- `Show advanced settings` 버튼을 누르면 expert 튜닝 컨트롤(`divisible_by`, `cfg`, `sampler_name`, `scheduler`, `denoise`, `aura_shift`)과 LoRA 슬롯/버튼이 나타납니다. 상태는 노드에 저장되어 그래프를 다시 열어도 유지됩니다.
+- **info 배지**: 노드 우상단 모서리의 `i` 아이콘에 마우스를 올리면, 이 노드가 어떤 노드들을 접는지(t2i/img2img 흐름 포함) 설명 툴팁이 뜹니다.
+- **해상도 미리보기**: `ratio_preset @ megapixels -> 가로 x 세로`(직접 입력 시 `manual -> ...`, 이미지 연결 시 `img2img -> ...`) 표시 위젯이 항상 보여, 큐에 올리기 전에 실제 생성 크기를 확인할 수 있습니다.
 
 출력:
 
