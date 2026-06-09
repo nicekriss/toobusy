@@ -108,9 +108,11 @@ function drawInfoBadge(node, ctx) {
     const lines = wrapText(ctx, INFO_TEXT, maxTextW);
     const boxW = maxTextW + pad * 2;
     const boxH = lines.length * lineH + pad * 2;
-    let bx = cx + r - boxW;            // right-align the box under the badge
-    if (bx < 4) bx = 4;
-    const by = cy + r + 6;            // drop just below the badge into the body
+    // Float the tooltip OUTSIDE the node — to the right of its right edge —
+    // so it never covers the node's own inputs/widgets. onDrawForeground is
+    // not clipped to the node body, so out-of-bounds coords render fine.
+    const bx = node.size[0] + 12;
+    const by = cy;                   // align the box top with the badge, extend down
     ctx.fillStyle = "rgba(20, 26, 32, 0.96)";
     ctx.strokeStyle = "#2d3642";
     ctx.lineWidth = 1;
