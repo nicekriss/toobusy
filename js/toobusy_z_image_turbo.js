@@ -54,6 +54,55 @@ function findWidget(node, name) {
     return node.widgets?.find((widget) => widget.name === name);
 }
 
+// Read-only resolution status line. Drawn directly on the canvas (custom widget
+// type) so a click never opens an edit box — a plain "text" widget pops a
+// prompt, and a customtext DOM widget collapsed to zero height. Always reserves
+// its row, coloured with the shared accent.
+function makeReadoutWidget() {
+    return {
+        type: "toobusy_readout",
+        name: "resolution_readout",
+        value: "",
+        options: { serialize: false },
+        serialize: false,
+        draw(ctx, node, widgetWidth, widgetY, height) {
+            ctx.save();
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.font = "600 12px sans-serif";
+            ctx.fillStyle = ACCENT;
+            ctx.fillText(String(this.value || ""), widgetWidth * 0.5, widgetY + height * 0.5);
+            ctx.restore();
+        },
+        computeSize(width) {
+            return [width || 0, 22];
+        },
+    };
+}
+
+// The model/clip/vae override sockets are an advanced surface: beginners pick a
+// model via the model_name/clip_name/vae_name dropdowns and never need these.
+// Show them only in Advanced. The `image` (img2img) input is NOT gated.
+const OVERRIDE_INPUT_SPECS = [
+    ["model_override", "MODEL"],
+    ["clip_override", "CLIP"],
+    ["vae_override", "VAE"],
+];
+
+function setOverrideInputsVisible(node, visible) {
+    for (const [name, type] of OVERRIDE_INPUT_SPECS) {
+        const idx = node.inputs ? node.inputs.findIndex((i) => i.name === name) : -1;
+        const exists = idx >= 0;
+        if (visible) {
+            if (!exists) node.addInput(name, type);
+        } else if (exists && node.inputs[idx].link == null) {
+            // Never drop a wired override — only hide the unused ones, so toggling
+            // back to Basic can't silently break a connected graph.
+            node.removeInput(idx);
+        }
+    }
+}
+
 function titleHeight() {
     return (typeof LiteGraph !== "undefined" && LiteGraph.NODE_TITLE_HEIGHT) || 30;
 }
@@ -325,6 +374,8 @@ function applyAdvanced(node) {
     for (const name of ADVANCED_WIDGETS) {
         setWidgetVisible(node, findWidget(node, name), advanced);
     }
+    // Override sockets (MODEL/CLIP/VAE) are advanced-only; image input stays.
+    setOverrideInputsVisible(node, advanced);
     if (node._toobusyAdvButton) {
         node._toobusyAdvButton.name = advanced ? "Hide advanced settings" : "Show advanced settings";
     }
@@ -348,27 +399,12 @@ app.registerExtension({
 
             // Always-visible resolution readout (sits right after the inputs,
             // above the LoRA/advanced buttons).
-            // Read-only resolution status line. Uses a customtext (DOM) widget
-            // with readOnly so clicking it does nothing — a plain "text" widget
-            // pops an edit prompt, which felt unfinished. Coloured to stand out
-            // as a status readout rather than an input.
-            const readout = this.addWidget("customtext", "resolution_readout", "", () => {}, { serialize: false });
-            if (readout.inputEl) {
-                const el = readout.inputEl;
-                el.readOnly = true;
-                el.style.fontSize = "12px";
-                el.style.fontWeight = "600";
-                el.style.color = ACCENT;
-                el.style.textAlign = "center";
-                el.style.background = "transparent";
-                el.style.border = "none";
-                el.style.boxShadow = "none";
-                el.style.resize = "none";
-                el.style.overflow = "hidden";
-                el.style.cursor = "default";
-                el.style.minHeight = "0px";
-                el.style.height = "20px";
-                el.rows = 1;
+            // Read-only resolution status line (canvas-drawn, not editable).
+            const readout = makeReadoutWidget();
+            if (this.addCustomWidget) {
+                this.addCustomWidget(readout);
+            } else {
+                (this.widgets = this.widgets || []).push(readout);
             }
             for (const name of ["ratio_preset", "megapixels", "divisible_by", "width", "height"]) {
                 hookReadout(this, name);
