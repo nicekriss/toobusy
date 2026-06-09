@@ -99,9 +99,9 @@
         "toobusy_advanced": true
       },
       "widgets_values": [
-        "ZIT\\zImage_turbo.safetensors",
-        "ZIT\\zImage_textEncoder.safetensors",
-        "FLUX1\\ae.safetensors",
+        "z_image_turbo_bf16.safetensors",
+        "qwen_3_4b.safetensors",
+        "ae.safetensors",
         "blue sky,huge clouds is shape of text \"Z Image Turbo\"",
         "",
         "16:9",
