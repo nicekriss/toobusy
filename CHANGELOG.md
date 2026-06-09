@@ -33,6 +33,9 @@
   한 번이면 바로 쓸 수 있지만, 켜기 전에는 아무 LoRA도 적용되지 않습니다.
 - `resolution_readout`을 **클릭 불가한 표시 전용 + 강조 색**으로 바꿨습니다(클릭 시 편집
   입력칸이 뜨던 미완성 느낌 제거).
+- info 배지 호버 툴팁에 **너무바쁜베짱이 시그니처**를 절제해서 넣었습니다 — 제목줄 +
+  fold 설명 + 얇은 구분선 아래 희미한 `fold the graph — 너무바쁜베짱이` 한 줄. 본문에는
+  공통 accent 색(readout·배지·툴팁 제목)만 잔잔하게 유지.
 
 ### Fixed
 - CI byte-compile 목록에서 빠져 있던 `ideogram_prompt_polish_node`를 추가했습니다.
