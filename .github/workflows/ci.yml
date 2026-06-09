@@ -21,10 +21,13 @@ jobs:
             hf_model_auto_loader \
             ideogram4_t2i_node \
             ideogram_layout_builder \
+            ideogram_prompt_polish_node \
             keyframe_maker_node \
             ltx23_compact_sampler_node \
             storyboard_board_node \
             z_image_turbo_node
+      - name: Override input regression tests (no ComfyUI runtime)
+        run: python tests/test_model_overrides.py
 
   js-syntax:
     name: Frontend JS syntax

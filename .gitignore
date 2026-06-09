@@ -7,5 +7,6 @@ __pycache__/
 
 # Private local Crux <-> Coda collaboration notes (never published).
 AGENT_MAILBOX.md
+AGENT_STATE.md
 CODA_HANDOFF.md
 CLAUDE.md

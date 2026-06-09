@@ -50,6 +50,8 @@
 
 한국어 장면을 입력하면, Ideogram용 구조화 프롬프트로 정리하고, Layout Builder에서 박스와 구도를 확인한 뒤, 로컬 Ideogram4 모델로 이미지를 생성하는 흐름입니다.
 
+`toobusy Ideogram4 T2I`도 선택형 외부 모델 override 입력을 받습니다: `model_override`·`uncond_model_override`(MODEL), `clip_override`(CLIP), `vae_override`(VAE). 연결된 소켓은 해당 내부 로더를 건너뛰고(미연결 시 `model_name`/`unconditional_model_name`/`clip_name`/`vae_name`으로 내부 로드), GGUF 등 다른 로더의 모델을 그대로 사용할 수 있습니다.
+
 함께 쓰기 좋은 노드:
 
 - `toobusy Keyframe Maker`
@@ -267,6 +269,7 @@ UNETLoader + CLIPLoader + VAELoader
 - `ratio_preset`, `megapixels`, `divisible_by`: 종횡비와 목표 메가픽셀로부터 해상도를 계산합니다.
 - `seed`, `steps`, `cfg`, `sampler_name`, `scheduler`, `denoise`, `aura_shift`.
 - LoRA 슬롯: 프런트엔드에 `Add LoRA slot` / `Remove LoRA slot` 버튼이 추가됩니다. 최대 5개 슬롯까지 표시할 수 있으며, 각 슬롯은 자체 활성화 토글, LoRA 파일, 강도를 가집니다.
+- 외부 모델 override(선택): `model_override`(MODEL), `clip_override`(CLIP), `vae_override`(VAE) 입력 소켓입니다. 연결하면 해당 내부 로더(`UNETLoader`/`CLIPLoader`/`VAELoader`)를 건너뛰고 연결된 객체를 그대로 사용하고, 비워 두면 위의 `model_name`/`clip_name`/`vae_name`으로 내부 로드합니다. GGUF 등 다른 로더로 불러온 모델을 그대로 흘려보낼 때 유용합니다.
 
 LoRA 동작:
 
