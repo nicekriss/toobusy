@@ -19,6 +19,8 @@
 - override / 해상도 / img2img 동작을 검증하는 회귀 테스트
   `tests/test_model_overrides.py`, `tests/test_zimage_resolution_i2i.py`를 추가하고
   CI에서 `tests/test_*.py`를 자동 검출해 실행합니다(ComfyUI 런타임 불필요).
+- `toobusy Z-Image Turbo` 예제 워크플로우(`docs/workflows/z_image_turbo.json`)와 워크플로우
+  이미지·결과 샘플을 추가하고 README 노드 소개에 연결했습니다.
 
 ### Changed
 - `toobusy Z-Image Turbo`의 **Basic/Advanced 구성을 재정비**했습니다. 모델 로드 슬롯
