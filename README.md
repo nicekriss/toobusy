@@ -36,7 +36,7 @@
 </p>
 <p align="center"><sub>▶ 리뷰·소개 영상 (클릭하면 YouTube) · 너무바쁜베짱이</sub></p>
 
-노드는 세 갈래로 접혀 있습니다:
+노드는 두 갈래로 접혀 있습니다:
 
 - **`toobusy/Plan`** — 기획·연출·프롬프트를 접는다: Keyframe Maker, Storyboard Board, Ideogram Layout Builder, Ideogram Prompt Polish
 - **`toobusy/Make`** — 생성 파이프라인을 접는다: Z-Image Turbo, Ideogram4 T2I, LTX2.3 3종
