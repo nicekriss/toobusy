@@ -44,6 +44,11 @@
 
 ### Fixed
 - CI byte-compile 목록에서 빠져 있던 `ideogram_prompt_polish_node`를 추가했습니다.
+- 예제 워크플로우 `korean_scene_to_ideogram4.json`가 **로드 시 LoRA 관련 에러로 실행 불가**하던
+  문제를 고쳤습니다. 0.2.7에서 Ideogram4 T2I에 LoRA 슬롯이 추가되며 위젯 순서가 늘었는데, 예제는
+  그 이전 레이아웃(위젯 20개)으로 저장돼 있어 로드 시 `mu`/`cfg_override` 값이 `lora_*_name`
+  칸으로 밀려 들어가 "유효하지 않은 LoRA"로 막혔습니다. 현재 노드 레이아웃(위젯 36개)에 맞춰
+  LoRA 블록을 비활성·`None`으로 재정렬했습니다.
 
 ## [0.2.7] - 2026-06-08
 
