@@ -18,7 +18,6 @@ jobs:
         run: |
           python -m compileall -q \
             __init__.py \
-            hf_model_auto_loader \
             ideogram4_t2i_node \
             ideogram_layout_builder \
             ideogram_prompt_polish_node \

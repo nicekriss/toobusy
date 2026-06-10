@@ -40,7 +40,6 @@
 
 - **`toobusy/Plan`** — 기획·연출·프롬프트를 접는다: Keyframe Maker, Storyboard Board, Ideogram Layout Builder, Ideogram Prompt Polish
 - **`toobusy/Make`** — 생성 파이프라인을 접는다: Z-Image Turbo, Ideogram4 T2I, LTX2.3 3종
-- **`toobusy/Setup`** — 셋업을 접는다: HF Model Auto Loader
 
 현재 대표 흐름:
 
@@ -58,7 +57,6 @@
 - `toobusy Storyboard Board`
 - `toobusy Z-Image Turbo`
 - `toobusy LTX2.3` 컴팩트 노드들
-- `toobusy HF Model Auto Loader`
 
 ## 왜 "접기"인가 — Before → After
 
@@ -88,7 +86,6 @@
 | **Ideogram4 T2I** | **로컬 Ideogram 4 모델** + ComfyUI의 Ideogram4 지원 노드(`Ideogram4Scheduler`/`CFGOverride`/`DualModelGuider` 등) + UNET 2개(model/uncond) + `ideogram4` CLIP | **웹 API가 아닙니다.** Ideogram4 미지원 빌드에선 실행 시점에 실패합니다 |
 | **LTX2.3 (3종)** | ComfyUI에 LTX 2.3 노드셋(`LTXV*`) 설치 + LTX 모델/VAE/텍스트 인코더 | LTX 지원이 없는 환경에선 실행 시점에 실패합니다 |
 | **Storyboard Board** | (코어만) Pillow·numpy·torch | 드롭한 이미지는 `board_data`에 임베드 → 이미지가 많으면 그래프 JSON이 커집니다. 폰트는 arial→기본 폴백 |
-| **HF Model Auto Loader** | repo id 다운로드 시 `huggingface_hub` (전체 URL 다운로드는 불필요) | `download_if_missing` 기본 꺼짐 — 켜야 실제 네트워크 다운로드가 일어납니다 |
 
 > 모델 파일은 저장소에 포함하지 않습니다. 각 모델은 ComfyUI의 해당 폴더(`diffusion_models`/`text_encoders`/`vae`/`loras`)에 직접 두세요.
 
@@ -399,11 +396,6 @@ RandomNoise -> LTXVConcatAVLatent -> CFGGuider -> KSamplerSelect -> ManualSigmas
 
 아래는 설치하면 함께 등록되는 노드들의 상세 메모입니다. 상단 대표 흐름에서 바로 쓰는 노드와, 다른 흐름을 보조하는 노드를 함께 정리합니다:
 
-- `hf_model_auto_loader` — ComfyUI 모델 폴더에서 요청한 모델을 찾고, 없으면 선택적으로
-  Hugging Face에서 내려받습니다. `download_if_missing`은 **기본값이 꺼짐(False)** 이라
-  평소엔 스캔/리포트만 하며, 켜면 큐 실행 시 `hf_source`에서 **실제 네트워크 다운로드**가
-  일어납니다(repo id 또는 전체 파일 URL). `Open on Hugging Face` 버튼은 `hf_source`의
-  소스 페이지를 브라우저로 엽니다.
 - `ideogram_layout_builder` (`toobusy Ideogram Layout Builder`) — Ideogram 4
   구조화 프롬프트 JSON과 `width`/`height`를 출력하는 시각적 bbox 편집기입니다.
   캔버스에 영역을 그리고, 각 영역을 텍스트 또는 오브젝트로 지정하고, 전역/요소별
