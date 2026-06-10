@@ -2,7 +2,7 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
-## [Unreleased]
+## [0.2.8] - 2026-06-09
 
 ### Added
 - `toobusy Z-Image Turbo`와 `toobusy Ideogram4 T2I`에 **외부 모델 override 입력**을
@@ -42,8 +42,18 @@
   fold 설명 + 얇은 구분선 아래 희미한 `fold the graph — 너무바쁜베짱이` 한 줄. 본문에는
   공통 accent 색(readout·배지·툴팁 제목)만 잔잔하게 유지.
 
+### Removed
+- **`toobusy HF Model Auto Loader` 노드를 제거**했습니다(`toobusy/Setup` 버킷도 함께 제거).
+  인터넷에서 모델을 직접 내려받는 경로가 Registry 보안 스캔에서 불필요한 마찰을 일으켰고,
+  모델 안내는 워크플로우 Note 노드 방식이 더 명확합니다. 함께 `huggingface_hub` 의존성도
+  제거해 패키지를 의존성 0으로 만들었습니다.
+
 ### Fixed
 - CI byte-compile 목록에서 빠져 있던 `ideogram_prompt_polish_node`를 추가했습니다.
+- 예제 워크플로우 `korean_scene_to_ideogram4.json`를 모델 링크 Note 노드 방식으로 갱신하고,
+  Ideogram4 T2I 위젯을 0.2.7 LoRA 슬롯 추가 이후 레이아웃(위젯 36개)에 맞춰 재정렬했습니다.
+  이전 예제는 LoRA 슬롯 추가 전(위젯 20개)으로 저장돼 있어 로드 시 `mu`/`cfg_override` 값이
+  `lora_*_name` 칸으로 밀려 "유효하지 않은 LoRA"로 실행이 막혔습니다.
 
 ## [0.2.7] - 2026-06-08
 
