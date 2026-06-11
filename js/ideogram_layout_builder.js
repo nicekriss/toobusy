@@ -2057,7 +2057,7 @@ function installEditor(node) {
 
             const subtitle = document.createElement("div");
             subtitle.className = "import-modal-subtitle";
-            subtitle.textContent = "Paste Prompt Polish ideogram_json, or load a PNG with ComfyUI metadata. Nothing changes until Apply.";
+            subtitle.textContent = "Paste Prompt Polish ideogram_json, or load a PNG with ComfyUI metadata (the PNG also becomes the canvas reference backdrop). Nothing changes until Apply.";
 
             const textarea = document.createElement("textarea");
             textarea.spellcheck = false;
@@ -2077,6 +2077,7 @@ function installEditor(node) {
             const applyButton = makeButton("Apply", "Replace the current layout with this parsed payload", () => {
                 if (!importDialog.state) return;
                 applyState(importDialog.state);
+                if (importDialog.pendingReference) setReferenceImage(importDialog.pendingReference);
                 close();
             });
             applyButton.disabled = true;
@@ -2137,6 +2138,17 @@ function installEditor(node) {
                     validate();
                     if (importDialog.state) {
                         setStatus(`${status.textContent}\n\nLoaded from PNG metadata field: ${found.source}`, false);
+                        // Stage the PNG itself as the reference backdrop so the
+                        // boxes land on the very image they came from.
+                        const objectUrl = URL.createObjectURL(file);
+                        const probe = new Image();
+                        probe.onload = () => {
+                            URL.revokeObjectURL(objectUrl);
+                            importDialog.pendingReference = encodeReferenceImage(probe);
+                            setStatus(`${status.textContent}\nThis PNG will also become the reference backdrop on Apply.`, false);
+                        };
+                        probe.onerror = () => URL.revokeObjectURL(objectUrl);
+                        probe.src = objectUrl;
                     }
                 } catch (err) {
                     setStatus(`Image metadata import error: ${err.message}`, true);
@@ -2146,9 +2158,11 @@ function installEditor(node) {
             const close = () => {
                 backdrop.hidden = true;
                 importDialog.state = null;
+                importDialog.pendingReference = null;
             };
             const open = () => {
                 textarea.value = "";
+                importDialog.pendingReference = null;
                 validate();
                 backdrop.hidden = false;
                 setTimeout(() => textarea.focus(), 0);
@@ -2162,7 +2176,7 @@ function installEditor(node) {
                     close();
                 }
             });
-            importDialog = { open, state: null };
+            importDialog = { open, state: null, pendingReference: null };
         }
         importDialog.open();
     }
@@ -2375,6 +2389,15 @@ function installEditor(node) {
         node.setSize([w, node.computeSize()[1]]);
         node.setDirtyCanvas(true, true);
     };
+
+    // The element panel grows and shrinks as selections change (palette rows,
+    // Clear colors, role hints), so re-measure the node whenever the editor's
+    // content height drifts from the node height — otherwise the bottom row
+    // ends up clipped by the node border.
+    new ResizeObserver(() => {
+        const target = node.computeSize()[1];
+        if (Math.abs((node.size?.[1] || 0) - target) > 2) ensurePreferredSize();
+    }).observe(root);
 
     requestAnimationFrame(() => { applyResolution(); ensurePreferredSize(); });
     setTimeout(ensurePreferredSize, 50);
