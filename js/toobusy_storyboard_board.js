@@ -157,7 +157,7 @@ function makeBoardEditor(node) {
             .toobusy-board {
                 position: relative;
                 width: 100%;
-                height: 600px;
+                height: 600px; /* runtime: follows the node height (syncBoardHeight) */
                 box-sizing: border-box;
                 border-radius: 10px;
                 overflow: hidden;
@@ -327,7 +327,7 @@ function makeBoardEditor(node) {
         <div class="island toolbar"></div>
         <div class="island props" hidden></div>
         <div class="island zoom"></div>
-        <div class="hint">Space-drag pan · Ctrl+wheel zoom · Ctrl+V paste image · double-click text · K keyframe</div>
+        <div class="hint">Wheel zoom · Space-drag pan · Ctrl+V paste image · double-click text · K keyframe</div>
         <textarea class="inline-editor" spellcheck="false"></textarea>
         <input class="image-file" type="file" accept="image/*" multiple />
     `;
@@ -348,11 +348,24 @@ function makeBoardEditor(node) {
     root.addEventListener("keydown", (event) => event.stopPropagation());
 
     // ----- view + coordinate helpers ----------------------------------------
-    const toWorld = (event) => {
+    // The whole node is scaled by the LiteGraph canvas zoom, so client-pixel
+    // offsets must be mapped back to the board's own CSS pixels via the
+    // bounding-rect ratio before the board view transform is applied —
+    // otherwise every click drifts whenever the graph zoom isn't 100%.
+    const toLocal = (clientX, clientY) => {
         const rect = canvas.getBoundingClientRect();
+        const ratioX = rect.width > 0 ? canvas.clientWidth / rect.width : 1;
+        const ratioY = rect.height > 0 ? canvas.clientHeight / rect.height : 1;
         return {
-            x: (event.clientX - rect.left - view.x) / view.scale,
-            y: (event.clientY - rect.top - view.y) / view.scale,
+            x: (clientX - rect.left) * ratioX,
+            y: (clientY - rect.top) * ratioY,
+        };
+    };
+    const toWorld = (event) => {
+        const local = toLocal(event.clientX, event.clientY);
+        return {
+            x: (local.x - view.x) / view.scale,
+            y: (local.y - view.y) / view.scale,
         };
     };
     const persistView = () => {
@@ -360,9 +373,9 @@ function makeBoardEditor(node) {
         node.properties.toobusy_board_view = { x: view.x, y: view.y, scale: view.scale };
     };
     const zoomAt = (clientX, clientY, factor) => {
-        const rect = canvas.getBoundingClientRect();
-        const sx = clientX - rect.left;
-        const sy = clientY - rect.top;
+        const local = toLocal(clientX, clientY);
+        const sx = local.x;
+        const sy = local.y;
         const wx = (sx - view.x) / view.scale;
         const wy = (sy - view.y) / view.scale;
         view.scale = Math.max(0.08, Math.min(4, view.scale * factor));
@@ -1150,7 +1163,8 @@ function makeBoardEditor(node) {
         const panning = event.button === 1 || spaceHeld || tool === "hand";
 
         if (panning) {
-            drag = { mode: "pan", startX: event.clientX, startY: event.clientY, viewX: view.x, viewY: view.y };
+            const local = toLocal(event.clientX, event.clientY);
+            drag = { mode: "pan", startX: local.x, startY: local.y, viewX: view.x, viewY: view.y };
             canvas.style.cursor = "grabbing";
             canvas.setPointerCapture(event.pointerId);
             return;
@@ -1241,8 +1255,9 @@ function makeBoardEditor(node) {
         const point = toWorld(event);
 
         if (drag.mode === "pan") {
-            view.x = drag.viewX + (event.clientX - drag.startX);
-            view.y = drag.viewY + (event.clientY - drag.startY);
+            const local = toLocal(event.clientX, event.clientY);
+            view.x = drag.viewX + (local.x - drag.startX);
+            view.y = drag.viewY + (local.y - drag.startY);
             draw();
             return;
         }
@@ -1366,21 +1381,13 @@ function makeBoardEditor(node) {
         }
     });
 
-    // Wheel: pan; Ctrl/Cmd+wheel: zoom to cursor. Never reaches LiteGraph.
+    // Wheel: zoom to cursor — same muscle memory as the ComfyUI graph itself.
+    // Panning is space-drag / hand tool / middle-drag. Never reaches LiteGraph.
     canvas.addEventListener("wheel", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        if (event.ctrlKey || event.metaKey) {
-            zoomAt(event.clientX, event.clientY, Math.exp(-event.deltaY * 0.0012));
-            return;
-        }
-        const dx = event.shiftKey ? event.deltaY : event.deltaX;
-        const dy = event.shiftKey ? 0 : event.deltaY;
-        view.x -= dx;
-        view.y -= dy;
-        persistView();
-        closeTextEditor();
-        draw();
+        const speed = event.ctrlKey || event.metaKey ? 0.0012 : 0.0018;
+        zoomAt(event.clientX, event.clientY, Math.exp(-event.deltaY * speed));
     }, { passive: false });
 
     // ----- keyboard -----------------------------------------------------------------------------
@@ -1605,18 +1612,44 @@ app.registerExtension({
             return;
         }
 
+        // Reserved vertical space above the board: node title + the four
+        // visible widgets (width/height/background/keyframe_fit) + margins.
+        const BOARD_RESERVED = 170;
+        const syncBoardHeight = (node) => {
+            const editor = node._toobusyBoardEl;
+            if (!editor) return;
+            const height = Math.max(340, Math.round((node.size?.[1] || 760) - BOARD_RESERVED));
+            editor.style.height = `${height}px`;
+        };
+
         const onNodeCreated = nodeType.prototype.onNodeCreated;
         nodeType.prototype.onNodeCreated = function () {
             onNodeCreated?.apply(this, arguments);
             hideWidget(this, boardWidget(this));
 
             const editor = makeBoardEditor(this);
+            this._toobusyBoardEl = editor;
             if (this.addDOMWidget) {
                 this.addDOMWidget("storyboard_board", "div", editor, { serialize: false });
             } else {
                 this.addWidget("button", "Inline board unsupported", "open", () => {}, { serialize: false });
             }
-            this.size = [960, 760];
+            this.size = [960, 780];
+            syncBoardHeight(this);
+        };
+
+        const onResize = nodeType.prototype.onResize;
+        nodeType.prototype.onResize = function () {
+            const result = onResize?.apply(this, arguments);
+            syncBoardHeight(this);
+            return result;
+        };
+
+        const onConfigure = nodeType.prototype.onConfigure;
+        nodeType.prototype.onConfigure = function () {
+            const result = onConfigure?.apply(this, arguments);
+            syncBoardHeight(this);
+            return result;
         };
 
         const onDrawForeground = nodeType.prototype.onDrawForeground;
