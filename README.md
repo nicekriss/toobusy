@@ -95,6 +95,7 @@
 
 - [`korean_scene_to_ideogram4.json`](docs/workflows/korean_scene_to_ideogram4.json) — **한국어 장면 → Prompt Polish → (Import polished로) Layout Builder → Ideogram4 T2I.** 한국어 한 줄이 영어 구조화 프롬프트 + 레이아웃 + 이미지로 흐르는 흐름입니다. 처음 사용자는 이 워크플로우를 먼저 열어 전체 흐름을 확인하는 것을 권장합니다. 필요한 모델 링크는 워크플로우 안 Note 노드에 있습니다.
 - [`z_image_turbo.json`](docs/workflows/z_image_turbo.json) — **`toobusy Z-Image Turbo` 한 노드로 t2i 그래프(~10노드)를 접는 예제.** `image` 입력에 Load Image를 연결하면 자동으로 img2img로 전환됩니다. 필요한 모델 링크는 워크플로우 안 Note 노드에 있습니다(Comfy-Org Z-Image Turbo / Qwen3-4B / Flux VAE).
+- [`wan21_scail2.json`](docs/workflows/wan21_scail2.json) — **Wan 2.1 SCAIL-2 모션 트랜스퍼 풀 그래프(92노드).** 레퍼런스 이미지 + 댄스 영상 → SAM3 세그멘테이션 → 베이스 생성 + 익스텐드 2회. `toobusy Wan SCAIL Extend Sampler`가 접는 대상이 바로 이 그래프의 샘플링 체인입니다(before/after 비교용). 결과: [`wan21_scail2_sample.mp4`](docs/workflows/wan21_scail2_sample.mp4). 최신 ComfyUI 코어(SCAIL-2) + SAM3/KJNodes/VHS 필요.
 
 ## 설치
 
@@ -445,6 +446,17 @@ CLIPTextEncode x2 + CLIPVisionEncode + ModelSamplingSD3 + KSamplerSelect + Basic
 `previous_frames` / `video_frame_offset`)이 있는 **최신 ComfyUI**가 필요합니다.
 구버전 코어에서는 노드 로드는 되고, 실행 시 ComfyUI 업데이트를 안내하는 명확한
 에러를 냅니다.
+
+모드: `replacement_mode` 토글이 노드의 동작을 결정합니다 — **animation mode**(기본)
+= 레퍼런스 캐릭터가 포즈 영상의 동작을 따라 움직임(모션 트랜스퍼), **replacement
+mode** = 원본 영상의 장면을 유지한 채 인물만 레퍼런스 캐릭터로 교체(캐릭터 스왑).
+`Create SCAIL-2 Colored Mask` 노드의 같은 토글과 **항상 같은 값**이어야 하며,
+어긋나면 실행 시 콘솔 경고가 뜹니다.
+
+예제: 접기 전 풀 그래프 [`wan21_scail2.json`](docs/workflows/wan21_scail2.json)
+(92노드 — 이 노드가 접는 샘플링 체인의 before) · 결과 영상
+[`wan21_scail2_sample.mp4`](docs/workflows/wan21_scail2_sample.mp4)
+(65+81+81프레임, 익스텐드 2회, 이음새 색보정).
 
 ## 기타 노드 상세 메모
 

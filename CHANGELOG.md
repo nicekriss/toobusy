@@ -2,34 +2,36 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
-## [Unreleased]
-
-### Changed
-- **`toobusy Storyboard Board` 전면 리디자인** — Excalidraw 스타일 무한 화이트보드로
-  재작성했습니다. 무한 캔버스 팬/줌(휠/Ctrl+휠/Space), DPR 대응 선명 렌더, 도트 그리드,
-  출력 프레임 표시, 플로팅 아이콘 툴바(드래그로 도형 그리기), 인라인 텍스트 편집(팝업
-  제거), Ctrl+V 이미지 붙여넣기(자동 다운스케일 임베드), 컨텍스트 속성 패널(색 스와치/
-  선 두께/폰트 프리셋), 4코너 비율 유지 리사이즈, 이미지 카드 라운드+그림자, info 배지.
-  기존 `board_data` 스키마와 출력 슬롯 순서는 그대로 호환됩니다.
+## [0.2.9] - 2026-06-12
 
 ### Added
+- **`toobusy Wan SCAIL Extend Sampler`** 신규 노드: Wan 2.1 SCAIL-2 영상의 생성+익스텐드
+  그래프(~22 코어 노드 + Get/Set 배선)를 1노드로 접었습니다. 익스텐드 청크는
+  `＋ Add / ✕ Remove` 동적 슬롯(최대 8), offset/previous_frames 체이닝 내부 자동,
+  Reinhard LAB 이음새 색보정 내장, 총 프레임 readout + 모드 표시, info 배지.
+  `replacement_mode`(animation/replacement)는 Basic 노출이며 마스크 배경 규약
+  불일치 시 콘솔 경고를 냅니다. 최신 코어의 SCAIL-2 `WanSCAILToVideo` 필요
+  (구코어에선 명확한 업데이트 안내 에러). 예제 풀 그래프 `wan21_scail2.json` +
+  결과 영상 추가. (PR #45, #47)
+
 - `toobusy Storyboard Board`에 **keyframes 출력**: 보드의 이미지 카드를 `K`로 키프레임
   마킹(순번 배지)하면 마킹 순서대로 `width x height`에 피팅된 IMAGE 배치로 출력됩니다
   (`keyframe_fit`: crop/pad/stretch). 이미지 → 키프레임 → 영상 흐름의 다리.
-  익스포트 텍스트에 한글 폰트(맑은 고딕) 폴백 추가.
-- **`toobusy Wan SCAIL Extend Sampler`** 신규 노드: Wan 2.1 SCAIL-2 영상의 생성+익스텐드
-  그래프(CLIPTextEncode x2 + CLIPVisionEncode + ModelSamplingSD3 + KSamplerSelect +
-  BasicScheduler + 청크마다 WanSCAILToVideo→SamplerCustom→VAEDecode + 익스텐드마다
-  오버랩 트리밍/Reinhard LAB 색보정 + 프레임 결합, 익스텐드 2개 기준 ~22 코어 노드)를
-  하나의 노드로 접었습니다. 익스텐드 청크는 `＋ Add / ✕ Remove` 동적 슬롯(최대 8)로
-  추가하며 offset/previous_frames 체이닝은 내부 자동 처리. 총 프레임 readout, 우상단
-  `i` info 배지 + 시그니처 툴팁, Basic/Advanced 게이팅 포함. 회귀 테스트
-  `tests/test_wan_scail_extend_sampler.py` 추가. 최신 코어의 `WanSCAILToVideo`(SCAIL-2
-  확장 입력)가 필요하며, 구버전 코어에선 명확한 업데이트 안내 에러를 냅니다.
+  익스포트 텍스트에 한글 폰트(맑은 고딕) 폴백 추가. (PR #46)
 - `toobusy Ideogram Layout Builder`에 **레퍼런스 이미지 백드롭**: 캔버스 밑에 이미지를
   깔고(투명도 조절) 그 위에 박스를 트레이싱. Import polished에서 PNG를 불러오면 그
   PNG가 레퍼런스로 자동 적용(Apply 시). 이미지는 가이드 전용으로 워크플로우/프롬프트에
   들어가지 않고 브라우저 localStorage에만 저장됩니다. (PR #43, #44)
+
+### Changed
+- **`toobusy Storyboard Board` 전면 리디자인** — Excalidraw 스타일 무한 화이트보드로
+  재작성했습니다. 무한 캔버스 팬/줌(휠 = 커서 기준 줌, Space 드래그 = 팬), DPR 대응
+  선명 렌더, 도트 그리드, 출력 프레임 표시, 플로팅 아이콘 툴바(드래그로 도형 그리기),
+  인라인 텍스트 편집(팝업 제거), Ctrl+V 이미지 붙여넣기(자동 다운스케일 임베드),
+  컨텍스트 속성 패널(색 스와치/선 두께/폰트 프리셋), 4코너 비율 유지 리사이즈, 이미지
+  카드 라운드+그림자, info 배지. 그래프 줌 상태와 무관하게 좌표가 정확하며 노드 세로
+  리사이즈를 따라갑니다. 기존 `board_data` 스키마와 출력 슬롯 순서는 그대로 호환.
+  (PR #46, #48)
 
 ## [0.2.8] - 2026-06-09
 
