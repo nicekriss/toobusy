@@ -127,6 +127,33 @@ def _scail_missing_params():
     return [name for name in _SCAIL_REQUIRED_PARAMS if name not in params]
 
 
+def _estimate_mask_background(mask_video):
+    """'white' / 'black' from the corner luminance of the first mask frame, or
+    None when ambiguous. SCAIL-2's mode convention lives in the mask background
+    (animation = black, replacement = white), so a mismatch here almost always
+    means the replacement_mode toggles on this node and on 'Create SCAIL-2
+    Colored Mask' disagree."""
+    try:
+        frame = mask_video[0]
+        height = int(frame.shape[0])
+        width = int(frame.shape[1])
+        patch = max(1, min(8, height // 8, width // 8))
+        corners = (
+            frame[:patch, :patch],
+            frame[:patch, width - patch:],
+            frame[height - patch:, :patch],
+            frame[height - patch:, width - patch:],
+        )
+        luminance = sum(float(corner.mean()) for corner in corners) / 4.0
+    except Exception:
+        return None
+    if luminance >= 0.75:
+        return "white"
+    if luminance <= 0.25:
+        return "black"
+    return None
+
+
 def _chunk_plan(base_frames, extend_segments, segment_frames, seed):
     """[(length, noise_seed), ...] for the base chunk plus each active extend
     segment. Chunk seeds step from the base seed so each chunk gets fresh
@@ -383,6 +410,18 @@ class ToobusyWanSCAILExtendSampler:
                 raise ValueError(
                     f"extend_{index + 1}_frames ({segment_frames[index]}) must be larger than "
                     f"previous_frame_count ({overlap}); the chunk would only re-render the overlap."
+                )
+
+        if pose_video_mask is not None:
+            estimated = _estimate_mask_background(pose_video_mask)
+            expected = "white" if replacement_mode else "black"
+            if estimated is not None and estimated != expected:
+                mode_name = "replacement" if replacement_mode else "animation"
+                print(
+                    f"[toobusy Wan SCAIL] Warning: pose_video_mask background looks {estimated} "
+                    f"but {mode_name} mode expects {expected}. Set replacement_mode to the SAME "
+                    "value on this node and on 'Create SCAIL-2 Colored Mask' — mismatched mask "
+                    "conventions degrade quality, especially with multiple people."
                 )
 
         plan = _chunk_plan(base_frames, extend_segments, segment_frames, seed)

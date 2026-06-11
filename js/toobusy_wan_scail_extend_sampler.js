@@ -4,14 +4,15 @@ const MAX_EXTEND_SEGMENTS = 8;
 
 // Expert tuning hidden by default (Basic view). The extend segment controls
 // are NOT here — growing the video is the whole point of this node, so the
-// +/- segment surface always shows.
+// +/- segment surface always shows. replacement_mode is deliberately NOT here
+// either: animation vs replacement changes what the node fundamentally does
+// (whose scene, whose character), so it stays on the Basic surface.
 const ADVANCED_WIDGETS = [
     "sampler_name",
     "scheduler",
     "shift",
     "previous_frame_count",
     "color_match",
-    "replacement_mode",
     "pose_strength",
     "pose_start",
     "pose_end",
@@ -255,7 +256,8 @@ function updateFramesReadout(node) {
     const total = parts.reduce((sum, value) => sum + value, 0);
     const seconds = (total / 16).toFixed(1);
     const sum = parts.length > 1 ? `${parts.join(" + ")} = ` : "";
-    readout.value = `${sum}${total} frames · ~${seconds}s @ 16fps`;
+    const mode = findWidget(node, "replacement_mode")?.value ? "Replacement" : "Animation";
+    readout.value = `${sum}${total} frames · ~${seconds}s @ 16fps · ${mode}`;
     node.setDirtyCanvas?.(true, true);
 }
 
@@ -348,6 +350,7 @@ app.registerExtension({
             }
             hookReadout(this, "base_frames");
             hookReadout(this, "previous_frame_count");
+            hookReadout(this, "replacement_mode");
             for (let slot = 1; slot <= MAX_EXTEND_SEGMENTS; slot += 1) {
                 hookReadout(this, `extend_${slot}_frames`);
             }
