@@ -24,6 +24,7 @@ jobs:
             keyframe_maker_node \
             ltx23_compact_sampler_node \
             storyboard_board_node \
+            wan_scail_extend_sampler_node \
             z_image_turbo_node
       - name: Node behaviour regression tests (no ComfyUI runtime)
         run: |
