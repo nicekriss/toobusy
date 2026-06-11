@@ -466,6 +466,16 @@ function installEditor(node) {
         height: clamp(storedResolution.height || heightWidget?.value || 2048, 256, 2048),
     };
 
+    // Reference image: an optional backdrop drawn under the boxes so the user
+    // can trace a layout over an existing picture. It is a placement guide
+    // only — it never enters elements_json, the workflow, or the prompt.
+    // Stored per node in this browser's localStorage (like presets).
+    const REFERENCE_STORE_KEY = "toobusy.ideogram.reference_images";
+    const REFERENCE_MAX_EDGE = 1536;
+    let referenceImage = null;
+    let referenceOpacity = 0.5;
+    let updateReferenceControls = () => {};
+
     const root = document.createElement("div");
     root.className = "toobusy-ideogram";
     root.innerHTML = `
@@ -770,6 +780,29 @@ function installEditor(node) {
                 display: flex;
                 align-items: center;
             }
+            .toobusy-ideogram .ref-bar {
+                display: flex;
+                gap: 7px;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+            .toobusy-ideogram .ref-bar input[type="range"] {
+                width: 110px;
+                flex: 0 0 auto;
+                padding: 0;
+                border: none;
+                border-left: none;
+                background: transparent;
+                cursor: pointer;
+            }
+            .toobusy-ideogram .ref-bar input[type="range"]:disabled {
+                opacity: 0.35;
+                cursor: default;
+            }
+            .toobusy-ideogram .ref-bar .ref-status {
+                color: #7f8b99;
+                font-size: 11px;
+            }
             .toobusy-ideogram .palette-editor {
                 display: flex;
                 flex-direction: column;
@@ -847,6 +880,7 @@ function installEditor(node) {
                 <div class="canvas-frame">
                     <canvas width="1000" height="1000"></canvas>
                 </div>
+                <div class="ref-bar"></div>
                 <div class="resolution"></div>
                 <div class="element"></div>
             </div>
@@ -858,6 +892,7 @@ function installEditor(node) {
     `;
 
     const scene = root.querySelector(".scene");
+    const referenceBar = root.querySelector(".ref-bar");
     const resolutionBar = root.querySelector(".resolution");
     const toolbar = root.querySelector(".toolbar");
     const sideInfo = root.querySelector(".side-info");
@@ -909,6 +944,69 @@ function installEditor(node) {
             heightWidget.callback?.(resolution.height);
         }
         node.setDirtyCanvas(true, true);
+    }
+
+    // ----- Reference image helpers -----
+    function loadReferenceStore() {
+        try { return JSON.parse(localStorage.getItem(REFERENCE_STORE_KEY)) || {}; } catch { return {}; }
+    }
+    function saveReferenceStore(store) {
+        try { localStorage.setItem(REFERENCE_STORE_KEY, JSON.stringify(store)); } catch {}
+    }
+    function persistReferenceImage(dataUrl) {
+        const store = loadReferenceStore();
+        if (dataUrl) {
+            store[String(node.id)] = { dataUrl, opacity: referenceOpacity };
+        } else {
+            delete store[String(node.id)];
+        }
+        saveReferenceStore(store);
+    }
+    function persistReferenceOpacity() {
+        const store = loadReferenceStore();
+        const entry = store[String(node.id)];
+        if (!entry) return;
+        entry.opacity = referenceOpacity;
+        saveReferenceStore(store);
+    }
+
+    function setReferenceImage(dataUrl, { persist = true } = {}) {
+        if (!dataUrl) {
+            referenceImage = null;
+            if (persist) persistReferenceImage(null);
+            updateReferenceControls();
+            draw();
+            return;
+        }
+        const img = new Image();
+        img.onload = () => {
+            referenceImage = img;
+            if (persist) persistReferenceImage(dataUrl);
+            updateReferenceControls();
+            draw();
+        };
+        img.onerror = () => {
+            referenceImage = null;
+            if (persist) persistReferenceImage(null);
+            updateReferenceControls();
+            draw();
+        };
+        img.src = dataUrl;
+    }
+
+    // Downscale + re-encode as JPEG so the localStorage copy stays small; the
+    // backdrop is a placement guide, not pixel-perfect art.
+    function encodeReferenceImage(img) {
+        const scale = Math.min(1, REFERENCE_MAX_EDGE / Math.max(img.width, img.height));
+        const buffer = document.createElement("canvas");
+        buffer.width = Math.max(1, Math.round(img.width * scale));
+        buffer.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = buffer.getContext("2d");
+        // Flatten transparency to the canvas background so JPEG doesn't turn it black.
+        ctx.fillStyle = "#151a20";
+        ctx.fillRect(0, 0, buffer.width, buffer.height);
+        ctx.drawImage(img, 0, 0, buffer.width, buffer.height);
+        return buffer.toDataURL("image/jpeg", 0.85);
     }
 
     function applyResolution() {
@@ -984,6 +1082,14 @@ function installEditor(node) {
         ctx.clearRect(0, 0, W, H);
         ctx.fillStyle = "#151a20";
         ctx.fillRect(0, 0, W, H);
+
+        if (referenceImage) {
+            // Stretch to fill: boxes are normalized over the full output frame,
+            // so the reference must occupy exactly the same frame.
+            ctx.globalAlpha = referenceOpacity;
+            ctx.drawImage(referenceImage, 0, 0, W, H);
+            ctx.globalAlpha = 1;
+        }
 
         ctx.strokeStyle = "#2d3642";
         ctx.lineWidth = 1;
@@ -1330,6 +1436,67 @@ function installEditor(node) {
     });
 
     resolutionBar.append(presetLabel, widthLabel, heightLabel, resolutionReadout);
+
+    // Reference image bar under the canvas: load / clear / opacity.
+    const referenceFileInput = document.createElement("input");
+    referenceFileInput.type = "file";
+    referenceFileInput.accept = "image/*";
+    referenceFileInput.className = "import-file";
+    const referenceLoadButton = makeButton(
+        "Load reference",
+        "Show an image under the boxes as a placement guide (saved in this browser only, never in the workflow)",
+        () => referenceFileInput.click(),
+    );
+    const referenceClearButton = makeButton("✕", "Remove the reference image", () => setReferenceImage(null));
+    const referenceSlider = document.createElement("input");
+    referenceSlider.type = "range";
+    referenceSlider.min = "10";
+    referenceSlider.max = "100";
+    referenceSlider.value = "50";
+    referenceSlider.title = "Reference image opacity";
+    // Keep slider drags from reaching the LiteGraph canvas underneath.
+    referenceSlider.addEventListener("pointerdown", (event) => event.stopPropagation());
+    const referenceStatus = document.createElement("span");
+    referenceStatus.className = "ref-status";
+    referenceBar.append(referenceLoadButton, referenceClearButton, referenceSlider, referenceStatus);
+
+    updateReferenceControls = () => {
+        const active = Boolean(referenceImage);
+        referenceClearButton.disabled = !active;
+        referenceSlider.disabled = !active;
+        referenceSlider.value = String(Math.round(referenceOpacity * 100));
+        referenceStatus.textContent = active
+            ? `${referenceImage.naturalWidth} x ${referenceImage.naturalHeight} @ ${Math.round(referenceOpacity * 100)}%`
+            : "No reference image";
+    };
+    updateReferenceControls();
+
+    referenceSlider.addEventListener("input", () => {
+        referenceOpacity = clamp(referenceSlider.value, 10, 100) / 100;
+        updateReferenceControls();
+        draw();
+    });
+    // Persist only on release; "input" fires on every drag tick and the store
+    // entry carries the whole dataURL.
+    referenceSlider.addEventListener("change", persistReferenceOpacity);
+
+    referenceFileInput.addEventListener("change", () => {
+        const file = referenceFileInput.files && referenceFileInput.files[0];
+        referenceFileInput.value = "";
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const probe = new Image();
+            probe.onload = () => setReferenceImage(encodeReferenceImage(probe));
+            probe.onerror = () => {
+                console.error("[toobusy ideogram] could not decode the reference image file.");
+                updateReferenceControls();
+            };
+            probe.src = String(reader.result);
+        };
+        reader.readAsDataURL(file);
+    });
+    referenceBar.appendChild(referenceFileInput);
 
     // Compact icon buttons in the narrow right column.
     const iconAdd = makeButton("＋", "Add element", addElement);
@@ -2223,6 +2390,18 @@ function installEditor(node) {
     };
 
     setTimeout(reloadFromWidgets, 0);
+
+    // Restore this node's reference image once the node id is final (same
+    // deferred tick the widget reload uses).
+    setTimeout(() => {
+        const entry = loadReferenceStore()[String(node.id)];
+        if (!entry || !entry.dataUrl) return;
+        const storedOpacity = Number(entry.opacity);
+        if (Number.isFinite(storedOpacity)) {
+            referenceOpacity = clamp(storedOpacity * 100, 10, 100) / 100;
+        }
+        setReferenceImage(entry.dataUrl, { persist: false });
+    }, 0);
 }
 
 app.registerExtension({
