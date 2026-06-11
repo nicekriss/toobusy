@@ -2,6 +2,23 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [Unreleased]
+
+### Added
+- **`toobusy Wan SCAIL Extend Sampler`** 신규 노드: Wan 2.1 SCAIL-2 영상의 생성+익스텐드
+  그래프(CLIPTextEncode x2 + CLIPVisionEncode + ModelSamplingSD3 + KSamplerSelect +
+  BasicScheduler + 청크마다 WanSCAILToVideo→SamplerCustom→VAEDecode + 익스텐드마다
+  오버랩 트리밍/Reinhard LAB 색보정 + 프레임 결합, 익스텐드 2개 기준 ~22 코어 노드)를
+  하나의 노드로 접었습니다. 익스텐드 청크는 `＋ Add / ✕ Remove` 동적 슬롯(최대 8)로
+  추가하며 offset/previous_frames 체이닝은 내부 자동 처리. 총 프레임 readout, 우상단
+  `i` info 배지 + 시그니처 툴팁, Basic/Advanced 게이팅 포함. 회귀 테스트
+  `tests/test_wan_scail_extend_sampler.py` 추가. 최신 코어의 `WanSCAILToVideo`(SCAIL-2
+  확장 입력)가 필요하며, 구버전 코어에선 명확한 업데이트 안내 에러를 냅니다.
+- `toobusy Ideogram Layout Builder`에 **레퍼런스 이미지 백드롭**: 캔버스 밑에 이미지를
+  깔고(투명도 조절) 그 위에 박스를 트레이싱. Import polished에서 PNG를 불러오면 그
+  PNG가 레퍼런스로 자동 적용(Apply 시). 이미지는 가이드 전용으로 워크플로우/프롬프트에
+  들어가지 않고 브라우저 localStorage에만 저장됩니다. (PR #43, #44)
+
 ## [0.2.8] - 2026-06-09
 
 ### Added

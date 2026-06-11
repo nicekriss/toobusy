@@ -392,6 +392,49 @@ RandomNoise -> LTXVConcatAVLatent -> CFGGuider -> KSamplerSelect -> ManualSigmas
 
 노드는 샘플링 후 항상 `LTXVCropGuides`를 실행하여 latent이 이어지기 전에 가이드 프레임을 제거합니다.
 
+### toobusy Wan SCAIL Extend Sampler
+
+카테고리:
+
+```text
+toobusy/Make
+```
+
+Wan 2.1 SCAIL-2 영상의 **생성 + 익스텐드 그래프 전체**를 하나의 노드로 접었습니다:
+
+```text
+CLIPTextEncode x2 + CLIPVisionEncode + ModelSamplingSD3 + KSamplerSelect + BasicScheduler
++ 청크마다 (WanSCAILToVideo -> SamplerCustom -> VAEDecode)
++ 익스텐드마다 (오버랩 트리밍 + Reinhard LAB 이음새 색보정) + 최종 프레임 결합
+```
+
+익스텐드 1개당 복붙하던 18노드짜리 블록이 **`＋ Add extend segment` 버튼 한 번**으로
+바뀝니다(최대 8개, 슬롯별 `✕ Remove`). 청크 간 `video_frame_offset`/`previous_frames`
+체이닝은 내부에서 자동 처리되고, readout 위젯이 총 출력 프레임 수(~초 @16fps)를
+미리 보여줍니다.
+
+입력:
+
+- `model` / `clip` / `vae` — 로더는 바깥에 둡니다(GGUF 등 어떤 로더든 연결 가능).
+- `reference_image` + `pose_video` — SCAIL 기본 컨디셔닝.
+- 선택: `clip_vision`(연결 시 reference를 내부에서 CLIPVisionEncode),
+  `pose_video_mask` / `reference_image_mask`(SCAIL-2 멀티 아이덴티티 마스크).
+
+세부 동작:
+
+- 각 청크는 **fresh 텍스트 컨디셔닝**을 받습니다(reference latent이 청크당 정확히
+  한 번 붙음). 청크 시드는 `seed + 청크 번호`로 결정적입니다.
+- 익스텐드 청크의 앞 `previous_frame_count`(기본 5, SCAIL-2 학습값) 프레임은
+  오버랩 재생성분이라 잘라내고, `color_match`가 켜져 있으면 이전 청크 마지막
+  프레임에 LAB 색 통계를 맞춰 이음새 색 틀어짐을 막습니다.
+- expert 튜닝(`sampler/scheduler/shift/pose_*` 등)은 `Show advanced settings`에
+  숨겨져 있습니다.
+
+요구 사항: 코어 `WanSCAILToVideo`에 SCAIL-2 확장 입력(`pose_video_mask` /
+`previous_frames` / `video_frame_offset`)이 있는 **최신 ComfyUI**가 필요합니다.
+구버전 코어에서는 노드 로드는 되고, 실행 시 ComfyUI 업데이트를 안내하는 명확한
+에러를 냅니다.
+
 ## 기타 노드 상세 메모
 
 아래는 설치하면 함께 등록되는 노드들의 상세 메모입니다. 상단 대표 흐름에서 바로 쓰는 노드와, 다른 흐름을 보조하는 노드를 함께 정리합니다:
