@@ -249,6 +249,27 @@ def test_old_core_without_scail2_inputs_fails_clearly():
         raise AssertionError("expected RuntimeError on old core")
 
 
+# --- mask background estimation (torch only) ---------------------------------
+
+def test_mask_background_estimation():
+    if not _HAS_TORCH:
+        print("SKIP test_mask_background_estimation (no torch)")
+        return
+    import torch
+
+    white = torch.ones(2, 64, 64, 3)
+    black = torch.zeros(2, 64, 64, 3)
+    gray = torch.full((1, 64, 64, 3), 0.5)
+    assert _mod._estimate_mask_background(white) == "white"
+    assert _mod._estimate_mask_background(black) == "black"
+    assert _mod._estimate_mask_background(gray) is None
+    # A character in the middle must not flip the corner-based estimate.
+    busy = torch.zeros(1, 64, 64, 3)
+    busy[0, 16:48, 16:48, 2] = 1.0
+    assert _mod._estimate_mask_background(busy) == "black"
+    assert _mod._estimate_mask_background(None) is None
+
+
 # --- color transfer (torch only) ---------------------------------------------
 
 def test_color_match_identity_when_stats_match():
