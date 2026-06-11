@@ -4,7 +4,19 @@
 
 ## [Unreleased]
 
+### Changed
+- **`toobusy Storyboard Board` 전면 리디자인** — Excalidraw 스타일 무한 화이트보드로
+  재작성했습니다. 무한 캔버스 팬/줌(휠/Ctrl+휠/Space), DPR 대응 선명 렌더, 도트 그리드,
+  출력 프레임 표시, 플로팅 아이콘 툴바(드래그로 도형 그리기), 인라인 텍스트 편집(팝업
+  제거), Ctrl+V 이미지 붙여넣기(자동 다운스케일 임베드), 컨텍스트 속성 패널(색 스와치/
+  선 두께/폰트 프리셋), 4코너 비율 유지 리사이즈, 이미지 카드 라운드+그림자, info 배지.
+  기존 `board_data` 스키마와 출력 슬롯 순서는 그대로 호환됩니다.
+
 ### Added
+- `toobusy Storyboard Board`에 **keyframes 출력**: 보드의 이미지 카드를 `K`로 키프레임
+  마킹(순번 배지)하면 마킹 순서대로 `width x height`에 피팅된 IMAGE 배치로 출력됩니다
+  (`keyframe_fit`: crop/pad/stretch). 이미지 → 키프레임 → 영상 흐름의 다리.
+  익스포트 텍스트에 한글 폰트(맑은 고딕) 폴백 추가.
 - **`toobusy Wan SCAIL Extend Sampler`** 신규 노드: Wan 2.1 SCAIL-2 영상의 생성+익스텐드
   그래프(CLIPTextEncode x2 + CLIPVisionEncode + ModelSamplingSD3 + KSamplerSelect +
   BasicScheduler + 청크마다 WanSCAILToVideo→SamplerCustom→VAEDecode + 익스텐드마다

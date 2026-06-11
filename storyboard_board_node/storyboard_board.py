@@ -78,7 +78,7 @@ def _tensor_to_pil(image_tensor):
     return Image.fromarray(array, "RGB")
 
 
-def _fit_image(image, width, height):
+def _fit_image(image, width, height, fill=(245, 245, 245)):
     width = max(1, int(width))
     height = max(1, int(height))
     source_w, source_h = image.size
@@ -86,7 +86,7 @@ def _fit_image(image, width, height):
     new_w = max(1, int(source_w * scale))
     new_h = max(1, int(source_h * scale))
     resized = image.resize((new_w, new_h), Image.Resampling.LANCZOS)
-    canvas = Image.new("RGB", (width, height), (245, 245, 245))
+    canvas = Image.new("RGB", (width, height), fill)
     canvas.paste(resized, ((width - new_w) // 2, (height - new_h) // 2))
     return canvas
 
@@ -102,10 +102,13 @@ def _data_url_to_pil(data_url):
 
 
 def _font(size):
-    try:
-        return ImageFont.truetype("arial.ttf", max(8, int(size)))
-    except Exception:
-        return ImageFont.load_default()
+    # malgun first so Korean scene notes render with real glyphs on Windows.
+    for name in ("malgun.ttf", "arial.ttf", "DejaVuSans.ttf"):
+        try:
+            return ImageFont.truetype(name, max(8, int(size)))
+        except Exception:
+            continue
+    return ImageFont.load_default()
 
 
 def _wrap_text(draw, text, font, width):
@@ -134,6 +137,39 @@ def _points(points):
     return result
 
 
+def _rounded_rect(draw, box, radius, **kwargs):
+    try:
+        draw.rounded_rectangle(box, radius=radius, **kwargs)
+    except Exception:
+        draw.rectangle(box, **kwargs)
+
+
+def _cover_image(image, width, height):
+    """Scale to fill width x height, center-cropping the overflow."""
+    width = max(1, int(width))
+    height = max(1, int(height))
+    source_w, source_h = image.size
+    scale = max(width / source_w, height / source_h)
+    new_w = max(1, int(round(source_w * scale)))
+    new_h = max(1, int(round(source_h * scale)))
+    resized = image.resize((new_w, new_h), Image.Resampling.LANCZOS)
+    left = (new_w - width) // 2
+    top = (new_h - height) // 2
+    return resized.crop((left, top, left + width, top + height))
+
+
+def _keyframe_items(board):
+    """Image items marked as keyframes, in their marked order."""
+    items = [
+        item
+        for item in board.get("items", [])
+        if isinstance(item, dict)
+        and item.get("type") == "image"
+        and int(item.get("keyframe") or 0) > 0
+    ]
+    return sorted(items, key=lambda item: int(item.get("keyframe") or 0))
+
+
 class ToobusyStoryboardBoard:
     @classmethod
     def INPUT_TYPES(cls):
@@ -142,16 +178,25 @@ class ToobusyStoryboardBoard:
                 "board_data": ("STRING", {"default": json.dumps(DEFAULT_BOARD), "multiline": True}),
                 "width": ("INT", {"default": 1280, "min": 256, "max": 4096, "step": 8}),
                 "height": ("INT", {"default": 720, "min": 256, "max": 4096, "step": 8}),
-                "background": ("STRING", {"default": "#f4f1e8"}),
+                "background": ("STRING", {"default": "#f8f9fa"}),
+                "keyframe_fit": (
+                    ["crop", "pad", "stretch"],
+                    {
+                        "default": "crop",
+                        "tooltip": "How keyframe images are fitted to width x height: crop = fill and center-crop, pad = letterbox on the background color, stretch = ignore aspect.",
+                    },
+                ),
             },
         }
 
-    RETURN_TYPES = ("IMAGE", "STRING")
-    RETURN_NAMES = ("image", "board_data")
+    # keyframes/keyframe_count are appended after the original outputs so
+    # existing workflows keep their link slot indices.
+    RETURN_TYPES = ("IMAGE", "STRING", "IMAGE", "INT")
+    RETURN_NAMES = ("image", "board_data", "keyframes", "keyframe_count")
     FUNCTION = "render"
     CATEGORY = "toobusy/Plan"
 
-    def render(self, board_data, width, height, background):
+    def render(self, board_data, width, height, background, keyframe_fit="crop"):
         width = int(width)
         height = int(height)
         board = _parse_board(board_data)
@@ -180,7 +225,8 @@ class ToobusyStoryboardBoard:
                     draw.text((x + 12, y + 12), "drop image", fill=color, font=_font(18))
 
             elif item_type == "rect":
-                draw.rectangle((x, y, x + w, y + h), fill=fill, outline=color, width=stroke_width)
+                radius = max(0, min(12, w / 4, h / 4))
+                _rounded_rect(draw, (x, y, x + w, y + h), radius, fill=fill, outline=color, width=stroke_width)
 
             elif item_type == "ellipse":
                 draw.ellipse((x, y, x + w, y + h), fill=fill, outline=color, width=stroke_width)
@@ -212,7 +258,34 @@ class ToobusyStoryboardBoard:
                         break
 
         array = np.asarray(canvas).astype(np.float32) / 255.0
-        return (torch.from_numpy(array)[None,], json.dumps(board, ensure_ascii=False))
+        board_image = torch.from_numpy(array)[None,]
+
+        # Keyframe batch: image cards marked with a keyframe order, fitted to
+        # the output size, ready for keyframe/video nodes downstream. With no
+        # marked keyframes the batch falls back to the board render (count 0).
+        keyframe_frames = []
+        background_rgb = _hex_to_rgba(background)[:3]
+        for item in _keyframe_items(board):
+            image = _data_url_to_pil(item.get("src"))
+            if image is None:
+                continue
+            if keyframe_fit == "pad":
+                fitted = _fit_image(image, width, height, fill=background_rgb)
+            elif keyframe_fit == "stretch":
+                fitted = image.resize((width, height), Image.Resampling.LANCZOS)
+            else:
+                fitted = _cover_image(image, width, height)
+            frame = np.asarray(fitted.convert("RGB")).astype(np.float32) / 255.0
+            keyframe_frames.append(torch.from_numpy(frame))
+
+        if keyframe_frames:
+            keyframes = torch.stack(keyframe_frames, dim=0)
+            keyframe_count = len(keyframe_frames)
+        else:
+            keyframes = board_image
+            keyframe_count = 0
+
+        return (board_image, json.dumps(board, ensure_ascii=False), keyframes, keyframe_count)
 
 
 NODE_CLASS_MAPPINGS = {
