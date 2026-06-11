@@ -5,49 +5,57 @@
 
 > **Fold the graph.** — toobusy folds tedious multi-step ComfyUI workflows into single production nodes.
 
+## 대표 데모
+
+### 1. Wan SCAIL-2 — 영상 생성/익스텐드 그래프 접기
+
 <p align="center">
-  <img src="docs/workflows/korean_scene_to_ideogram4.png" width="100%" alt="toobusy 워크플로우 — 한국어 장면을 Prompt Polish → Layout Builder → Ideogram4 T2I로 접는 그래프">
+  <a href="docs/workflows/wan21_scail2_sample.mp4">
+    <img src="docs/workflows/wan21_scail2_sample.jpg" width="100%" alt="toobusy Wan SCAIL-2 result preview">
+  </a>
 </p>
+<p align="center"><sub>↑ SCAIL-2 결과 영상 미리보기 — 클릭하면 mp4. 워크플로우: <a href="docs/workflows/wan21_scail2.json">wan21_scail2.json</a></sub></p>
+
+### 2. Ideogram4 — 한국어 장면에서 레이아웃과 이미지까지
+
+<p align="center">
+  <a href="docs/workflows/korean_scene_to_ideogram4.json">
+    <img src="docs/workflows/korean_scene_to_ideogram4.png" width="100%" alt="toobusy 워크플로우 — 한국어 장면을 Prompt Polish → Layout Builder → Ideogram4 T2I로 접는 그래프">
+  </a>
+</p>
+<p align="center"><sub>↑ Prompt Polish → Layout Builder → Ideogram4 T2I. 워크플로우: <a href="docs/workflows/korean_scene_to_ideogram4.json">korean_scene_to_ideogram4.json</a></sub></p>
 
 <table>
   <tr>
-    <td align="center" width="50%">
-      <a href="docs/workflows/sample1.jpg"><img src="docs/workflows/sample1.jpg" height="170" alt="Ideogram4 samurai action result made with toobusy"></a>
-    </td>
-    <td align="center" width="50%">
-      <a href="docs/workflows/sample2.jpg"><img src="docs/workflows/sample2.jpg" height="170" alt="Bold Korean typography result made with toobusy"></a>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="50%">
-      <a href="docs/workflows/sample3.jpg"><img src="docs/workflows/sample3.jpg" height="170" alt="Magazine cover style result made with toobusy"></a>
-    </td>
-    <td align="center" width="50%">
-      <a href="docs/workflows/sample4.jpg"><img src="docs/workflows/sample4.jpg" height="170" alt="Game poster style result made with toobusy"></a>
-    </td>
+    <td align="center" width="25%"><a href="docs/workflows/sample1.jpg"><img src="docs/workflows/sample1.jpg" height="150" alt="Ideogram4 sample result 1"></a></td>
+    <td align="center" width="25%"><a href="docs/workflows/sample2.jpg"><img src="docs/workflows/sample2.jpg" height="150" alt="Ideogram4 sample result 2"></a></td>
+    <td align="center" width="25%"><a href="docs/workflows/sample3.jpg"><img src="docs/workflows/sample3.jpg" height="150" alt="Ideogram4 sample result 3"></a></td>
+    <td align="center" width="25%"><a href="docs/workflows/sample4.jpg"><img src="docs/workflows/sample4.jpg" height="150" alt="Ideogram4 sample result 4"></a></td>
   </tr>
 </table>
-<p align="center"><sub>↑ toobusy 노드(Layout Builder · Prompt Polish · Ideogram4 T2I)로 만든 결과 — 클릭하면 원본. 워크플로우: <a href="docs/workflows/korean_scene_to_ideogram4.json">korean_scene_to_ideogram4.json</a></sub></p>
+<p align="center"><sub>↑ toobusy Ideogram 계열 노드로 만든 결과 — 클릭하면 원본.</sub></p>
+
+### 3. Z-Image Turbo — t2i 그래프를 한 노드로
 
 <p align="center">
-  <a href="https://youtu.be/1XQLOK40ATw">
-    <img src="https://img.youtube.com/vi/1XQLOK40ATw/maxresdefault.jpg" width="72%" alt="toobusy 리뷰/소개 영상 — 너무바쁜베짱이">
+  <a href="docs/workflows/z_image_turbo.json">
+    <img src="docs/workflows/z_image_turbo.png" width="100%" alt="toobusy Z-Image Turbo 워크플로우 — Load Image + 한 노드 + Save Image">
   </a>
 </p>
-<p align="center"><sub>▶ 리뷰·소개 영상 (클릭하면 YouTube) · 너무바쁜베짱이</sub></p>
+<p align="center"><sub>↑ Z-Image Turbo 예제 워크플로우. 결과 예시: <a href="docs/workflows/z_image_turbo_sample.png">z_image_turbo_sample.png</a></sub></p>
 
 노드는 두 갈래로 접혀 있습니다:
 
 - **`toobusy/Plan`** — 기획·연출·프롬프트를 접는다: Keyframe Maker, Storyboard Board, Ideogram Layout Builder, Ideogram Prompt Polish
 - **`toobusy/Make`** — 생성 파이프라인을 접는다: Z-Image Turbo, Ideogram4 T2I, LTX2.3 3종
 
-현재 대표 흐름:
+현재 README에서 바로 확인할 수 있는 대표 흐름:
 
-- `toobusy Ideogram Prompt Polish`
-- `toobusy Ideogram Layout Builder`
-- `toobusy Ideogram4 T2I`
+- `toobusy Wan SCAIL Extend Sampler`
+- `toobusy Ideogram Prompt Polish` + `toobusy Ideogram Layout Builder` + `toobusy Ideogram4 T2I`
+- `toobusy Z-Image Turbo`
 
-한국어 장면을 입력하면, Ideogram용 구조화 프롬프트로 정리하고, Layout Builder에서 박스와 구도를 확인한 뒤, 로컬 Ideogram4 모델로 이미지를 생성하는 흐름입니다.
+SCAIL-2는 레퍼런스 이미지와 포즈 영상을 받아 영상 생성/익스텐드 체인을 접고, Ideogram4는 한국어 장면을 구조화 프롬프트와 레이아웃으로 정리한 뒤 로컬 모델로 이미지를 만들며, Z-Image Turbo는 텍스트→이미지 기본 그래프를 한 노드로 줄입니다.
 
 `toobusy Ideogram4 T2I`도 선택형 외부 모델 override 입력을 받습니다: `model_override`·`uncond_model_override`(MODEL), `clip_override`(CLIP), `vae_override`(VAE). 연결된 소켓은 해당 내부 로더를 건너뛰고(미연결 시 `model_name`/`unconditional_model_name`/`clip_name`/`vae_name`으로 내부 로드), GGUF 등 다른 로더의 모델을 그대로 사용할 수 있습니다.
 
@@ -55,7 +63,6 @@
 
 - `toobusy Keyframe Maker`
 - `toobusy Storyboard Board`
-- `toobusy Z-Image Turbo`
 - `toobusy LTX2.3` 컴팩트 노드들
 
 ## 왜 "접기"인가 — Before → After
@@ -64,8 +71,9 @@
 
 | 노드 | Before (직접 배선) | After |
 |---|---|---|
-| **Z-Image Turbo** | UNET·CLIP·VAE 로더 + (LoRA×N) + ModelSamplingAuraFlow + CLIPTextEncode×2 + EmptyLatentImage + KSampler + VAEDecode — 약 10노드 | **1 노드** |
+| **Wan SCAIL Extend Sampler** | SCAIL-2 컨디셔닝 + 샘플러 + 디코드 + 익스텐드 반복 + 프레임 결합/색보정 — 약 20노드+ | **1 노드** |
 | **Ideogram4 T2I** | 로더 4 + 선택적 LoRA 체인 + 인코딩 + ConditioningZeroOut + CFGOverride + DualModelGuider + RandomNoise + KSamplerSelect + Ideogram4Scheduler + EmptyLatent + SamplerCustomAdvanced + VAEDecode — 약 13노드+ | **1 노드** |
+| **Z-Image Turbo** | UNET·CLIP·VAE 로더 + (LoRA×N) + ModelSamplingAuraFlow + CLIPTextEncode×2 + EmptyLatentImage + KSampler + VAEDecode — 약 10노드 | **1 노드** |
 | **LTX2.3 Compact AV Sampler** | RandomNoise + ConcatAVLatent + CFGGuider + KSamplerSelect + ManualSigmas + SamplerCustomAdvanced + SeparateAVLatent + CropGuides — 8노드 | **1 노드** |
 | **LTX2.3 Empty AV Latents** | EmptyLTXVLatentVideo + LTXVEmptyLatentAudio (+커스텀 오디오: AudioVAEEncode + SolidMask + SetLatentNoiseMask) | **1 노드** |
 | **Keyframe Maker** | 브리프 → 샷 비트 → 비주얼 앵커 → 키프레임 → 스토리, 5단계 수동 프롬프팅 | **1 노드** |
@@ -81,9 +89,10 @@
 
 | 노드 | 필요한 것 | 제약 / 검증 조건 |
 |---|---|---|
-| **Keyframe Maker** | `clip`에 **텍스트 생성 가능한 모델**(Gemma/LTX 등) + ComfyUI `TextGenerate` 노드 | 출력 품질은 연결한 LLM에 좌우됩니다. 내부에서 `seed`~`seed+4`를 사용 |
-| **Z-Image Turbo** | Z-Image Turbo 디퓨전 모델 + `lumina2` 텍스트 인코더 + VAE | 해당 모델 파일이 모델 폴더에 있어야 합니다 |
+| **Wan SCAIL Extend Sampler** | 외부 `model`/`clip`/`vae` 로더 + `reference_image` + `pose_video` + 최신 ComfyUI SCAIL-2 코어 | 코어 `WanSCAILToVideo`에 SCAIL-2 확장 입력이 필요합니다. SAM3/KJNodes/VHS는 예제 워크플로우 재현에 필요합니다 |
 | **Ideogram4 T2I** | **로컬 Ideogram 4 모델** + ComfyUI의 Ideogram4 지원 노드(`Ideogram4Scheduler`/`CFGOverride`/`DualModelGuider` 등) + UNET 2개(model/uncond) + `ideogram4` CLIP | **웹 API가 아닙니다.** Ideogram4 미지원 빌드에선 실행 시점에 실패합니다 |
+| **Z-Image Turbo** | Z-Image Turbo 디퓨전 모델 + `lumina2` 텍스트 인코더 + VAE | 해당 모델 파일이 모델 폴더에 있어야 합니다 |
+| **Keyframe Maker** | `clip`에 **텍스트 생성 가능한 모델**(Gemma/LTX 등) + ComfyUI `TextGenerate` 노드 | 출력 품질은 연결한 LLM에 좌우됩니다. 내부에서 `seed`~`seed+4`를 사용 |
 | **LTX2.3 (3종)** | ComfyUI에 LTX 2.3 노드셋(`LTXV*`) 설치 + LTX 모델/VAE/텍스트 인코더 | LTX 지원이 없는 환경에선 실행 시점에 실패합니다 |
 | **Storyboard Board** | (코어만) Pillow·numpy·torch | 드롭한 이미지는 `board_data`에 임베드 → 이미지가 많으면 그래프 JSON이 커집니다. 폰트는 arial→기본 폴백 |
 
@@ -93,9 +102,9 @@
 
 `docs/workflows/`에 "열면 돌아가는" 워크플로우를 둡니다.
 
+- [`wan21_scail2.json`](docs/workflows/wan21_scail2.json) — **Wan 2.1 SCAIL-2 모션 트랜스퍼 풀 그래프(92노드).** 레퍼런스 이미지 + 댄스 영상 → SAM3 세그멘테이션 → 베이스 생성 + 익스텐드 2회. `toobusy Wan SCAIL Extend Sampler`가 접는 대상이 바로 이 그래프의 샘플링 체인입니다(before/after 비교용). 결과: [`wan21_scail2_sample.mp4`](docs/workflows/wan21_scail2_sample.mp4). 최신 ComfyUI 코어(SCAIL-2) + SAM3/KJNodes/VHS 필요.
 - [`korean_scene_to_ideogram4.json`](docs/workflows/korean_scene_to_ideogram4.json) — **한국어 장면 → Prompt Polish → (Import polished로) Layout Builder → Ideogram4 T2I.** 한국어 한 줄이 영어 구조화 프롬프트 + 레이아웃 + 이미지로 흐르는 흐름입니다. 처음 사용자는 이 워크플로우를 먼저 열어 전체 흐름을 확인하는 것을 권장합니다. 필요한 모델 링크는 워크플로우 안 Note 노드에 있습니다.
 - [`z_image_turbo.json`](docs/workflows/z_image_turbo.json) — **`toobusy Z-Image Turbo` 한 노드로 t2i 그래프(~10노드)를 접는 예제.** `image` 입력에 Load Image를 연결하면 자동으로 img2img로 전환됩니다. 필요한 모델 링크는 워크플로우 안 Note 노드에 있습니다(Comfy-Org Z-Image Turbo / Qwen3-4B / Flux VAE).
-- [`wan21_scail2.json`](docs/workflows/wan21_scail2.json) — **Wan 2.1 SCAIL-2 모션 트랜스퍼 풀 그래프(92노드).** 레퍼런스 이미지 + 댄스 영상 → SAM3 세그멘테이션 → 베이스 생성 + 익스텐드 2회. `toobusy Wan SCAIL Extend Sampler`가 접는 대상이 바로 이 그래프의 샘플링 체인입니다(before/after 비교용). 결과: [`wan21_scail2_sample.mp4`](docs/workflows/wan21_scail2_sample.mp4). 최신 ComfyUI 코어(SCAIL-2) + SAM3/KJNodes/VHS 필요.
 
 ## 설치
 

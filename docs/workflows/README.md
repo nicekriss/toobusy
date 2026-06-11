@@ -12,13 +12,13 @@
 
 ## 들어있는 워크플로우
 
+- [x] **`wan21_scail2.json`** — Wan 2.1 SCAIL-2 모션 트랜스퍼 풀 그래프(92노드, 검증 완료).
+  레퍼런스 이미지 + 댄스 영상 → SAM3 → 베이스 + 익스텐드 2회. `toobusy Wan SCAIL Extend Sampler`가 접는 샘플링 체인의 **before** 예제. 결과 영상: `wan21_scail2_sample.mp4`. 최신 ComfyUI 코어(SCAIL-2) + SAM3/KJNodes/VHS 필요.
 - [x] **`korean_scene_to_ideogram4.json`** — 한국어 장면 → Prompt Polish → (Import polished로) Layout Builder → Ideogram4 T2I.
   한국어 한 줄이 영어 구조화 프롬프트 + 레이아웃 + 이미지로 흐르는 flagship 흐름. 필요한 모델은 워크플로우 안 Note 노드에 링크되어 있음(Comfy-Org Ideogram4 / Qwen3-VL / Gemma4 / Flux2 VAE).
   - 흐름: `Prompt Polish`의 `ideogram_json` 출력을 복사 → `Layout Builder`의 **Import polished**에 붙여넣고 박스 확인/수정 → `Ideogram4 T2I`로 생성.
 - [x] **`z_image_turbo.json`** — `toobusy Z-Image Turbo` 한 노드로 t2i 그래프(~10노드)를 접는 예제.
   `image` 입력에 Load Image를 연결하면 자동으로 img2img로 전환됨. 필요한 모델은 워크플로우 안 Note 노드에 링크되어 있음(Comfy-Org Z-Image Turbo / Qwen3-4B / Flux VAE).
-- [x] **`wan21_scail2.json`** — Wan 2.1 SCAIL-2 모션 트랜스퍼 풀 그래프(92노드, 검증 완료).
-  레퍼런스 이미지 + 댄스 영상 → SAM3 → 베이스 + 익스텐드 2회. `toobusy Wan SCAIL Extend Sampler`가 접는 샘플링 체인의 **before** 예제. 결과 영상: `wan21_scail2_sample.mp4`. 최신 ComfyUI 코어(SCAIL-2) + SAM3/KJNodes/VHS 필요.
 
 ## 권장 목록 (추가로 만들면 좋은 것)
 
