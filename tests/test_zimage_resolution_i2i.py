@@ -83,8 +83,8 @@ def _generate(**overrides):
 
 def _generate_wh(**overrides):
     """width/height-first view of generate(): the node now appends
-    model/clip/vae/positive/negative passthrough outputs after the original
-    image/latent/width/height slots."""
+    model/model_clean/clip/vae/positive/negative passthrough outputs after
+    the original image/latent/width/height slots."""
     return _generate(**overrides)[2:]
 
 
@@ -96,10 +96,12 @@ def _called(node_type):
 
 def test_passthrough_outputs_expose_loaded_objects():
     result = _generate()
-    assert len(result) == 9
-    image, latent, w, h, model, clip, vae, positive, negative = result
-    # LoRA off + shift applied -> model passthrough is the shift-patched model.
+    assert len(result) == 10
+    image, latent, w, h, model, model_clean, clip, vae, positive, negative = result
+    # `model` is the final sampled model (shift applied here; no LoRA/controlnet
+    # in this run); `model_clean` is the as-loaded model before any patching.
     assert model == "<ModelSamplingAuraFlow-out>"
+    assert model_clean == "<UNETLoader-out>"
     assert clip == "<CLIPLoader-out>"
     assert vae == "<VAELoader-out>"
     assert positive == "<CLIPTextEncode-out>" and negative == "<CLIPTextEncode-out>"
@@ -108,7 +110,9 @@ def test_passthrough_outputs_expose_loaded_objects():
 def test_output_slot_order_is_backward_compatible():
     types = _zit.ToobusyZImageTurbo.RETURN_TYPES
     assert types[:4] == ("IMAGE", "LATENT", "INT", "INT"), "existing slots must not move"
-    assert types[4:] == ("MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING")
+    assert types[4:] == ("MODEL", "MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING")
+    names = _zit.ToobusyZImageTurbo.RETURN_NAMES
+    assert names[4:6] == ("model", "model_clean")
 
 
 # --- INPUT_TYPES exposure --------------------------------------------------

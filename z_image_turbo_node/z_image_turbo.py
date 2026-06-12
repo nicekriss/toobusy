@@ -234,14 +234,17 @@ class ToobusyZImageTurbo:
 
         return base
 
-    # model/clip/vae/conditioning are passthrough outputs of what this node
-    # loaded and prepared (LoRA + shift applied; zit_control patches are NOT
-    # carried — control maps are sized to this node's own run). They feed
-    # follow-up stages (e.g. toobusy Hires Upscale + a second sampler pass)
-    # without re-adding loader nodes. Appended after the original outputs so
-    # existing workflows keep their link slots.
-    RETURN_TYPES = ("IMAGE", "LATENT", "INT", "INT", "MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING")
-    RETURN_NAMES = ("image", "latent", "width", "height", "model", "clip", "vae", "positive", "negative")
+    # Passthrough outputs of what this node loaded and prepared, so follow-up
+    # stages (toobusy Hires Upscale + a second sampler pass) need no external
+    # loaders or re-typed prompts. Two model flavors:
+    #   model       — exactly what sampled here: LoRA + shift + any zit_control
+    #                 patches (control maps are bound to THIS run's resolution;
+    #                 at a different second-pass size prefer model_clean).
+    #   model_clean — the model as loaded (override or internal), before LoRA /
+    #                 shift / controlnet: swap LoRAs or re-shift externally.
+    # Appended after the original outputs so existing workflows keep their slots.
+    RETURN_TYPES = ("IMAGE", "LATENT", "INT", "INT", "MODEL", "MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING")
+    RETURN_NAMES = ("image", "latent", "width", "height", "model", "model_clean", "clip", "vae", "positive", "negative")
     FUNCTION = "generate"
     CATEGORY = "toobusy/Make"
 
@@ -302,6 +305,10 @@ class ToobusyZImageTurbo:
             print("[toobusy Z-Image Turbo] Using internal VAE loader.")
             vae = _call_node("VAELoader", vae_name=vae_name)[0]
 
+        # Clean passthrough: the model exactly as loaded, before LoRA / shift /
+        # controlnet — for swapping LoRAs in a second pass.
+        model_clean = model
+
         lora_slots = max(0, min(MAX_LORA_SLOTS, int(lora_slots)))
         for slot in range(1, lora_slots + 1):
             enabled = lora_kwargs.get(f"lora_{slot}_enable", False)
@@ -351,11 +358,6 @@ class ToobusyZImageTurbo:
             )[0]
             width, height = target_w, target_h
 
-        # Passthrough model: LoRA + shift applied, but before any zit_control
-        # patch (control maps are bound to this run's resolution and would
-        # misbehave at a different second-pass size).
-        export_model = model
-
         # ControlNet module (optional): patch the final model — override/LoRA
         # included — once the generation size is known, so control maps match
         # the latent. Without a connected module nothing changes.
@@ -377,7 +379,7 @@ class ToobusyZImageTurbo:
         )[0]
         image = _call_node("VAEDecode", samples=sampled, vae=vae)[0]
 
-        return (image, sampled, width, height, export_model, clip, vae, positive_cond, negative_cond)
+        return (image, sampled, width, height, model, model_clean, clip, vae, positive_cond, negative_cond)
 
 
 NODE_CLASS_MAPPINGS = {
