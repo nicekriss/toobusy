@@ -49,11 +49,18 @@ def _install_stubs():
     sub.__path__ = [os.path.join(ROOT, "ltx23_compact_sampler_node")]
     sys.modules["toobusy.ltx23_compact_sampler_node"] = sub
 
-    samp = types.ModuleType("toobusy.ltx23_compact_sampler_node.ltx23_compact_sampler")
+    # Load the REAL shared module (the nodes import _scan_for/_normalized from
+    # it now), then patch only the runtime-touching helpers.
+    ltx_path = os.path.join(ROOT, "ltx23_compact_sampler_node", "ltx23_compact_sampler.py")
+    spec = importlib.util.spec_from_file_location(
+        "toobusy.ltx23_compact_sampler_node.ltx23_compact_sampler", ltx_path
+    )
+    samp = importlib.util.module_from_spec(spec)
+    sys.modules["toobusy.ltx23_compact_sampler_node.ltx23_compact_sampler"] = samp
+    spec.loader.exec_module(samp)
     samp._call_node = fake_call_node
     samp._sampler_names = lambda: ["res_multistep", "euler"]
     samp._default_sampler_name = lambda names: names[0]
-    sys.modules["toobusy.ltx23_compact_sampler_node.ltx23_compact_sampler"] = samp
 
 
 def _load(modname, relpath):

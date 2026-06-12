@@ -4,7 +4,19 @@
 
 ## [Unreleased]
 
+### Fixed
+- **`toobusy Flux2 Klein` 실행 불가 버그 수정**(검수): 레퍼런스 컨디셔닝이 백엔드에
+  존재하지 않는 서브그래프 UUID 클래스를 호출하고 있었음 → 원본 워크플로우의 실제
+  체인(`ImageScaleToTotalPixels`(lanczos·1MP) → `VAEEncode` → `ReferenceLatent`)
+  으로 교체. 내부 CLIP 로더 타입 `lumina2` → `flux2` 수정, 자체 `_call_node` 사본을
+  V3 기본값 채움이 포함된 공용 헬퍼로 교체.
+
 ### Changed
+- **모델 기본값 자동 감지를 전 노드로 확대**: `_scan_for`(퍼지 스캔)를 공용 모듈로
+  승격하고 `toobusy Ideogram4 T2I`(조건/무조건 모델 구분 포함)와 `toobusy Flux2
+  Klein`에 적용. 새 노드를 꺼내면 폴더에서 알맞은 모델이 자동 선택됩니다.
+- `toobusy Flux2 Klein`에 passthrough 출력 추가(`model`/`model_clean`/`clip`/
+  `vae`/`positive`) — Z-Image Turbo와 같은 규약, 기존 슬롯 순서 유지.
 - `toobusy Z-Image Turbo`의 **모델 기본값 자동 감지** 개선: 정확한 파일명 일치
   대신 퍼지 스캔(zimage/z-image/z_image + turbo/textEncoder/vae 등)으로 모델
   폴더에서 Z-Image 파일을 찾아 새 노드의 기본값으로 잡습니다. 파일명/폴더

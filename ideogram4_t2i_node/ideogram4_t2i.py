@@ -1,6 +1,11 @@
 import math
 
-from ..ltx23_compact_sampler_node.ltx23_compact_sampler import _call_node, _sampler_names
+from ..ltx23_compact_sampler_node.ltx23_compact_sampler import (
+    _call_node,
+    _normalized,
+    _sampler_names,
+    _scan_for,
+)
 
 
 RATIO_PRESETS = {
@@ -51,13 +56,6 @@ def _folder_list(kind, fallback):
         return names or fallback
     except Exception:
         return fallback
-
-
-def _first_existing(names, preferred):
-    for name in preferred:
-        if name in names:
-            return name
-    return names[0] if names else preferred[0]
 
 
 def _diffusion_model_names():
@@ -112,19 +110,42 @@ class ToobusyIdeogram4T2I:
 
         inputs = {
             "required": {
+                # Fuzzy auto-detection (shared _scan_for): a fresh node picks
+                # the right Ideogram4 files no matter how they're named or
+                # foldered. The conditional model scan excludes "uncond" names
+                # so the two model slots never grab the same file.
                 "model_name": (
                     diffusion_names,
-                    {"default": _first_existing(diffusion_names, ["ideogram4_fp8_scaled.safetensors"])},
+                    {"default": _scan_for(
+                        [n for n in diffusion_names if "uncond" not in _normalized(n)] or diffusion_names,
+                        [("ideogram4",), ("ideogram",)],
+                        fallback_preferred=["ideogram4_fp8_scaled.safetensors"],
+                    )},
                 ),
                 "unconditional_model_name": (
                     diffusion_names,
-                    {"default": _first_existing(diffusion_names, ["ideogram4_unconditional_fp8_scaled.safetensors"])},
+                    {"default": _scan_for(
+                        diffusion_names,
+                        [("ideogram4", "unconditional"), ("ideogram", "uncond")],
+                        fallback_preferred=["ideogram4_unconditional_fp8_scaled.safetensors"],
+                    )},
                 ),
                 "clip_name": (
                     clip_names,
-                    {"default": _first_existing(clip_names, ["qwen3vl_8b_fp8_scaled.safetensors"])},
+                    {"default": _scan_for(
+                        clip_names,
+                        [("qwen3vl",), ("qwen", "vl"), ("ideogram",)],
+                        fallback_preferred=["qwen3vl_8b_fp8_scaled.safetensors"],
+                    )},
                 ),
-                "vae_name": (vae_names, {"default": _first_existing(vae_names, ["flux2-vae.safetensors"])}),
+                "vae_name": (
+                    vae_names,
+                    {"default": _scan_for(
+                        vae_names,
+                        [("flux2", "vae"), ("flux2",), ("flux", "ae")],
+                        fallback_preferred=["flux2-vae.safetensors"],
+                    )},
+                ),
                 "prompt": ("STRING", {"default": DEFAULT_PROMPT, "multiline": True}),
                 "quality": (list(QUALITY_PRESETS.keys()) + ["Custom"], {"default": "Turbo"}),
                 "steps": (

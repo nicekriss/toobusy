@@ -1,7 +1,11 @@
-import inspect
 import math
 
-from ..ltx23_compact_sampler_node.ltx23_compact_sampler import _default_sampler_name, _sampler_names
+from ..ltx23_compact_sampler_node.ltx23_compact_sampler import (
+    _call_node,
+    _default_sampler_name,
+    _sampler_names,
+    _scan_for,
+)
 
 
 RATIO_PRESETS = {
@@ -17,41 +21,6 @@ RATIO_PRESETS = {
 MAX_LORA_SLOTS = 5
 MAX_REFERENCE_SLOTS = 3
 
-# The operator workflow exports the Flux2 Klein reference conditioners with
-# UUID class ids. Keep them as constants so the folded node calls the same graph.
-KLEIN_REF1_NODE = "6f5ae6ae-be1f-4f5c-a5af-178cfb6f7d59"
-KLEIN_REF2_NODE = "49cbf2f1-9ad3-46a0-a601-3dcd6841d1d5"
-KLEIN_REF3_NODE = "27a7eb01-8cd8-445b-a655-f79d702ab0c8"
-
-
-def _node_class(class_name):
-    import nodes
-
-    try:
-        return nodes.NODE_CLASS_MAPPINGS[class_name]
-    except KeyError as exc:
-        raise RuntimeError(
-            f"Required ComfyUI node '{class_name}' is not available. "
-            "This folded Flux2 Klein workflow needs Flux2/Klein reference nodes "
-            "installed in the current ComfyUI environment."
-        ) from exc
-
-
-def _call_node(class_name, **kwargs):
-    cls = _node_class(class_name)
-    node = cls()
-    fn_name = getattr(cls, "FUNCTION", None)
-    if not fn_name:
-        raise RuntimeError(f"Node '{class_name}' does not define FUNCTION.")
-
-    fn = getattr(node, fn_name)
-    signature = inspect.signature(fn)
-    if any(param.kind == inspect.Parameter.VAR_KEYWORD for param in signature.parameters.values()):
-        return fn(**kwargs)
-
-    filtered = {key: value for key, value in kwargs.items() if key in signature.parameters}
-    return fn(**filtered)
-
 
 def _folder_list(kind, fallback):
     try:
@@ -61,13 +30,6 @@ def _folder_list(kind, fallback):
         return names or fallback
     except Exception:
         return fallback
-
-
-def _first_existing(names, preferred):
-    for name in preferred:
-        if name in names:
-            return name
-    return names[0]
 
 
 def _model_names():
@@ -121,7 +83,10 @@ def _image_dims(image):
 
 
 def _load_clip(clip_name):
-    return _call_node("CLIPLoader", clip_name=clip_name, type="lumina2", device="default")[0]
+    # Flux2 Klein uses a Qwen3-based text encoder with the "flux2" CLIP type
+    # (the source workflow loads it via CLIPLoaderGGUF with type=flux2; the
+    # GGUF file itself can flow in through clip_override).
+    return _call_node("CLIPLoader", clip_name=clip_name, type="flux2", device="default")[0]
 
 
 class ToobusyFlux2Klein:
@@ -143,9 +108,32 @@ class ToobusyFlux2Klein:
 
         base = {
             "required": {
-                "model_name": (model_names, {"default": _first_existing(model_names, ["FLUX2/flux-2-klein-9b-kv-fp8.safetensors", "FLUX2\\flux-2-klein-9b-kv-fp8.safetensors"])}),
-                "clip_name": (clip_names, {"default": _first_existing(clip_names, ["flux2/qwen_3_8b_fp8mixed.safetensors", "flux2\\qwen_3_8b_fp8mixed.safetensors"])}),
-                "vae_name": (vae_names, {"default": _first_existing(vae_names, ["flux2/flux2-vae.safetensors", "flux2\\flux2-vae.safetensors"])}),
+                # Fuzzy auto-detection (shared _scan_for): a fresh node picks
+                # the Flux2 Klein files regardless of naming/foldering.
+                "model_name": (
+                    model_names,
+                    {"default": _scan_for(
+                        model_names,
+                        [("flux2", "klein"), ("flux", "klein"), ("klein",), ("flux2",)],
+                        fallback_preferred=["FLUX2/flux-2-klein-9b-kv-fp8.safetensors"],
+                    )},
+                ),
+                "clip_name": (
+                    clip_names,
+                    {"default": _scan_for(
+                        clip_names,
+                        [("qwen", "klein"), ("qwen3", "8b"), ("qwen", "8b"), ("qwen",)],
+                        fallback_preferred=["flux2/qwen_3_8b_fp8mixed.safetensors"],
+                    )},
+                ),
+                "vae_name": (
+                    vae_names,
+                    {"default": _scan_for(
+                        vae_names,
+                        [("flux2", "vae"), ("flux2",), ("flux", "ae")],
+                        fallback_preferred=["flux2/flux2-vae.safetensors"],
+                    )},
+                ),
                 "positive": (
                     "STRING",
                     {
@@ -205,8 +193,14 @@ class ToobusyFlux2Klein:
 
         return base
 
-    RETURN_TYPES = ("IMAGE", "LATENT", "INT", "INT")
-    RETURN_NAMES = ("image", "latent", "width", "height")
+    # Passthrough outputs (toobusy convention, same as Z-Image Turbo):
+    #   model       — what sampled here (LoRA + Flux KV cache applied)
+    #   model_clean — as loaded, before any patching (swap LoRAs externally)
+    # plus clip / vae / the encoded positive conditioning, so a Hires Upscale +
+    # second sampler pass needs no external loaders. Appended after the
+    # original outputs to keep existing link slots.
+    RETURN_TYPES = ("IMAGE", "LATENT", "INT", "INT", "MODEL", "MODEL", "CLIP", "VAE", "CONDITIONING")
+    RETURN_NAMES = ("image", "latent", "width", "height", "model", "model_clean", "clip", "vae", "positive")
     FUNCTION = "generate"
     CATEGORY = "toobusy/Make"
 
@@ -272,21 +266,21 @@ class ToobusyFlux2Klein:
                 )
                 print(f"[toobusy Flux2 Klein] LoRA slot {slot} applied: {lora_name} @ {lora_strength}")
 
+        # Clean passthrough: the model as loaded, before LoRA / KV cache.
+        model_clean = model
+
         model = _call_node("FluxKVCache", model=model)[0]
         conditioning = _call_node("CLIPTextEncode", clip=clip, text=positive)[0]
 
+        # Reference conditioning. The source workflow's per-reference subgraph
+        # is ImageScaleToTotalPixels (lanczos, 1MP) -> VAEEncode ->
+        # ReferenceLatent, chained on the conditioning — all core nodes.
         reference_slots = max(0, min(MAX_REFERENCE_SLOTS, int(reference_slots)))
         references = {
             1: reference_1_image,
             2: reference_2_image,
             3: reference_3_image,
         }
-        ref_nodes = {
-            1: KLEIN_REF1_NODE,
-            2: KLEIN_REF2_NODE,
-            3: KLEIN_REF3_NODE,
-        }
-        base_image = None
         first_active_image = None
 
         for slot in range(1, reference_slots + 1):
@@ -301,20 +295,25 @@ class ToobusyFlux2Klein:
             if first_active_image is None:
                 first_active_image = image
 
-            if slot == 1:
-                conditioning, base_image = _call_node(ref_nodes[slot], on_false=conditioning, vae=vae, image=image)
-            elif slot == 2:
-                conditioning = _call_node(ref_nodes[slot], image=image, vae=vae, conditioning=conditioning)[0]
-            else:
-                conditioning = _call_node(ref_nodes[slot], vae=vae, conditioning=conditioning, image=image)[0]
+            scaled = _call_node(
+                "ImageScaleToTotalPixels",
+                image=image,
+                upscale_method="lanczos",
+                megapixels=1.0,
+            )[0]
+            reference_latent = _call_node("VAEEncode", pixels=scaled, vae=vae)[0]
+            conditioning = _call_node(
+                "ReferenceLatent",
+                conditioning=conditioning,
+                latent=reference_latent,
+            )[0]
             print(f"[toobusy Flux2 Klein] Reference #{slot} applied.")
 
         if int(width) > 0 and int(height) > 0:
             target_w = _round_to(int(width), divisible_by)
             target_h = _round_to(int(height), divisible_by)
         else:
-            size_image = base_image if base_image is not None else first_active_image
-            target_w, target_h = _image_dims(size_image) if size_image is not None else (0, 0)
+            target_w, target_h = _image_dims(first_active_image) if first_active_image is not None else (0, 0)
             if target_w <= 0 or target_h <= 0:
                 target_w, target_h = _resolution_from_megapixels(ratio_preset, megapixels, divisible_by)
 
@@ -332,7 +331,7 @@ class ToobusyFlux2Klein:
             latent_image=latent_image,
         )[0]
         image = _call_node("VAEDecode", samples=sampled, vae=vae)[0]
-        return (image, sampled, target_w, target_h)
+        return (image, sampled, target_w, target_h, model, model_clean, clip, vae, conditioning)
 
 
 NODE_CLASS_MAPPINGS = {
