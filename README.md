@@ -488,7 +488,8 @@ Load Upscale Model -> Upscale Image (using Model) -> Upscale Image By -> VAE Enc
 되돌리고, 바로 두 번째 샘플러 패스에 꽂을 수 있게 VAE 인코딩까지 끝냅니다.
 
 - 입력: `image` + `vae`, 선택 `upscale_model`(UPSCALE_MODEL override — 연결 시
-  내부 로더 스킵).
+  내부 로더 스킵). `vae`는 `toobusy Z-Image Turbo`의 `vae` passthrough 출력을
+  그대로 받으면 Load VAE 노드가 필요 없습니다.
 - 위젯: `upscale_model_name`(Remacri가 있으면 기본 선택), `downscale_method`
   (기본 lanczos), `scale_by`(1.0이면 리샘플 단계 생략).
 - 출력: `image`(최종 픽셀) / `latent`(VAE 인코딩) / `width` / `height`.

@@ -234,8 +234,14 @@ class ToobusyZImageTurbo:
 
         return base
 
-    RETURN_TYPES = ("IMAGE", "LATENT", "INT", "INT")
-    RETURN_NAMES = ("image", "latent", "width", "height")
+    # model/clip/vae/conditioning are passthrough outputs of what this node
+    # loaded and prepared (LoRA + shift applied; zit_control patches are NOT
+    # carried — control maps are sized to this node's own run). They feed
+    # follow-up stages (e.g. toobusy Hires Upscale + a second sampler pass)
+    # without re-adding loader nodes. Appended after the original outputs so
+    # existing workflows keep their link slots.
+    RETURN_TYPES = ("IMAGE", "LATENT", "INT", "INT", "MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING")
+    RETURN_NAMES = ("image", "latent", "width", "height", "model", "clip", "vae", "positive", "negative")
     FUNCTION = "generate"
     CATEGORY = "toobusy/Make"
 
@@ -345,6 +351,11 @@ class ToobusyZImageTurbo:
             )[0]
             width, height = target_w, target_h
 
+        # Passthrough model: LoRA + shift applied, but before any zit_control
+        # patch (control maps are bound to this run's resolution and would
+        # misbehave at a different second-pass size).
+        export_model = model
+
         # ControlNet module (optional): patch the final model — override/LoRA
         # included — once the generation size is known, so control maps match
         # the latent. Without a connected module nothing changes.
@@ -366,7 +377,7 @@ class ToobusyZImageTurbo:
         )[0]
         image = _call_node("VAEDecode", samples=sampled, vae=vae)[0]
 
-        return (image, sampled, width, height)
+        return (image, sampled, width, height, export_model, clip, vae, positive_cond, negative_cond)
 
 
 NODE_CLASS_MAPPINGS = {

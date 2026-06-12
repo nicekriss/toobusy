@@ -1,4 +1,4 @@
-"""Regression tests for toobusy Z-Image Turbo resolution + img2img inputs.
+﻿"""Regression tests for toobusy Z-Image Turbo resolution + img2img inputs.
 
 Covers the optional ``width``/``height`` direct-resolution fields and the
 optional ``image`` input that auto-switches the node to img2img:
@@ -81,8 +81,34 @@ def _generate(**overrides):
     return _zit.ToobusyZImageTurbo().generate(**kwargs)
 
 
+def _generate_wh(**overrides):
+    """width/height-first view of generate(): the node now appends
+    model/clip/vae/positive/negative passthrough outputs after the original
+    image/latent/width/height slots."""
+    return _generate(**overrides)[2:]
+
+
 def _called(node_type):
     return [kw for nt, kw in _CALLS if nt == node_type]
+
+
+# --- passthrough outputs ----------------------------------------------------
+
+def test_passthrough_outputs_expose_loaded_objects():
+    result = _generate()
+    assert len(result) == 9
+    image, latent, w, h, model, clip, vae, positive, negative = result
+    # LoRA off + shift applied -> model passthrough is the shift-patched model.
+    assert model == "<ModelSamplingAuraFlow-out>"
+    assert clip == "<CLIPLoader-out>"
+    assert vae == "<VAELoader-out>"
+    assert positive == "<CLIPTextEncode-out>" and negative == "<CLIPTextEncode-out>"
+
+
+def test_output_slot_order_is_backward_compatible():
+    types = _zit.ToobusyZImageTurbo.RETURN_TYPES
+    assert types[:4] == ("IMAGE", "LATENT", "INT", "INT"), "existing slots must not move"
+    assert types[4:] == ("MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING")
 
 
 # --- INPUT_TYPES exposure --------------------------------------------------
@@ -103,7 +129,7 @@ def test_no_lora_auto_enabled_by_default():
 # --- text-to-image (no image) ---------------------------------------------
 
 def test_t2i_default_uses_empty_latent_from_ratio():
-    _, _, w, h = _generate()
+    w, h, *_ = _generate_wh()
     assert _called("EmptyLatentImage"), "t2i should build an EmptyLatentImage"
     assert not _called("VAEEncode"), "t2i must not VAE-encode"
     # 1:1 @ 1.0MP -> sqrt(1e6)=1000 -> round(1000/32)*32 = 992.
@@ -111,7 +137,7 @@ def test_t2i_default_uses_empty_latent_from_ratio():
 
 
 def test_t2i_explicit_width_height_override_ratio():
-    _, _, w, h = _generate(width=768, height=1280)
+    w, h, *_ = _generate_wh(width=768, height=1280)
     empties = _called("EmptyLatentImage")
     assert empties and empties[0]["width"] == 768 and empties[0]["height"] == 1280
     assert (w, h) == (768, 1280)
@@ -119,13 +145,13 @@ def test_t2i_explicit_width_height_override_ratio():
 
 def test_t2i_explicit_size_is_rounded_to_divisible_by():
     # 700 -> nearest multiple of 32 = 704; 1290 -> 1280.
-    _, _, w, h = _generate(width=700, height=1290, divisible_by=32)
+    w, h, *_ = _generate_wh(width=700, height=1290, divisible_by=32)
     assert (w, h) == (704, 1280)
 
 
 def test_t2i_single_dimension_falls_back_to_ratio():
     # Only width set (height 0) is not a complete manual size -> ratio path.
-    _, _, w, h = _generate(width=512, height=0)
+    w, h, *_ = _generate_wh(width=512, height=0)
     assert (w, h) == (992, 992)
 
 
@@ -140,20 +166,20 @@ def test_i2i_image_switches_to_vae_encode():
 
 def test_i2i_native_size_follows_source_image():
     img = _FakeImage(height=512, width=768)
-    _, _, w, h = _generate(image=img)
+    w, h, *_ = _generate_wh(image=img)
     # source 768x512 already multiples of 8 -> reported as-is
     assert (w, h) == (768, 512)
 
 
 def test_i2i_native_size_cropped_to_multiple_of_8():
     img = _FakeImage(height=510, width=770)  # not multiples of 8
-    _, _, w, h = _generate(image=img)
+    w, h, *_ = _generate_wh(image=img)
     assert (w, h) == (768, 504)  # 770//8*8=768, 510//8*8=504
 
 
 def test_i2i_explicit_size_scales_source():
     img = _FakeImage(height=512, width=768)
-    _, _, w, h = _generate(image=img, width=1024, height=1024)
+    w, h, *_ = _generate_wh(image=img, width=1024, height=1024)
     scales = _called("ImageScale")
     assert scales and scales[0]["width"] == 1024 and scales[0]["height"] == 1024
     assert _called("VAEEncode")

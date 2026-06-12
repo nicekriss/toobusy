@@ -5,6 +5,11 @@
 ## [Unreleased]
 
 ### Changed
+- `toobusy Z-Image Turbo`에 **passthrough 출력 5개 추가**: `model`/`clip`/`vae`
+  (내부 로드 + LoRA/shift 반영 결과) + `positive`/`negative`(인코딩된 컨디셔닝).
+  `toobusy Hires Upscale`(vae)나 2차 샘플러 패스에 외부 로더/CLIPTextEncode 없이
+  바로 연결할 수 있습니다. 기존 출력 슬롯 순서는 유지(뒤에 추가). zit_control
+  패치는 해당 런의 해상도에 묶여 있어 model 출력에 포함되지 않습니다. (운영자 피드백)
 - `toobusy ZIT ControlNet` UI 정리: Basic 표면은 타입별 **스위치 + 스트렝스**만
   남기고, 전처리 토글 3개("이미 만든 컨트롤 맵" 모드)·전처리 해상도·canny
   임계값은 `Show advanced settings` 뒤로 이동했습니다(기본 동작 불변). 우상단
