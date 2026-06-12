@@ -5,6 +5,11 @@
 ## [Unreleased]
 
 ### Changed
+- `toobusy Z-Image Turbo`의 **모델 기본값 자동 감지** 개선: 정확한 파일명 일치
+  대신 퍼지 스캔(zimage/z-image/z_image + turbo/textEncoder/vae 등)으로 모델
+  폴더에서 Z-Image 파일을 찾아 새 노드의 기본값으로 잡습니다. 파일명/폴더
+  구성이 달라도(z_image_bf16, ZIT/zImage_* 등) 처음부터 올바른 모델이 선택됩니다.
+  (운영자 피드백)
 - `toobusy Z-Image Turbo`에 **passthrough 출력 6개 추가**: `model`(LoRA+shift+
   zit_control까지 — 이 노드가 실제 샘플링한 그 모델), `model_clean`(로드 직후
   원본 — 2차 패스에서 LoRA를 갈아끼울 때), `clip`/`vae`, `positive`/`negative`
