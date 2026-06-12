@@ -18,6 +18,7 @@ jobs:
         run: |
           python -m compileall -q \
             __init__.py \
+            hires_upscale_node \
             ideogram4_t2i_node \
             ideogram_layout_builder \
             ideogram_prompt_polish_node \

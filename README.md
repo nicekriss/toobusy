@@ -413,6 +413,29 @@ RandomNoise -> LTXVConcatAVLatent -> CFGGuider -> KSamplerSelect -> ManualSigmas
 
 노드는 샘플링 후 항상 `LTXVCropGuides`를 실행하여 latent이 이어지기 전에 가이드 프레임을 제거합니다.
 
+### toobusy Hires Upscale
+
+카테고리:
+
+```text
+toobusy/Make
+```
+
+하이레즈 픽스 전처리 콤보를 한 노드로 접었습니다:
+
+```text
+Load Upscale Model -> Upscale Image (using Model) -> Upscale Image By -> VAE Encode
+```
+
+4x ESRGAN 계열 모델로 올린 뒤 `scale_by`(기본 0.50 = 깔끔한 2x)로 작업 해상도로
+되돌리고, 바로 두 번째 샘플러 패스에 꽂을 수 있게 VAE 인코딩까지 끝냅니다.
+
+- 입력: `image` + `vae`, 선택 `upscale_model`(UPSCALE_MODEL override — 연결 시
+  내부 로더 스킵).
+- 위젯: `upscale_model_name`(Remacri가 있으면 기본 선택), `downscale_method`
+  (기본 lanczos), `scale_by`(1.0이면 리샘플 단계 생략).
+- 출력: `image`(최종 픽셀) / `latent`(VAE 인코딩) / `width` / `height`.
+
 ### toobusy Wan SCAIL Extend Sampler
 
 카테고리:
