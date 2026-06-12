@@ -14,7 +14,7 @@
     <img src="docs/workflows/wan21_scail2_sample.jpg" width="100%" alt="toobusy Wan SCAIL-2 result preview">
   </a>
 </p>
-<p align="center"><sub>↑ SCAIL-2 결과 영상 미리보기 — 클릭하면 mp4. 워크플로우: <a href="docs/workflows/wan21_scail2.json">wan21_scail2.json</a></sub></p>
+<p align="center"><sub>↑ SCAIL-2 결과 영상 미리보기 — 클릭하면 mp4. 워크플로우: <a href="docs/workflows/Wan21_SCAIL2_Testing_neobabae.json">wan21_scail2.json</a></sub></p>
 
 ### 2. Ideogram4 — 한국어 장면에서 레이아웃과 이미지까지
 
