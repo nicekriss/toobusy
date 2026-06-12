@@ -2,6 +2,14 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [Unreleased]
+
+### Added
+- **`toobusy Hires Upscale`** 신규 노드: 하이레즈 픽스 전처리 콤보
+  (UpscaleModelLoader → ImageUpscaleWithModel → ImageScaleBy → VAEEncode, 4노드)를
+  1노드로 접었습니다. Remacri 기본 선호, `scale_by` 0.50 기본(4x 모델 → 2x),
+  1.0이면 리샘플 생략, `upscale_model` override 소켓, image/latent/width/height 출력.
+
 ## [0.2.9] - 2026-06-12
 
 ### Added
