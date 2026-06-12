@@ -413,6 +413,37 @@ RandomNoise -> LTXVConcatAVLatent -> CFGGuider -> KSamplerSelect -> ManualSigmas
 
 노드는 샘플링 후 항상 `LTXVCropGuides`를 실행하여 latent이 이어지기 전에 가이드 프레임을 제거합니다.
 
+### toobusy ZIT ControlNet
+
+카테고리:
+
+```text
+toobusy/Make
+```
+
+`toobusy Z-Image Turbo` 앞에 모듈처럼 붙는 **컨트롤넷 노드**입니다. 기존에 서브그래프
+3개를 만들고 바이패스를 풀었다 잠갔다 하던 depth/canny/pose 구성이 **노드 하나의
+토글 3개**로 접힙니다:
+
+```text
+(슬롯별) ImageScaleToTotalPixels -> 전처리기(MiDaS/Canny/DWPose)
+-> ModelPatchLoader(Fun ControlNet Union) -> QwenImageDiffsynthControlnet -> 미리보기
+```
+
+- 슬롯 3개(depth/canny/pose) 각각 **독립 이미지 입력 + on/off 스위치 + 스트렝스**
+  (기본 0.4 / 1.0 / 1.0). 여러 슬롯을 동시에 켜면 패치가 **누적**되어 서로 다른
+  이미지의 컨트롤 신호를 중첩 적용할 수 있습니다(스트렝스로 균형 조절).
+- 전처리 결과(뎁스맵/엣지/포즈)가 **노드 안에 미리보기**로 표시됩니다(실행 시).
+- 슬롯별 `preprocess` 토글을 끄면 이미 만들어진 컨트롤 맵을 그대로 사용합니다.
+- 출력 `zit_control` 한 줄을 Z-Image Turbo의 `zit_control` 입력에 연결하면 끝.
+  Z-Image Turbo가 최종 모델(내부 로더든 `model_override`든, LoRA 적용 후)에 패치를
+  얹고 컨트롤 맵을 생성 해상도에 맞춰 리사이즈합니다. **미연결 시 기존 동작과 100%
+  동일합니다.**
+
+요구 사항: `Z-Image-Turbo-Fun-Controlnet-Union.safetensors`를 `models/model_patches`에,
+depth/pose 전처리는 `comfyui_controlnet_aux` 팩 필요(Canny는 코어 노드로 폴백).
+패치는 Z-Image 아키텍처 전용이라 다른 계열 모델에는 적용되지 않습니다.
+
 ### toobusy Hires Upscale
 
 카테고리:
