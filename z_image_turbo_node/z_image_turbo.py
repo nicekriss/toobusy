@@ -35,6 +35,25 @@ def _first_existing(names, preferred):
     return names[0]
 
 
+def _normalized(name):
+    """Lowercased, separator-free view for fuzzy matching: 'ZIT\\Z-Image_Turbo'
+    and 'z_image_turbo' both become 'zitzimageturbo'."""
+    return name.lower().replace("-", "").replace("_", "").replace(" ", "")
+
+
+def _scan_for(names, keyword_groups, fallback_preferred=()):
+    """First name matching the earliest keyword group (all keywords of a group
+    must appear in the normalized name). Groups are ordered best-first, so a
+    'zimage turbo' file beats a plain 'zimage' one. Falls back to exact
+    preferred names, then to the folder's first entry."""
+    normalized = [(name, _normalized(name)) for name in names]
+    for keywords in keyword_groups:
+        for name, key in normalized:
+            if all(keyword in key for keyword in keywords):
+                return name
+    return _first_existing(names, fallback_preferred)
+
+
 def _model_names():
     names = _folder_list("diffusion_models", [])
     if not names:
@@ -166,9 +185,34 @@ class ToobusyZImageTurbo:
 
         base = {
             "required": {
-                "model_name": (model_names, {"default": _first_existing(model_names, ["ZIT/zImage_turbo.safetensors"])}),
-                "clip_name": (clip_names, {"default": _first_existing(clip_names, ["ZIT/zImage_textEncoder.safetensors"])}),
-                "vae_name": (vae_names, {"default": _first_existing(vae_names, ["FLUX1/ae.safetensors"])}),
+                # Auto-detect Z-Image files by fuzzy name scan, so a freshly
+                # added node starts with the right models regardless of how
+                # the user named or foldered them (z_image_bf16, ZIT/zImage_*,
+                # Z-Image-Turbo, ...).
+                "model_name": (
+                    model_names,
+                    {"default": _scan_for(
+                        model_names,
+                        [("zimage", "turbo"), ("zimage",)],
+                        fallback_preferred=["ZIT/zImage_turbo.safetensors"],
+                    )},
+                ),
+                "clip_name": (
+                    clip_names,
+                    {"default": _scan_for(
+                        clip_names,
+                        [("zimage", "textencoder"), ("zimage", "text"), ("zimage",), ("lumina",)],
+                        fallback_preferred=["ZIT/zImage_textEncoder.safetensors"],
+                    )},
+                ),
+                "vae_name": (
+                    vae_names,
+                    {"default": _scan_for(
+                        vae_names,
+                        [("zimage", "vae"), ("zimage",), ("flux", "ae"), ("ae.safetensors",)],
+                        fallback_preferred=["FLUX1/ae.safetensors"],
+                    )},
+                ),
                 "positive": ("STRING", {"default": "", "multiline": True}),
                 "negative": ("STRING", {"default": "", "multiline": True}),
                 "ratio_preset": (list(RATIO_PRESETS.keys()), {"default": "2:3"}),

@@ -115,6 +115,32 @@ def test_output_slot_order_is_backward_compatible():
     assert names[4:6] == ("model", "model_clean")
 
 
+# --- model auto-detection ----------------------------------------------------
+
+def test_scan_picks_zimage_model_regardless_of_naming():
+    names = ["aaa_first.safetensors", "z_image_bf16.safetensors", "wan21_14B.safetensors"]
+    picked = _zit._scan_for(names, [("zimage", "turbo"), ("zimage",)])
+    assert picked == "z_image_bf16.safetensors"
+
+
+def test_scan_prefers_turbo_variant_over_plain():
+    names = ["z_image_bf16.safetensors", "ZIT\\Z-Image-Turbo_fp8.safetensors"]
+    picked = _zit._scan_for(names, [("zimage", "turbo"), ("zimage",)])
+    assert picked == "ZIT\\Z-Image-Turbo_fp8.safetensors"
+
+
+def test_scan_finds_text_encoder_and_vae_in_subfolders():
+    clips = ["qwen3_4b.safetensors", "ZIT\\zImage_textEncoder.safetensors"]
+    assert _zit._scan_for(clips, [("zimage", "textencoder"), ("zimage",)]) == "ZIT\\zImage_textEncoder.safetensors"
+    vaes = ["sdxl_vae.safetensors", "ZIT\\zImage_vae.safetensors"]
+    assert _zit._scan_for(vaes, [("zimage", "vae"), ("zimage",)]) == "ZIT\\zImage_vae.safetensors"
+
+
+def test_scan_falls_back_to_first_when_nothing_matches():
+    names = ["unrelated_a.safetensors", "unrelated_b.safetensors"]
+    assert _zit._scan_for(names, [("zimage",)]) == "unrelated_a.safetensors"
+
+
 # --- INPUT_TYPES exposure --------------------------------------------------
 
 def test_exposes_image_width_height_inputs():
