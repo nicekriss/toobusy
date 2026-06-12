@@ -35,6 +35,7 @@ def _install_stubs():
 
     samp = types.ModuleType("toobusy.ltx23_compact_sampler_node.ltx23_compact_sampler")
     samp._sampler_names = lambda: ["euler", "res_multistep"]
+    samp._fill_input_defaults = lambda cls, kwargs, params, has_var_keyword: kwargs
     sys.modules["toobusy.ltx23_compact_sampler_node.ltx23_compact_sampler"] = samp
 
 

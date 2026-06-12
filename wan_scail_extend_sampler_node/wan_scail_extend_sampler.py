@@ -20,7 +20,7 @@ time with a clear "update ComfyUI" message.
 
 import inspect
 
-from ..ltx23_compact_sampler_node.ltx23_compact_sampler import _sampler_names
+from ..ltx23_compact_sampler_node.ltx23_compact_sampler import _fill_input_defaults, _sampler_names
 
 MAX_EXTEND_SEGMENTS = 8
 
@@ -104,9 +104,13 @@ def _call_core(class_name, hint="", **kwargs):
     fn = getattr(target, getattr(cls, "FUNCTION", "execute"))
 
     params = _execute_params(cls, fn)
-    if params is not None and not any(
+    has_var_keyword = params is None or any(
         p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values()
-    ):
+    )
+    # Fill schema defaults for inputs we don't pass (the executor does this
+    # in-graph; a core update adding a widget must not break the fold).
+    kwargs = _fill_input_defaults(cls, dict(kwargs), None if has_var_keyword else params, has_var_keyword)
+    if not has_var_keyword:
         kwargs = {key: value for key, value in kwargs.items() if key in params}
 
     result = fn(**kwargs)
