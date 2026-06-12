@@ -5,6 +5,13 @@
 ## [Unreleased]
 
 ### Added
+- **`toobusy ZIT ControlNet`** 신규 노드: Z-Image Turbo 앞에 붙는 depth/canny/pose
+  컨트롤 모듈. 슬롯별 이미지 입력+스위치+스트렝스, 내부 전처리(MiDaS/DWPose는
+  controlnet_aux, Canny는 코어 폴백)와 결과 미리보기, Fun-ControlNet-Union 모델
+  패치 번들(`ZIT_CONTROL`) 출력. 여러 슬롯 동시 ON 시 패치 누적으로 서로 다른
+  컨트롤 이미지를 중첩 적용. `toobusy Z-Image Turbo`에 optional `zit_control`
+  입력 추가 — 연결 시 최종 모델(override/LoRA 포함)에 생성 해상도로 리사이즈된
+  컨트롤 맵 패치 적용, **미연결 시 기존 동작 불변**(회귀 테스트 보장).
 - **`toobusy Hires Upscale`** 신규 노드: 하이레즈 픽스 전처리 콤보
   (UpscaleModelLoader → ImageUpscaleWithModel → ImageScaleBy → VAEEncode, 4노드)를
   1노드로 접었습니다. Remacri 기본 선호, `scale_by` 0.50 기본(4x 모델 → 2x),

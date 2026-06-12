@@ -98,6 +98,41 @@ def _image_dims(image):
     return (width // 8) * 8, (height // 8) * 8
 
 
+def _apply_zit_control(model, vae, control, width, height):
+    """Apply a `toobusy ZIT ControlNet` bundle to the final model. Each active
+    entry stacks its own Fun-ControlNet-Union patch (model patches append, so
+    depth + canny + pose can drive the model together); control maps are
+    resized to the actual generation size first."""
+    entries = list(control.get("entries", [])) if isinstance(control, dict) else []
+    if not entries:
+        return model
+
+    model_patch = _call_node("ModelPatchLoader", name=control.get("patch_name"))[0]
+    for entry in entries:
+        image = entry.get("image")
+        if image is None:
+            continue
+        sized = _call_node(
+            "ImageScale",
+            image=image,
+            upscale_method="lanczos",
+            width=int(width),
+            height=int(height),
+            crop="center",
+        )[0]
+        strength = float(entry.get("strength", 1.0))
+        model = _call_node(
+            "QwenImageDiffsynthControlnet",
+            model=model,
+            model_patch=model_patch,
+            vae=vae,
+            image=sized,
+            strength=strength,
+        )[0]
+        print(f"[toobusy Z-Image Turbo] ControlNet patch applied: {entry.get('type')} @ {strength}")
+    return model
+
+
 def _resolution_from_megapixels(ratio_preset, megapixels, divisible_by):
     ratio_w, ratio_h = RATIO_PRESETS.get(ratio_preset, RATIO_PRESETS["1:1"])
     pixels = max(0.01, float(megapixels)) * 1_000_000
@@ -175,6 +210,10 @@ class ToobusyZImageTurbo:
                 "model_override": ("MODEL",),
                 "clip_override": ("CLIP",),
                 "vae_override": ("VAE",),
+                "zit_control": (
+                    "ZIT_CONTROL",
+                    {"tooltip": "Connect a 'toobusy ZIT ControlNet' module to apply depth/canny/pose Fun-ControlNet-Union model patches. Leave unconnected for plain generation."},
+                ),
             },
         }
 
@@ -225,6 +264,7 @@ class ToobusyZImageTurbo:
         model_override=None,
         clip_override=None,
         vae_override=None,
+        zit_control=None,
         **lora_kwargs,
     ):
         # Resolution: explicit width AND height win (rounded to divisible_by);
@@ -304,6 +344,12 @@ class ToobusyZImageTurbo:
                 batch_size=batch_size,
             )[0]
             width, height = target_w, target_h
+
+        # ControlNet module (optional): patch the final model — override/LoRA
+        # included — once the generation size is known, so control maps match
+        # the latent. Without a connected module nothing changes.
+        if zit_control is not None:
+            model = _apply_zit_control(model, vae, zit_control, width, height)
 
         sampled = _call_node(
             "KSampler",
