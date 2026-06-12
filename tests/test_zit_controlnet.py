@@ -175,7 +175,11 @@ def test_zimage_applies_one_patch_per_entry_at_generation_size():
             {"type": "pose", "image": "map-C", "strength": 1.0},
         ],
     }
-    _generate(zit_control=control, width=768, height=1280)
+    result = _generate(zit_control=control, width=768, height=1280)
+    # Passthrough flavors: `model` carries the controlnet patches, `model_clean`
+    # is the as-loaded model (slots 4 and 5).
+    assert result[4] == "<QwenImageDiffsynthControlnet-out>"
+    assert result[5] == "<UNETLoader-out>"
     loaders = _called("ModelPatchLoader")
     assert len(loaders) == 1 and loaders[0]["name"] == "union.safetensors"
     patches = _called("QwenImageDiffsynthControlnet")
