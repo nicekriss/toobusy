@@ -13,6 +13,39 @@ def _node_class(class_name):
         ) from exc
 
 
+def _fill_input_defaults(cls, kwargs, params, has_var_keyword):
+    """Add INPUT_TYPES defaults for declared inputs the caller didn't pass.
+
+    The graph executor does this from the node schema before calling a node;
+    when we call a node class directly we must do the same, otherwise a core
+    update that adds a new widget (e.g. ImageScaleToTotalPixels growing a
+    required `resolution_steps`) breaks every fold that calls it. V3 nodes
+    are the sharp edge: their `execute` has no Python defaults for schema
+    inputs, so a missing kwarg is a hard TypeError.
+    """
+    try:
+        spec = cls.INPUT_TYPES()
+    except Exception:
+        return kwargs
+    if not isinstance(spec, dict):
+        return kwargs
+    for section in ("required", "optional"):
+        for name, definition in (spec.get(section) or {}).items():
+            if name in kwargs:
+                continue
+            if not has_var_keyword and params is not None and name not in params:
+                continue
+            if not isinstance(definition, (list, tuple)) or not definition:
+                continue
+            options = definition[1] if len(definition) > 1 else None
+            if isinstance(options, dict) and "default" in options:
+                kwargs[name] = options["default"]
+            elif isinstance(definition[0], (list, tuple)) and definition[0]:
+                # Combo without an explicit default: first entry, like the UI.
+                kwargs[name] = definition[0][0]
+    return kwargs
+
+
 def _call_node(class_name, **kwargs):
     cls = _node_class(class_name)
     node = cls()
@@ -22,10 +55,27 @@ def _call_node(class_name, **kwargs):
 
     fn = getattr(node, fn_name)
     signature = inspect.signature(fn)
-    if any(param.kind == inspect.Parameter.VAR_KEYWORD for param in signature.parameters.values()):
+    has_var_keyword = any(
+        param.kind == inspect.Parameter.VAR_KEYWORD for param in signature.parameters.values()
+    )
+
+    # V3 io.ComfyNode classes expose FUNCTION as a *args/**kwargs normalizer;
+    # the real parameter list lives on `execute`.
+    params = None if has_var_keyword else signature.parameters
+    if has_var_keyword and hasattr(cls, "execute"):
+        try:
+            execute_params = inspect.signature(cls.execute).parameters
+            if not any(p.kind == inspect.Parameter.VAR_KEYWORD for p in execute_params.values()):
+                params = execute_params
+                has_var_keyword = False
+        except (TypeError, ValueError):
+            pass
+
+    kwargs = _fill_input_defaults(cls, dict(kwargs), params, has_var_keyword)
+    if has_var_keyword or params is None:
         return fn(**kwargs)
 
-    filtered = {key: value for key, value in kwargs.items() if key in signature.parameters}
+    filtered = {key: value for key, value in kwargs.items() if key in params}
     return fn(**filtered)
 
 
