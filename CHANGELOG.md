@@ -5,6 +5,11 @@
 ## [Unreleased]
 
 ### Added
+- **`toobusy Paint Canvas`** 신규 노드: 그래프 맨 앞단의 오픈캔버스풍 페인팅 노드.
+  필압 브러시/지우개/스포이드, 레이어(순서/불투명도/병합), 줌·팬, Undo/Redo,
+  **자동저장 온오프 토글**(끄면 Save 버튼으로만 커밋). 출력 image(합성) +
+  painted_mask(칠한 영역) + canvas_data. 그린 그림이 큐마다 ZIT ControlNet /
+  img2img 입력으로 들어가는 "AI가 완성해주는" 루프의 입구.
 - **`toobusy ZIT ControlNet`** 신규 노드: Z-Image Turbo 앞에 붙는 depth/canny/pose
   컨트롤 모듈. 슬롯별 이미지 입력+스위치+스트렝스, 내부 전처리(MiDaS/DWPose는
   controlnet_aux, Canny는 코어 폴백)와 결과 미리보기, Fun-ControlNet-Union 모델
