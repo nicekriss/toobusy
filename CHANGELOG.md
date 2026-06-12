@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### Changed
+- `toobusy ZIT ControlNet` UI 정리: Basic 표면은 타입별 **스위치 + 스트렝스**만
+  남기고, 전처리 토글 3개("이미 만든 컨트롤 맵" 모드)·전처리 해상도·canny
+  임계값은 `Show advanced settings` 뒤로 이동했습니다(기본 동작 불변). 우상단
+  info 배지 추가. (운영자 피드백)
+
 ### Added
 - **`toobusy Paint Canvas`** 신규 노드: 그래프 맨 앞단의 오픈캔버스풍 페인팅 노드.
   필압 브러시/지우개/스포이드, 레이어(순서/불투명도/병합), 줌·팬, Undo/Redo,
