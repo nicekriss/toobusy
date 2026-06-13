@@ -19,7 +19,7 @@ RATIO_PRESETS = {
 }
 
 MAX_LORA_SLOTS = 5
-MAX_REFERENCE_SLOTS = 3
+MAX_REFERENCE_SLOTS = 5
 
 
 def _folder_list(kind, fallback):
@@ -170,19 +170,23 @@ class ToobusyFlux2Klein:
                     {"default": 0, "min": 0, "max": 8192, "step": 8,
                      "tooltip": "0 = use reference #1 size when connected; otherwise ratio_preset + megapixels. Set width AND height > 0 for manual size."},
                 ),
-                "reference_1_image": ("IMAGE", {"tooltip": "Reference #1. In the source workflow this image also drives the default width/height."}),
-                "reference_2_image": ("IMAGE", {"tooltip": "Reference #2. Applied after reference #1 in the conditioning chain."}),
-                "reference_3_image": ("IMAGE", {"tooltip": "Reference #3. Applied last in the Klein conditioning chain."}),
                 "model_override": ("MODEL",),
                 "clip_override": ("CLIP",),
                 "vae_override": ("VAE",),
             },
         }
 
+        optional = base["optional"]
+        # Reference image sockets are generated up to MAX_REFERENCE_SLOTS; the
+        # JS +/- buttons show `reference_slots` of them. A slot is applied when
+        # its image is connected. No per-slot enable flags.
+        for slot in range(1, MAX_REFERENCE_SLOTS + 1):
+            optional[f"reference_{slot}_image"] = (
+                "IMAGE",
+                {"tooltip": f"Reference #{slot}. Applied in order in the Klein conditioning chain (reference #1 also drives the default size)."},
+            )
+
         required = base["required"]
-        # References are driven by `reference_slots` alone (JS +/- buttons show
-        # that many image sockets); a slot is applied when its image is
-        # connected. No per-slot enable flags.
         for slot in range(1, MAX_LORA_SLOTS + 1):
             required[f"lora_{slot}_enable"] = ("BOOLEAN", {"default": False})
             required[f"lora_{slot}_name"] = (lora_names, {"default": "None"})
@@ -221,9 +225,6 @@ class ToobusyFlux2Klein:
         reference_slots,
         width=0,
         height=0,
-        reference_1_image=None,
-        reference_2_image=None,
-        reference_3_image=None,
         model_override=None,
         clip_override=None,
         vae_override=None,
@@ -277,9 +278,8 @@ class ToobusyFlux2Klein:
         # ReferenceLatent, chained on the conditioning — all core nodes.
         reference_slots = max(0, min(MAX_REFERENCE_SLOTS, int(reference_slots)))
         references = {
-            1: reference_1_image,
-            2: reference_2_image,
-            3: reference_3_image,
+            slot: slot_kwargs.get(f"reference_{slot}_image")
+            for slot in range(1, MAX_REFERENCE_SLOTS + 1)
         }
         first_active_image = None
 

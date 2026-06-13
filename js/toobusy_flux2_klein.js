@@ -1,7 +1,7 @@
 import { app } from "../../scripts/app.js";
 
 const MAX_LORA_SLOTS = 5;
-const MAX_REFERENCE_SLOTS = 3;
+const MAX_REFERENCE_SLOTS = 5;
 const ACCENT = "#7fc8ff";
 
 const ADVANCED_WIDGETS = [

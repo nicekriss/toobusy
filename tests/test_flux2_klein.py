@@ -117,6 +117,17 @@ def test_unconnected_slots_are_skipped():
     assert len(_called("ReferenceLatent")) == 1
 
 
+def test_supports_up_to_five_references():
+    assert _mod.MAX_REFERENCE_SLOTS == 5
+    images = {f"reference_{i}_image": _FakeImage(512, 512) for i in range(1, 6)}
+    _generate(reference_slots=5, **images)
+    assert len(_called("ReferenceLatent")) == 5
+    # All five image sockets are exposed as optional inputs.
+    optional = _mod.ToobusyFlux2Klein.INPUT_TYPES()["optional"]
+    for i in range(1, 6):
+        assert optional[f"reference_{i}_image"][0] == "IMAGE"
+
+
 def test_internal_clip_loader_uses_flux2_type():
     _generate()
     clips = _called("CLIPLoader")
