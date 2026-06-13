@@ -1,6 +1,11 @@
 import math
 
-from ..ltx23_compact_sampler_node.ltx23_compact_sampler import _call_node, _default_sampler_name, _sampler_names
+from ..ltx23_compact_sampler_node.ltx23_compact_sampler import (
+    _call_node,
+    _default_sampler_name,
+    _sampler_names,
+    _scan_for,
+)
 
 
 RATIO_PRESETS = {
@@ -28,30 +33,7 @@ def _folder_list(kind, fallback):
         return fallback
 
 
-def _first_existing(names, preferred):
-    for name in preferred:
-        if name in names:
-            return name
-    return names[0]
-
-
-def _normalized(name):
-    """Lowercased, separator-free view for fuzzy matching: 'ZIT\\Z-Image_Turbo'
-    and 'z_image_turbo' both become 'zitzimageturbo'."""
-    return name.lower().replace("-", "").replace("_", "").replace(" ", "")
-
-
-def _scan_for(names, keyword_groups, fallback_preferred=()):
-    """First name matching the earliest keyword group (all keywords of a group
-    must appear in the normalized name). Groups are ordered best-first, so a
-    'zimage turbo' file beats a plain 'zimage' one. Falls back to exact
-    preferred names, then to the folder's first entry."""
-    normalized = [(name, _normalized(name)) for name in names]
-    for keywords in keyword_groups:
-        for name, key in normalized:
-            if all(keyword in key for keyword in keywords):
-                return name
-    return _first_existing(names, fallback_preferred)
+# _scan_for / fuzzy model auto-detection lives in the shared ltx23 module now.
 
 
 def _model_names():

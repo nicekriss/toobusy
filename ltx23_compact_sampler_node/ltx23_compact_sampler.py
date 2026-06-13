@@ -9,8 +9,36 @@ def _node_class(class_name):
     except KeyError as exc:
         raise RuntimeError(
             f"Required ComfyUI node '{class_name}' is not available. "
-            "Install/enable the LTXV nodes used by this workflow first."
+            "This toobusy fold calls it internally — install/enable the node "
+            "pack (or update ComfyUI) that provides it."
         ) from exc
+
+
+def _first_existing(names, preferred):
+    for name in preferred:
+        if name in names:
+            return name
+    return names[0]
+
+
+def _normalized(name):
+    """Lowercased, separator-free view for fuzzy matching: 'ZIT\\Z-Image_Turbo'
+    and 'z_image_turbo' both become 'zitzimageturbo'."""
+    return name.lower().replace("-", "").replace("_", "").replace(" ", "")
+
+
+def _scan_for(names, keyword_groups, fallback_preferred=()):
+    """First name matching the earliest keyword group (all keywords of a group
+    must appear in the normalized name). Groups are ordered best-first, so a
+    'zimage turbo' file beats a plain 'zimage' one. Falls back to exact
+    preferred names, then to the folder's first entry. Shared by every fold
+    that auto-detects its default model files."""
+    normalized = [(name, _normalized(name)) for name in names]
+    for keywords in keyword_groups:
+        for name, key in normalized:
+            if all(keyword in key for keyword in keywords):
+                return name
+    return _first_existing(names, fallback_preferred)
 
 
 def _fill_input_defaults(cls, kwargs, params, has_var_keyword):
