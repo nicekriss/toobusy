@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+### Added
+- **`toobusy Load CLIP`** 신규 노드: safetensors/`.gguf` 텍스트 인코더를 한 노드로
+  로드하면서, 토큰을 추가한 커스텀/파인튜닝 LLM(예: Dolphin 128258 vs 코어 128256)도
+  로드되게 합니다. 잘라내지 않고 **모델 임베딩을 파일 크기에 맞춰 키워**(전체 토큰
+  보존) 처리하며, 후킹은 로드 동안만 적용되고 항상 원복됩니다. 로딩은 표준 로더에
+  위임(`.gguf`는 ComfyUI-GGUF, 나머지는 코어 CLIPLoader)해 toobusy에 GGUF 의존성을
+  더하지 않습니다. 로컬 LLM 프롬프트 인핸서 체인에 유용.
+
 ### Fixed
 - **`toobusy ZIT ControlNet` pose 전처리 KeyError 수정**: 공용 `_call_node`가
   미리보기 UI가 있는 노드의 `{"ui": ..., "result": (...)}` 반환을 튜플로 풀지
