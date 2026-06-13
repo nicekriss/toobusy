@@ -116,7 +116,8 @@ def _generate(**overrides):
         positive="p", negative="n", width=512, height=896,
         base_frames=65, extend_segments=0, seed=7, steps=6, cfg=1.0,
         sampler_name="euler", scheduler="simple", shift=5.0,
-        previous_frame_count=5, color_match=False, replacement_mode=False,
+        previous_frame_count=5, color_match=False, color_anchor="first chunk",
+        replacement_mode=False,
         pose_strength=1.0, pose_start=0.0, pose_end=1.0, clip_vision_crop="none",
     )
     kwargs.update(overrides)
@@ -241,13 +242,89 @@ def test_old_core_without_scail2_inputs_fails_clearly():
             positive="", negative="", width=512, height=896, base_frames=65,
             extend_segments=0, seed=1, steps=6, cfg=1.0, sampler_name="euler",
             scheduler="simple", shift=5.0, previous_frame_count=5,
-            color_match=False, replacement_mode=False, pose_strength=1.0,
-            pose_start=0.0, pose_end=1.0, clip_vision_crop="none",
+            color_match=False, color_anchor="first chunk", replacement_mode=False,
+            pose_strength=1.0, pose_start=0.0, pose_end=1.0, clip_vision_crop="none",
         )
     except RuntimeError as exc:
         assert "previous_frames" in str(exc) and "Update ComfyUI" in str(exc)
     else:
         raise AssertionError("expected RuntimeError on old core")
+
+
+# --- color anchor selection --------------------------------------------------
+
+def _spy_color_anchor(**overrides):
+    """Run a 2-extend generate with color_match on, recording which chunk's
+    frame each color match aimed at. Frames are tagged f0/f1/f2 so we can tell
+    'first chunk' (always f0) from 'previous chunk' (f0 then f1)."""
+    refs = []
+    real_match = _mod._match_color_to_reference
+    _mod._match_color_to_reference = lambda images, reference, strength=1.0: (refs.append(reference), images)[1]
+
+    class _TaggedFrames:
+        def __init__(self, tag, count):
+            self.tag = tag
+            self.count = count
+
+        @property
+        def shape(self):
+            return (self.count, 8, 8, 3)
+
+        def __getitem__(self, item):
+            return self  # last-frame slice keeps the tag
+
+    decoded_seq = [_TaggedFrames("f0", 65), _TaggedFrames("f1", 81), _TaggedFrames("f2", 81)]
+    state = {"i": 0}
+
+    def fake_call_core(class_name, hint="", **kwargs):
+        _CALLS.append((class_name, kwargs))
+        if class_name == "WanSCAILToVideo":
+            return ("pos+", "neg+", {"samples": "lat"}, kwargs["video_frame_offset"] + kwargs["length"])
+        if class_name == "SamplerCustom":
+            return ("out", "den")
+        if class_name == "VAEDecode":
+            frame = decoded_seq[state["i"]]
+            state["i"] += 1
+            return (frame,)
+        return (f"<{class_name}-out>",)
+
+    _mod._call_core = fake_call_core
+    _mod._scail_missing_params = lambda: []
+
+    fake_torch = types.ModuleType("torch")
+    fake_torch.cat = lambda chunks, dim=0: chunks[-1]
+
+    kwargs = dict(
+        model="m", clip="c", vae="v", reference_image="ref", pose_video="pose",
+        positive="p", negative="n", width=512, height=896,
+        base_frames=65, extend_segments=2, extend_1_frames=81, extend_2_frames=81,
+        seed=7, steps=6, cfg=1.0, sampler_name="euler", scheduler="simple", shift=5.0,
+        previous_frame_count=5, color_match=True, replacement_mode=False,
+        pose_strength=1.0, pose_start=0.0, pose_end=1.0, clip_vision_crop="none",
+    )
+    kwargs.update(overrides)
+    real_torch = sys.modules.get("torch")
+    sys.modules["torch"] = fake_torch
+    try:
+        _CALLS.clear()
+        _mod.ToobusyWanSCAILExtendSampler().generate(**kwargs)
+    finally:
+        _mod._match_color_to_reference = real_match
+        if real_torch is not None:
+            sys.modules["torch"] = real_torch
+        else:
+            del sys.modules["torch"]
+    return [ref.tag for ref in refs]
+
+
+def test_first_chunk_anchor_always_targets_first():
+    tags = _spy_color_anchor(color_anchor="first chunk")
+    assert tags == ["f0", "f0"], "every extend should match the first chunk (stops cumulative fade)"
+
+
+def test_previous_chunk_anchor_follows_the_chain():
+    tags = _spy_color_anchor(color_anchor="previous chunk")
+    assert tags == ["f0", "f1"], "each extend should match the chunk before it"
 
 
 # --- mask background estimation (torch only) ---------------------------------
