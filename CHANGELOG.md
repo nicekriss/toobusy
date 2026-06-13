@@ -12,6 +12,14 @@
   위임(`.gguf`는 ComfyUI-GGUF, 나머지는 코어 CLIPLoader)해 toobusy에 GGUF 의존성을
   더하지 않습니다. 로컬 LLM 프롬프트 인핸서 체인에 유용.
 
+### Changed
+- `toobusy Flux2 Klein`에 **`size_mode`**(from reference / ratio + megapixels /
+  manual)와 **사이즈 readout**을 추가했습니다. 레퍼런스 #1이 ratio/megapixels를
+  조용히 덮어쓰던 동작이 이제 명시적이고(기본 `from reference`라 동작 불변), readout이
+  실제 출력 크기·소스를 보여줘 "1:1@1MP로 설정했는데 레퍼런스 크기로 나오는" 혼란을
+  없앱니다. 레퍼런스 연결 상태에서도 `ratio + megapixels`로 강제 가능. 레퍼런스
+  슬롯 최대 3→5로 확대. (운영자 피드백)
+
 ### Fixed
 - **`toobusy ZIT ControlNet` pose 전처리 KeyError 수정**: 공용 `_call_node`가
   미리보기 UI가 있는 노드의 `{"ui": ..., "result": (...)}` 반환을 튜플로 풀지

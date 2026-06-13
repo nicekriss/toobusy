@@ -141,6 +141,13 @@ class ToobusyFlux2Klein:
                         "multiline": True,
                     },
                 ),
+                "size_mode": (
+                    ["from reference", "ratio + megapixels", "manual"],
+                    {
+                        "default": "from reference",
+                        "tooltip": "Where the output size comes from. 'from reference' = match reference #1 (Klein default — ratio/megapixels are ignored while a reference is connected); 'ratio + megapixels' = use the ratio_preset + megapixels below; 'manual' = use width/height.",
+                    },
+                ),
                 "ratio_preset": (list(RATIO_PRESETS.keys()), {"default": "1:1"}),
                 "megapixels": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 4.0, "step": 0.05}),
                 "divisible_by": ("INT", {"default": 32, "min": 8, "max": 128, "step": 8}),
@@ -214,6 +221,7 @@ class ToobusyFlux2Klein:
         clip_name,
         vae_name,
         positive,
+        size_mode,
         ratio_preset,
         megapixels,
         divisible_by,
@@ -305,13 +313,31 @@ class ToobusyFlux2Klein:
             )[0]
             print(f"[toobusy Flux2 Klein] Reference #{slot} applied.")
 
+        # Output size comes from one of three explicit sources (size_mode), so
+        # a connected reference never silently overrides the ratio/megapixels.
+        size_mode = str(size_mode)
+        ratio_size = _resolution_from_megapixels(ratio_preset, megapixels, divisible_by)
+        manual_size = None
         if int(width) > 0 and int(height) > 0:
-            target_w = _round_to(int(width), divisible_by)
-            target_h = _round_to(int(height), divisible_by)
-        else:
-            target_w, target_h = _image_dims(first_active_image) if first_active_image is not None else (0, 0)
-            if target_w <= 0 or target_h <= 0:
-                target_w, target_h = _resolution_from_megapixels(ratio_preset, megapixels, divisible_by)
+            manual_size = (_round_to(int(width), divisible_by), _round_to(int(height), divisible_by))
+
+        if size_mode == "manual":
+            if manual_size is not None:
+                target_w, target_h = manual_size
+            else:
+                target_w, target_h = ratio_size
+                print("[toobusy Flux2 Klein] size_mode=manual but width/height are 0 — using ratio + megapixels.")
+        elif size_mode == "ratio + megapixels":
+            target_w, target_h = ratio_size
+        else:  # "from reference"
+            ref_w, ref_h = _image_dims(first_active_image) if first_active_image is not None else (0, 0)
+            if ref_w > 0 and ref_h > 0:
+                target_w, target_h = ref_w, ref_h
+            else:
+                target_w, target_h = ratio_size
+                print("[toobusy Flux2 Klein] size_mode=from reference but no reference connected — using ratio + megapixels.")
+
+        print(f"[toobusy Flux2 Klein] Output size {target_w}x{target_h} (size_mode: {size_mode}).")
 
         noise = _call_node("RandomNoise", noise_seed=seed)[0]
         guider = _call_node("BasicGuider", model=model, conditioning=conditioning)[0]

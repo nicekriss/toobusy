@@ -4,6 +4,25 @@ const MAX_LORA_SLOTS = 5;
 const MAX_REFERENCE_SLOTS = 5;
 const ACCENT = "#7fc8ff";
 
+// Mirror of flux2_klein.py RATIO_PRESETS / _resolution_from_megapixels so the
+// node can preview the size it will generate for the ratio/manual modes.
+const RATIO_PRESETS = {
+    "1:1": [1, 1], "16:9": [16, 9], "9:16": [9, 16], "4:3": [4, 3],
+    "3:4": [3, 4], "3:2": [3, 2], "2:3": [2, 3],
+};
+
+function roundToMultiple(value, divisor) {
+    const d = Math.max(1, Math.round(divisor) || 1);
+    return Math.max(d, Math.round(value / d) * d);
+}
+
+function resolutionFromMegapixels(ratioPreset, megapixels, divisibleBy) {
+    const [rw, rh] = RATIO_PRESETS[ratioPreset] || RATIO_PRESETS["1:1"];
+    const pixels = Math.max(0.01, Number(megapixels) || 0) * 1_000_000;
+    const scale = Math.sqrt(pixels / (rw * rh));
+    return [roundToMultiple(rw * scale, divisibleBy), roundToMultiple(rh * scale, divisibleBy)];
+}
+
 const ADVANCED_WIDGETS = [
     "megapixels",
     "divisible_by",
@@ -142,10 +161,10 @@ function drawInfoBadge(node, ctx) {
     ctx.restore();
 }
 
-function makeReadoutWidget() {
+function makeReadoutWidget(name = "klein_reference_readout") {
     return {
         type: "toobusy_klein_readout",
-        name: "klein_reference_readout",
+        name,
         value: "",
         options: { serialize: false },
         serialize: false,
@@ -254,6 +273,49 @@ function updateReferenceReadout(node) {
     node.setDirtyCanvas?.(true, true);
 }
 
+function reference1Connected(node) {
+    const input = node.inputs?.find((i) => i.name === "reference_1_image");
+    return !!(input && input.link != null);
+}
+
+// Show where the output size actually comes from, so a connected reference
+// silently overriding ratio/megapixels never surprises the user again.
+function updateSizeReadout(node) {
+    const readout = findWidget(node, "klein_size_readout");
+    if (!readout) return;
+    const mode = String(findWidget(node, "size_mode")?.value || "from reference");
+    const ratio = String(findWidget(node, "ratio_preset")?.value || "1:1");
+    const mp = Number(findWidget(node, "megapixels")?.value ?? 1);
+    const div = Number(findWidget(node, "divisible_by")?.value ?? 32);
+    const w = Number(findWidget(node, "width")?.value ?? 0);
+    const h = Number(findWidget(node, "height")?.value ?? 0);
+    const [rw, rh] = resolutionFromMegapixels(ratio, mp, div);
+
+    if (mode === "manual") {
+        readout.value = w > 0 && h > 0
+            ? `Size: ${roundToMultiple(w, div)} x ${roundToMultiple(h, div)} (manual)`
+            : `Size: ${rw} x ${rh} (manual w/h are 0 -> ratio)`;
+    } else if (mode === "ratio + megapixels") {
+        readout.value = `Size: ${rw} x ${rh} (${ratio} @ ${mp.toFixed(2)}MP)`;
+    } else {
+        // from reference
+        readout.value = reference1Connected(node)
+            ? "Size: follows reference #1 (ratio/MP ignored)"
+            : `Size: ${rw} x ${rh} (no reference -> ratio @ ${mp.toFixed(2)}MP)`;
+    }
+    node.setDirtyCanvas?.(true, true);
+}
+
+function hookSizeReadout(node, name) {
+    const widget = findWidget(node, name);
+    if (!widget) return;
+    const original = widget.callback;
+    widget.callback = (...args) => {
+        original?.apply(widget, args);
+        updateSizeReadout(node);
+    };
+}
+
 // Reference count is driven purely by reference_slots: that many image input
 // sockets are shown, and a + / − pair changes the count. No per-slot enable
 // or disable — connect an image to a slot to use it.
@@ -292,6 +354,13 @@ app.registerExtension({
         const onNodeCreated = nodeType.prototype.onNodeCreated;
         nodeType.prototype.onNodeCreated = function () {
             onNodeCreated?.apply(this, arguments);
+
+            const sizeReadout = makeReadoutWidget("klein_size_readout");
+            if (this.addCustomWidget) this.addCustomWidget(sizeReadout);
+            else (this.widgets = this.widgets || []).push(sizeReadout);
+            for (const name of ["size_mode", "ratio_preset", "megapixels", "divisible_by", "width", "height"]) {
+                hookSizeReadout(this, name);
+            }
 
             const readout = makeReadoutWidget();
             if (this.addCustomWidget) this.addCustomWidget(readout);
@@ -355,12 +424,22 @@ app.registerExtension({
             }, { serialize: false });
 
             applyAdvanced(this);
+            updateSizeReadout(this);
         };
 
         const onConfigure = nodeType.prototype.onConfigure;
         nodeType.prototype.onConfigure = function () {
             onConfigure?.apply(this, arguments);
             applyAdvanced(this);
+            updateSizeReadout(this);
+        };
+
+        // Connecting/disconnecting reference #1 flips the "from reference" size.
+        const onConnectionsChange = nodeType.prototype.onConnectionsChange;
+        nodeType.prototype.onConnectionsChange = function () {
+            const result = onConnectionsChange?.apply(this, arguments);
+            updateSizeReadout(this);
+            return result;
         };
 
         const onDrawForeground = nodeType.prototype.onDrawForeground;
