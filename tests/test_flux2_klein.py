@@ -81,7 +81,6 @@ def _generate(**overrides):
         model_name="m", clip_name="c", vae_name="v", positive="p",
         ratio_preset="1:1", megapixels=1.0, divisible_by=32, batch_size=1,
         seed=1, steps=4, sampler_name="euler", lora_slots=0, reference_slots=3,
-        reference_1_enable=True, reference_2_enable=True, reference_3_enable=True,
     )
     kwargs.update(overrides)
     return _mod.ToobusyFlux2Klein().generate(**kwargs)
@@ -106,9 +105,16 @@ def test_references_use_real_core_chain():
     assert all("-" not in nt or nt.count("-") < 4 for nt, _ in _CALLS)
 
 
-def test_disabled_or_missing_references_are_skipped():
-    _generate(reference_1_image=_FakeImage(512, 512), reference_1_enable=False)
-    assert not _called("ReferenceLatent")
+def test_references_beyond_count_are_not_applied():
+    # reference_slots=1 -> only slot 1 is applied even if more images are wired.
+    _generate(reference_slots=1, reference_1_image=_FakeImage(512, 512), reference_2_image=_FakeImage(256, 256))
+    assert len(_called("ReferenceLatent")) == 1
+
+
+def test_unconnected_slots_are_skipped():
+    # count covers 2 slots but only slot 2 has an image -> one reference applied.
+    _generate(reference_slots=2, reference_2_image=_FakeImage(512, 512))
+    assert len(_called("ReferenceLatent")) == 1
 
 
 def test_internal_clip_loader_uses_flux2_type():
