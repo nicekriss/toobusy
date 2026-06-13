@@ -13,6 +13,11 @@
   더하지 않습니다. 로컬 LLM 프롬프트 인핸서 체인에 유용.
 
 ### Changed
+- `toobusy Wan SCAIL Extend Sampler`에 **`color_anchor`**(first chunk / previous
+  chunk) 옵션 추가. 청크 확장의 누적 색빠짐(VAE 왕복으로 청크마다 채도가 조금씩
+  깎임)을 막기 위해, color_match가 **첫 청크의 마지막 프레임을 고정 앵커**로
+  삼도록 기본값을 `first chunk`로 했습니다. `previous chunk`는 이전 청크 기준
+  (이음새 가장 매끄럽지만 드리프트를 따라감). (운영자 피드백)
 - `toobusy Flux2 Klein`에 **`size_mode`**(from reference / ratio + megapixels /
   manual)와 **사이즈 readout**을 추가했습니다. 레퍼런스 #1이 ratio/megapixels를
   조용히 덮어쓰던 동작이 이제 명시적이고(기본 `from reference`라 동작 불변), readout이

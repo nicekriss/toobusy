@@ -13,6 +13,7 @@ const ADVANCED_WIDGETS = [
     "shift",
     "previous_frame_count",
     "color_match",
+    "color_anchor",
     "pose_strength",
     "pose_start",
     "pose_end",

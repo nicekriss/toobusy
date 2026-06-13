@@ -330,7 +330,14 @@ class ToobusyWanSCAILExtendSampler:
                         "default": True,
                         "label_on": "match chunk colors",
                         "label_off": "raw chunk colors",
-                        "tooltip": "Reinhard LAB color transfer of every extend chunk toward the previous chunk's last frame, so seams don't drift.",
+                        "tooltip": "Reinhard LAB color transfer of every extend chunk so the colors stay consistent down the video.",
+                    },
+                ),
+                "color_anchor": (
+                    ["first chunk", "previous chunk"],
+                    {
+                        "default": "first chunk",
+                        "tooltip": "What color_match aims at. 'first chunk' anchors every chunk to the first chunk's last frame, stopping the cumulative fade that chunk-by-chunk VAE round-trips cause. 'previous chunk' matches each chunk to the one before it (smoothest seams, but follows the drift).",
                     },
                 ),
                 "replacement_mode": ("BOOLEAN", {"default": False, "label_on": "replacement mode", "label_off": "animation mode"}),
@@ -386,6 +393,7 @@ class ToobusyWanSCAILExtendSampler:
         shift,
         previous_frame_count,
         color_match,
+        color_anchor,
         replacement_mode,
         pose_strength,
         pose_start,
@@ -514,7 +522,11 @@ class ToobusyWanSCAILExtendSampler:
             else:
                 kept = decoded[overlap:]
                 if color_match and chunks:
-                    kept = _match_color_to_reference(kept, chunks[-1][-1:])
+                    # Anchor to the first chunk's last frame to stop cumulative
+                    # fade (every chunk targets the same un-drifted color), or
+                    # to the previous chunk for the smoothest seam.
+                    reference = chunks[0][-1:] if color_anchor == "first chunk" else chunks[-1][-1:]
+                    kept = _match_color_to_reference(kept, reference)
             chunks.append(kept)
             previous_frames = kept
 
