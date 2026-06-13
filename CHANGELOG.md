@@ -12,6 +12,12 @@
   V3 기본값 채움이 포함된 공용 헬퍼로 교체.
 
 ### Changed
+- `toobusy Z-Image Turbo`에 **컨디셔닝/레이턴트 입력 추가**: `positive_override`/
+  `negative_override`(CONDITIONING — 연결 시 해당 프롬프트 텍스트 무시, 둘 다
+  연결 + LoRA 없음이면 텍스트 인코더 로드 자체를 스킵)와 `latent_override`
+  (LATENT — image 입력보다 우선, 크기는 레이턴트를 따르고 `denoise`가 변환 강도).
+  Z-Image → Hires Upscale → **다시 Z-Image(latent in)** 로 외부 샘플러 없이
+  하이레즈 픽스 루프가 닫힙니다. (운영자 피드백)
 - **모델 기본값 자동 감지를 전 노드로 확대**: `_scan_for`(퍼지 스캔)를 공용 모듈로
   승격하고 `toobusy Ideogram4 T2I`(조건/무조건 모델 구분 포함)와 `toobusy Flux2
   Klein`에 적용. 새 노드를 꺼내면 폴더에서 알맞은 모델이 자동 선택됩니다.

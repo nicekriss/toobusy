@@ -87,6 +87,9 @@ const OVERRIDE_INPUT_SPECS = [
     ["model_override", "MODEL"],
     ["clip_override", "CLIP"],
     ["vae_override", "VAE"],
+    ["positive_override", "CONDITIONING"],
+    ["negative_override", "CONDITIONING"],
+    ["latent_override", "LATENT"],
 ];
 
 function setOverrideInputsVisible(node, visible) {
@@ -222,6 +225,11 @@ function imageInputConnected(node) {
     return !!(input && input.link != null);
 }
 
+function latentInputConnected(node) {
+    const input = node.inputs?.find((i) => i.name === "latent_override");
+    return !!(input && input.link != null);
+}
+
 function updateResolutionReadout(node) {
     const readout = findWidget(node, "resolution_readout");
     if (!readout) return;
@@ -244,7 +252,10 @@ function updateResolutionReadout(node) {
         source = `${ratio} @ ${mp.toFixed(2)}MP`;
     }
 
-    if (imageInputConnected(node)) {
+    if (latentInputConnected(node)) {
+        // An external latent wins over everything: size follows the latent.
+        readout.value = "latent in -> size from latent (denoise = strength)";
+    } else if (imageInputConnected(node)) {
         // img2img: a connected image drives the size unless width/height are set.
         readout.value = manual
             ? `img2img -> ${w} x ${h} (source scaled)`

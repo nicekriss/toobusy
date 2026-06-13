@@ -29,6 +29,8 @@ def _install_stubs():
 
     def fake_call_node(node_type, **kwargs):
         _CALLS.append((node_type, kwargs))
+        if node_type == "LoraLoader":
+            return [f"<{node_type}-model>", f"<{node_type}-clip>"]
         return [f"<{node_type}-out>"]
 
     pkg = types.ModuleType("toobusy")
@@ -120,6 +122,47 @@ def test_output_slot_order_is_backward_compatible():
     assert types[4:] == ("MODEL", "MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING")
     names = _zit.ToobusyZImageTurbo.RETURN_NAMES
     assert names[4:6] == ("model", "model_clean")
+
+
+# --- conditioning / latent overrides -----------------------------------------
+
+class _FakeLatent(dict):
+    """Stand-in for a LATENT dict: {"samples": tensor [B, C, H/8, W/8]}."""
+
+    def __init__(self, height_px, width_px):
+        samples = types.SimpleNamespace(shape=(1, 16, height_px // 8, width_px // 8))
+        super().__init__(samples=samples)
+
+
+def test_positive_override_skips_its_text_encode():
+    result = _generate(positive_override="ext-pos")
+    encodes = _called("CLIPTextEncode")
+    assert len(encodes) == 1 and encodes[0]["text"] == "n", "only the negative is encoded"
+    assert result[8] == "ext-pos", "positive passthrough echoes the override"
+
+
+def test_both_overrides_without_lora_skip_clip_loader():
+    result = _generate(positive_override="ext-pos", negative_override="ext-neg")
+    assert not _called("CLIPLoader"), "no prompt to encode and no LoRA -> no CLIP load"
+    assert not _called("CLIPTextEncode")
+    assert result[6] is None, "clip passthrough is None when the loader is skipped"
+    assert result[8] == "ext-pos" and result[9] == "ext-neg"
+
+
+def test_lora_still_loads_clip_with_both_overrides():
+    _generate(
+        positive_override="ext-pos", negative_override="ext-neg",
+        lora_slots=1, lora_1_enable=True, lora_1_name="some.safetensors", lora_1_strength=1.0,
+    )
+    assert _called("CLIPLoader"), "LoRA application needs CLIP even with conditioning overrides"
+
+
+def test_latent_override_wins_and_sets_size():
+    latent = _FakeLatent(height_px=1280, width_px=768)
+    result = _generate(latent_override=latent, image=_FakeImage(height=512, width=512))
+    assert not _called("EmptyLatentImage") and not _called("VAEEncode"), "external latent bypasses both latent sources"
+    assert _called("KSampler")[0]["latent_image"] is latent
+    assert (result[2], result[3]) == (768, 1280), "width/height follow the latent dims"
 
 
 # --- model auto-detection ----------------------------------------------------

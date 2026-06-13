@@ -99,6 +99,15 @@ def _image_dims(image):
     return (width // 8) * 8, (height // 8) * 8
 
 
+def _latent_dims(latent):
+    """Pixel (width, height) of a LATENT dict ({"samples": [B, C, H/8, W/8]})."""
+    try:
+        samples = latent["samples"]
+        return int(samples.shape[-1]) * 8, int(samples.shape[-2]) * 8
+    except (AttributeError, IndexError, KeyError, TypeError):
+        return 0, 0
+
+
 def _apply_zit_control(model, vae, control, width, height):
     """Apply a `toobusy ZIT ControlNet` bundle to the final model. Each active
     entry stacks its own Fun-ControlNet-Union patch (model patches append, so
@@ -236,6 +245,18 @@ class ToobusyZImageTurbo:
                 "model_override": ("MODEL",),
                 "clip_override": ("CLIP",),
                 "vae_override": ("VAE",),
+                "positive_override": (
+                    "CONDITIONING",
+                    {"tooltip": "External positive conditioning. Connected = the positive prompt text is ignored (and the internal CLIP is not even loaded when both overrides are connected and no LoRA is active)."},
+                ),
+                "negative_override": (
+                    "CONDITIONING",
+                    {"tooltip": "External negative conditioning. Connected = the negative prompt text is ignored."},
+                ),
+                "latent_override": (
+                    "LATENT",
+                    {"tooltip": "External starting latent (e.g. from toobusy Hires Upscale). Connected = wins over the image input and the empty latent; 'denoise' is the change strength. Width/height follow the latent."},
+                ),
                 "zit_control": (
                     "ZIT_CONTROL",
                     {"tooltip": "Connect a 'toobusy ZIT ControlNet' module to apply depth/canny/pose Fun-ControlNet-Union model patches. Leave unconnected for plain generation."},
@@ -299,6 +320,9 @@ class ToobusyZImageTurbo:
         model_override=None,
         clip_override=None,
         vae_override=None,
+        positive_override=None,
+        negative_override=None,
+        latent_override=None,
         zit_control=None,
         **lora_kwargs,
     ):
@@ -317,12 +341,28 @@ class ToobusyZImageTurbo:
             print("[toobusy Z-Image Turbo] Using internal MODEL loader.")
             model = _call_node("UNETLoader", unet_name=model_name, weight_dtype="default")[0]
 
+        # Active LoRA list up front: it decides whether CLIP is needed at all.
+        lora_slots = max(0, min(MAX_LORA_SLOTS, int(lora_slots)))
+        active_loras = []
+        for slot in range(1, lora_slots + 1):
+            enabled = lora_kwargs.get(f"lora_{slot}_enable", False)
+            lora_name = lora_kwargs.get(f"lora_{slot}_name", "None")
+            if enabled and lora_name != "None":
+                active_loras.append((lora_name, lora_kwargs.get(f"lora_{slot}_strength", 1.0)))
+
+        # CLIP is only needed to encode a prompt or to apply LoRAs. With both
+        # conditioning overrides connected and no active LoRA, skip loading the
+        # text encoder entirely (the clip passthrough output is None then).
+        need_clip = positive_override is None or negative_override is None or bool(active_loras)
         if clip_override is not None:
             print("[toobusy Z-Image Turbo] Using external CLIP override. Internal CLIP loader ignored.")
             clip = clip_override
-        else:
+        elif need_clip:
             print("[toobusy Z-Image Turbo] Using internal CLIP loader.")
             clip = _call_node("CLIPLoader", clip_name=clip_name, type="lumina2", device="default")[0]
+        else:
+            print("[toobusy Z-Image Turbo] Both conditioning overrides connected and no LoRA active — skipping the CLIP loader.")
+            clip = None
 
         if vae_override is not None:
             print("[toobusy Z-Image Turbo] Using external VAE override. Internal VAE loader ignored.")
@@ -335,29 +375,42 @@ class ToobusyZImageTurbo:
         # controlnet — for swapping LoRAs in a second pass.
         model_clean = model
 
-        lora_slots = max(0, min(MAX_LORA_SLOTS, int(lora_slots)))
-        for slot in range(1, lora_slots + 1):
-            enabled = lora_kwargs.get(f"lora_{slot}_enable", False)
-            lora_name = lora_kwargs.get(f"lora_{slot}_name", "None")
-            lora_strength = lora_kwargs.get(f"lora_{slot}_strength", 1.0)
-            if enabled and lora_name != "None":
-                model, clip = _call_node(
-                    "LoraLoader",
-                    model=model,
-                    clip=clip,
-                    lora_name=lora_name,
-                    strength_model=lora_strength,
-                    strength_clip=lora_strength,
-                )
+        for lora_name, lora_strength in active_loras:
+            model, clip = _call_node(
+                "LoraLoader",
+                model=model,
+                clip=clip,
+                lora_name=lora_name,
+                strength_model=lora_strength,
+                strength_clip=lora_strength,
+            )
 
         model = _call_node("ModelSamplingAuraFlow", model=model, shift=aura_shift)[0]
-        positive_cond = _call_node("CLIPTextEncode", clip=clip, text=positive)[0]
-        negative_cond = _call_node("CLIPTextEncode", clip=clip, text=negative)[0]
+        if positive_override is not None:
+            print("[toobusy Z-Image Turbo] Using external positive conditioning. Prompt text ignored.")
+            positive_cond = positive_override
+        else:
+            positive_cond = _call_node("CLIPTextEncode", clip=clip, text=positive)[0]
+        if negative_override is not None:
+            print("[toobusy Z-Image Turbo] Using external negative conditioning. Negative text ignored.")
+            negative_cond = negative_override
+        else:
+            negative_cond = _call_node("CLIPTextEncode", clip=clip, text=negative)[0]
 
-        # Latent source. A connected image auto-switches the node to img2img:
-        # the image is VAE-encoded into the starting latent and 'denoise' acts
-        # as the change strength. Otherwise we start from an empty latent (t2i).
-        if image is not None:
+        # Latent source priority: external latent > connected image (img2img)
+        # > empty latent (t2i). With a latent or image, 'denoise' acts as the
+        # change strength.
+        if latent_override is not None:
+            if image is not None:
+                print("[toobusy Z-Image Turbo] Both latent_override and image connected — the latent wins, image input ignored.")
+            latent_image = latent_override
+            latent_w, latent_h = _latent_dims(latent_override)
+            if latent_w > 0 and latent_h > 0:
+                width, height = latent_w, latent_h
+            else:
+                width, height = target_w, target_h
+            print(f"[toobusy Z-Image Turbo] External latent input -> {width}x{height} (denoise = strength).")
+        elif image is not None:
             explicit_size = int(width) > 0 and int(height) > 0
             if explicit_size:
                 print(f"[toobusy Z-Image Turbo] Image input detected -> img2img. Scaling source to {target_w}x{target_h} (denoise = strength).")
