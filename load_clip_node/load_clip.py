@@ -161,12 +161,24 @@ class ToobusyLoadClip:
     """A text-encoder loader that grows the model to fit the file, so custom /
     added-token LLM encoders (safetensors or GGUF) load with every token kept."""
 
+    DESCRIPTION = (
+        "Loads safetensors / .gguf text encoders and grows the model to fit "
+        "added-token fine-tunes (no token loss).\n\n"
+        "For an LLM prompt enhancer (-> Text Generate): the encoder must be a "
+        "GENERATION-capable family. ComfyUI auto-detects the architecture from "
+        "the file, and only Gemma-family encoders expose generate(). A Llama "
+        "checkpoint (Dolphin etc.) LOADS but routes to an encode-only wrapper "
+        "with no generate(), so Text Generate fails. Use a Gemma 3 (4B/12B/27B) "
+        "encoder — e.g. an abliterated GGUF for uncensored prompt expansion. "
+        "The `type` dropdown is ignored for LLM files (architecture wins)."
+    )
+
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "clip_name": (_clip_name_options(), {"tooltip": "Text encoder file (safetensors or .gguf). Both folders are merged here."}),
-                "type": (_clip_type_options(), {"default": "lumina2", "tooltip": "Text-encoder architecture (same list as the core CLIPLoader)."}),
+                "clip_name": (_clip_name_options(), {"tooltip": "Text encoder file (safetensors or .gguf). Both folders are merged here. For an LLM prompt enhancer (Text Generate), use a Gemma-family encoder — Llama/Dolphin loads but can't generate."}),
+                "type": (_clip_type_options(), {"default": "lumina2", "tooltip": "Text-encoder architecture (same list as the core CLIPLoader). Ignored for LLM files — ComfyUI auto-detects from the checkpoint."}),
             },
             "optional": {
                 "fit_model_to_file": (
