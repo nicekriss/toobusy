@@ -497,6 +497,12 @@ safetensors든 `.gguf`든 **한 노드로 텍스트 인코더를 로드**하면�
 인핸서**로 쓸 때. GGUF 파일은 ComfyUI-GGUF가 설치돼 있어야 로드되고, 없으면 명확한
 안내 메시지를 냅니다.
 
+> ⚠️ **프롬프트 인핸서로 쓸 땐 Gemma 계열 인코더가 필요합니다.** ComfyUI는 파일
+> 아키텍처로 래퍼를 자동 판별하는데, **Gemma 계열만 `generate()`를 노출**합니다.
+> Llama 계열(Dolphin 등)은 이 노드로 **로드는 되지만** encode 전용 래퍼로 잡혀
+> Text Generate에서 동작하지 않습니다. 무검열 프롬프트 확장이 목적이면 Gemma 3
+> (4B/12B/27B) abliterated GGUF를 쓰세요. (`type` 드롭다운은 LLM 파일에선 무시됨.)
+
 ### toobusy Hires Upscale
 
 카테고리:
