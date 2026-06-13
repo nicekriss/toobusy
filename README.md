@@ -470,6 +470,33 @@ toobusy/Make
 depth/pose 전처리는 `comfyui_controlnet_aux` 팩 필요(Canny는 코어 노드로 폴백).
 패치는 Z-Image 아키텍처 전용이라 다른 계열 모델에는 적용되지 않습니다.
 
+### toobusy Load CLIP
+
+카테고리:
+
+```text
+toobusy/Make
+```
+
+safetensors든 `.gguf`든 **한 노드로 텍스트 인코더를 로드**하면서, 토큰을 추가한
+커스텀/파인튜닝 LLM도 그대로 받습니다.
+
+코어 CLIPLoader는 고정 아키텍처(예: Llama 3.1 = 128256 토큰)로 인코더를 만든 뒤
+체크포인트를 붓는데, 토큰을 추가한 파인튜닝(예: Dolphin = 128258)은 크기 불일치로
+`load_state_dict`에서 막힙니다. 이 노드는 로드하는 동안만 **모델 임베딩을 파일
+크기에 맞춰 키워서**(잘라내지 않음 — 모든 토큰 보존) 그런 모델도 로드되게 합니다.
+
+- 로딩 자체는 표준 로더에 위임합니다: `.gguf`는 설치된 **ComfyUI-GGUF**로,
+  나머지는 **코어 CLIPLoader**로 — toobusy가 GGUF 코드나 의존성을 새로 들이지 않습니다.
+- 크기 맞춤 후킹은 이 노드가 도는 동안만 PyTorch 로드를 감쌌다가 **항상 원복**하므로
+  다른 노드/모델에 영구 영향이 없습니다.
+- `type`은 코어 CLIPLoader 목록을 그대로 노출(Z-Image = lumina2). `fit_model_to_file`을
+  끄면 일반 로더처럼 엄격 로드.
+
+용도: 로컬 LLM을 텍스트 인코더로 올려 Text Generate 류 노드에 물려 **프롬프트
+인핸서**로 쓸 때. GGUF 파일은 ComfyUI-GGUF가 설치돼 있어야 로드되고, 없으면 명확한
+안내 메시지를 냅니다.
+
 ### toobusy Hires Upscale
 
 카테고리:
