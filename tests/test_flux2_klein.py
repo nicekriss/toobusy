@@ -79,6 +79,7 @@ def _generate(**overrides):
     _CALLS.clear()
     kwargs = dict(
         model_name="m", clip_name="c", vae_name="v", positive="p",
+        size_mode="from reference",
         ratio_preset="1:1", megapixels=1.0, divisible_by=32, batch_size=1,
         seed=1, steps=4, sampler_name="euler", lora_slots=0, reference_slots=3,
     )
@@ -134,16 +135,31 @@ def test_internal_clip_loader_uses_flux2_type():
     assert clips and clips[0]["type"] == "flux2"
 
 
-def test_size_follows_first_active_reference():
-    _generate(reference_1_image=_FakeImage(510, 770))
+def test_from_reference_uses_reference_size():
+    _generate(size_mode="from reference", reference_1_image=_FakeImage(510, 770))
     latents = _called("EmptyFlux2LatentImage")
     assert latents and (latents[0]["width"], latents[0]["height"]) == (768, 504)
 
 
-def test_manual_size_wins_over_reference():
-    _generate(reference_1_image=_FakeImage(512, 512), width=768, height=1280)
+def test_ratio_megapixels_mode_ignores_connected_reference():
+    # The operator's case: 1:1 @ 1MP must win even with a reference connected.
+    _generate(size_mode="ratio + megapixels", ratio_preset="1:1", megapixels=1.0,
+              reference_1_image=_FakeImage(510, 770))
+    latents = _called("EmptyFlux2LatentImage")
+    # 1:1 @ 1MP, divisible_by 32 -> 992 x 992
+    assert latents and (latents[0]["width"], latents[0]["height"]) == (992, 992)
+
+
+def test_manual_mode_uses_width_height():
+    _generate(size_mode="manual", reference_1_image=_FakeImage(512, 512), width=768, height=1280)
     latents = _called("EmptyFlux2LatentImage")
     assert latents and (latents[0]["width"], latents[0]["height"]) == (768, 1280)
+
+
+def test_from_reference_without_reference_falls_back_to_ratio():
+    _generate(size_mode="from reference", ratio_preset="1:1", megapixels=1.0)
+    latents = _called("EmptyFlux2LatentImage")
+    assert latents and (latents[0]["width"], latents[0]["height"]) == (992, 992)
 
 
 def test_passthrough_outputs_and_slot_order():
