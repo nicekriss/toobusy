@@ -180,9 +180,9 @@ class ToobusyFlux2Klein:
         }
 
         required = base["required"]
-        for slot in range(1, MAX_REFERENCE_SLOTS + 1):
-            required[f"reference_{slot}_enable"] = ("BOOLEAN", {"default": True})
-
+        # References are driven by `reference_slots` alone (JS +/- buttons show
+        # that many image sockets); a slot is applied when its image is
+        # connected. No per-slot enable flags.
         for slot in range(1, MAX_LORA_SLOTS + 1):
             required[f"lora_{slot}_enable"] = ("BOOLEAN", {"default": False})
             required[f"lora_{slot}_name"] = (lora_names, {"default": "None"})
@@ -284,13 +284,9 @@ class ToobusyFlux2Klein:
         first_active_image = None
 
         for slot in range(1, reference_slots + 1):
-            enabled = bool(slot_kwargs.get(f"reference_{slot}_enable", True))
             image = references.get(slot)
-            if not enabled:
-                print(f"[toobusy Flux2 Klein] Reference #{slot} disabled.")
-                continue
             if image is None:
-                print(f"[toobusy Flux2 Klein] Reference #{slot} enabled but no IMAGE connected; skipped.")
+                print(f"[toobusy Flux2 Klein] Reference #{slot} has no IMAGE connected; skipped.")
                 continue
             if first_active_image is None:
                 first_active_image = image

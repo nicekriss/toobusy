@@ -228,13 +228,6 @@ function updateLoraSlots(node) {
     }
 }
 
-function referenceSlotWidgets(node, slot) {
-    return [
-        findWidget(node, `reference_${slot}_enable`),
-        node[`_toobusyRemoveReference${slot}`],
-    ];
-}
-
 function setInputVisible(node, name, type, visible) {
     const idx = node.inputs ? node.inputs.findIndex((i) => i.name === name) : -1;
     const exists = idx >= 0;
@@ -255,31 +248,29 @@ function updateReferenceReadout(node) {
     const readout = findWidget(node, "klein_reference_readout");
     if (!readout) return;
     const count = activeSlotCount(node, "reference_slots", MAX_REFERENCE_SLOTS);
-    readout.value = `Klein references: #1 -> #2 -> #3 (${count}/${MAX_REFERENCE_SLOTS} visible)`;
+    readout.value = count > 0
+        ? `References: ${count} — connect images to the slots above`
+        : "References: 0 (prompt only)";
     node.setDirtyCanvas?.(true, true);
 }
 
+// Reference count is driven purely by reference_slots: that many image input
+// sockets are shown, and a + / − pair changes the count. No per-slot enable
+// or disable — connect an image to a slot to use it.
 function updateReferenceSlots(node) {
     const count = activeSlotCount(node, "reference_slots", MAX_REFERENCE_SLOTS);
     for (let slot = 1; slot <= MAX_REFERENCE_SLOTS; slot += 1) {
-        const visible = slot <= count;
-        setInputVisible(node, `reference_${slot}_image`, "IMAGE", visible);
-        for (const widget of referenceSlotWidgets(node, slot)) setWidgetVisible(node, widget, visible);
+        setInputVisible(node, `reference_${slot}_image`, "IMAGE", slot <= count);
     }
-    setWidgetVisible(node, node._toobusyAddReferenceBtn, true);
     if (node._toobusyAddReferenceBtn) {
-        node._toobusyAddReferenceBtn.name = count >= MAX_REFERENCE_SLOTS ? "Reference slots full" : "Add reference slot";
+        node._toobusyAddReferenceBtn.name = count >= MAX_REFERENCE_SLOTS
+            ? `References full (${MAX_REFERENCE_SLOTS})`
+            : "＋ Add reference";
+    }
+    if (node._toobusyRemoveReferenceBtn) {
+        node._toobusyRemoveReferenceBtn.name = count <= 0 ? "No references" : "✕ Remove reference";
     }
     updateReferenceReadout(node);
-}
-
-function removeReferenceSlot(node, slot) {
-    const widget = findWidget(node, `reference_${slot}_enable`);
-    if (widget) {
-        widget.value = false;
-        widget.callback?.(false);
-    }
-    updateReferenceSlots(node);
 }
 
 function applyAdvanced(node) {
@@ -316,23 +307,16 @@ app.registerExtension({
                 };
             }
 
-            for (let slot = 1; slot <= MAX_REFERENCE_SLOTS; slot += 1) {
-                const button = this.addWidget("button", `Disable reference ${slot}`, "disable", () => {
-                    removeReferenceSlot(this, slot);
-                }, { serialize: false });
-                this[`_toobusyRemoveReference${slot}`] = button;
-                const widgets = this.widgets;
-                const fromIndex = widgets.indexOf(button);
-                if (fromIndex >= 0) widgets.splice(fromIndex, 1);
-                const enable = findWidget(this, `reference_${slot}_enable`);
-                const insertAt = enable ? widgets.indexOf(enable) + 1 : widgets.length;
-                widgets.splice(insertAt, 0, button);
-            }
-
-            this._toobusyAddReferenceBtn = this.addWidget("button", "Add reference slot", "add", () => {
+            this._toobusyAddReferenceBtn = this.addWidget("button", "＋ Add reference", "add", () => {
                 const count = activeSlotCount(this, "reference_slots", MAX_REFERENCE_SLOTS);
                 if (count >= MAX_REFERENCE_SLOTS) return;
                 setActiveSlotCount(this, "reference_slots", count + 1, MAX_REFERENCE_SLOTS, updateReferenceSlots);
+            }, { serialize: false });
+
+            this._toobusyRemoveReferenceBtn = this.addWidget("button", "✕ Remove reference", "remove", () => {
+                const count = activeSlotCount(this, "reference_slots", MAX_REFERENCE_SLOTS);
+                if (count <= 0) return;
+                setActiveSlotCount(this, "reference_slots", count - 1, MAX_REFERENCE_SLOTS, updateReferenceSlots);
             }, { serialize: false });
 
             const loraSlotWidget = findWidget(this, "lora_slots");
