@@ -101,10 +101,25 @@ def _call_node(class_name, **kwargs):
 
     kwargs = _fill_input_defaults(cls, dict(kwargs), params, has_var_keyword)
     if has_var_keyword or params is None:
-        return fn(**kwargs)
+        return _unwrap_result(fn(**kwargs))
 
     filtered = {key: value for key, value in kwargs.items() if key in params}
-    return fn(**filtered)
+    return _unwrap_result(fn(**filtered))
+
+
+def _unwrap_result(result):
+    """Normalize a node's return into the plain output tuple.
+
+    Nodes with a preview/UI (e.g. comfyui_controlnet_aux preprocessors,
+    PreviewImage) return ``{"ui": {...}, "result": (...)}`` instead of a bare
+    tuple — indexing that dict with ``[0]`` raised ``KeyError: 0``. V3
+    io.ComfyNode classes return a NodeOutput whose values live in ``.args``."""
+    args = getattr(result, "args", None)
+    if args is not None:
+        return tuple(args)
+    if isinstance(result, dict):
+        return tuple(result.get("result", ()))
+    return result
 
 
 def _sampler_names():

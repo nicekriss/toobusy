@@ -130,6 +130,34 @@ def test_v3_node_unknown_kwargs_filtered():
     assert result[0] == "img"
 
 
+class _PreviewNode:
+    """A node with a preview UI returns {"ui": ..., "result": (...)} instead of
+    a bare tuple — the shape that crashed ZIT ControlNet's DWPose call with
+    KeyError: 0 when the caller did result[0]."""
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {"image": ("IMAGE",)}}
+
+    FUNCTION = "run"
+
+    def run(self, image):
+        return {"ui": {"images": ["preview.png"]}, "result": (f"processed-{image}",)}
+
+
+def test_dict_result_with_ui_is_unwrapped():
+    _NODE_REGISTRY["Preview"] = _PreviewNode
+    result = _mod._call_node("Preview", image="img")
+    # Must be the result tuple, so result[0] works (not the dict -> KeyError: 0).
+    assert result[0] == "processed-img"
+
+
+def test_plain_tuple_return_is_unchanged():
+    _NODE_REGISTRY["Classic"] = _ClassicNode
+    result = _mod._call_node("Classic", image="img", method="lanczos")
+    assert isinstance(result, tuple) and result[0] == "img"
+
+
 if __name__ == "__main__":
     failures = 0
     for name, fn in sorted(globals().items()):

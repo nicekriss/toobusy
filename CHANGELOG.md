@@ -5,6 +5,11 @@
 ## [Unreleased]
 
 ### Fixed
+- **`toobusy ZIT ControlNet` pose 전처리 KeyError 수정**: 공용 `_call_node`가
+  미리보기 UI가 있는 노드의 `{"ui": ..., "result": (...)}` 반환을 튜플로 풀지
+  않아 DWPose(controlnet_aux) 호출 후 `result[0]`이 `KeyError: 0`으로 터졌습니다.
+  헬퍼가 이제 dict-result와 V3 NodeOutput을 모두 출력 튜플로 정규화합니다(미리보기
+  출력이 있는 모든 코어/커스텀 노드에 적용).
 - **`toobusy Flux2 Klein` 실행 불가 버그 수정**(검수): 레퍼런스 컨디셔닝이 백엔드에
   존재하지 않는 서브그래프 UUID 클래스를 호출하고 있었음 → 원본 워크플로우의 실제
   체인(`ImageScaleToTotalPixels`(lanczos·1MP) → `VAEEncode` → `ReferenceLatent`)
