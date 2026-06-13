@@ -2,9 +2,16 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
-## [Unreleased]
+## [0.2.10] - 2026-06-13
 
 ### Added
+- **`toobusy Flux2 Klein`** 신규 노드: Flux2 Klein 9B 레퍼런스 그래프(UNETLoader +
+  FluxKVCache + CLIP/VAE 로더 + CLIPTextEncode + 레퍼런스 N개 ImageScaleToTotalPixels
+  →VAEEncode→ReferenceLatent 체인 + BasicGuider + RandomNoise + KSamplerSelect +
+  Flux2Scheduler + EmptyFlux2LatentImage + SamplerCustomAdvanced + VAEDecode)를
+  1노드로 접었습니다. 레퍼런스 `＋/✕` 동적 슬롯(최대 5), LoRA 슬롯, `size_mode`
+  (from reference/ratio+megapixels/manual)와 사이즈 readout, passthrough 출력
+  (model/model_clean/clip/vae/positive), 모델 자동 감지, info 배지.
 - **`toobusy Load CLIP`** 신규 노드: safetensors/`.gguf` 텍스트 인코더를 한 노드로
   로드하면서, 토큰을 추가한 커스텀/파인튜닝 LLM(예: Dolphin 128258 vs 코어 128256)도
   로드되게 합니다. 잘라내지 않고 **모델 임베딩을 파일 크기에 맞춰 키워**(전체 토큰
@@ -26,6 +33,10 @@
   슬롯 최대 3→5로 확대. (운영자 피드백)
 
 ### Fixed
+- **공용 `_call_node`의 V3 노드 스키마 기본값 크래시 수정**: 코어 V3 노드가 새 필수
+  입력을 추가하면(예: `ImageScaleToTotalPixels`의 `resolution_steps`) 직접 호출 시
+  `TypeError`로 터졌습니다. 이제 헬퍼가 INPUT_TYPES 기본값을 실행기처럼 채우고 V3
+  normalizer 시그니처를 해석해, 코어가 위젯을 추가해도 모든 폴드가 안 깨집니다.
 - **`toobusy ZIT ControlNet` pose 전처리 KeyError 수정**: 공용 `_call_node`가
   미리보기 UI가 있는 노드의 `{"ui": ..., "result": (...)}` 반환을 튜플로 풀지
   않아 DWPose(controlnet_aux) 호출 후 `result[0]`이 `KeyError: 0`으로 터졌습니다.
