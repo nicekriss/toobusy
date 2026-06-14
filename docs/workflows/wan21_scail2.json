@@ -1,8 +1,8 @@
 {
   "id": "5e3b2cd8-2119-4be4-87d6-b524515abe69",
   "revision": 0,
-  "last_node_id": 186,
-  "last_link_id": 466,
+  "last_node_id": 190,
+  "last_link_id": 502,
   "nodes": [
     {
       "id": 87,
@@ -376,53 +376,6 @@
         }
       },
       "widgets_values": []
-    },
-    {
-      "id": 22,
-      "type": "SetNode",
-      "pos": [
-        911.6253769135122,
-        4167.327399575655
-      ],
-      "size": [
-        225,
-        34
-      ],
-      "flags": {
-        "collapsed": true
-      },
-      "order": 18,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "VAE",
-          "type": "VAE",
-          "link": 46
-        }
-      ],
-      "outputs": [
-        {
-          "name": "VAE",
-          "type": "VAE",
-          "links": null
-        }
-      ],
-      "title": "Set_VAE",
-      "properties": {
-        "Node name for S&R": "SetNode",
-        "aux_id": "kijai/ComfyUI-KJNodes",
-        "previousName": "VAE",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.8",
-          "input_ue_unconnectable": {}
-        }
-      },
-      "widgets_values": [
-        "VAE"
-      ],
-      "color": "#322",
-      "bgcolor": "#533"
     },
     {
       "id": 88,
@@ -989,7 +942,7 @@
           "name": "CLIP",
           "type": "CLIP",
           "links": [
-            459
+            495
           ]
         }
       ],
@@ -1034,7 +987,7 @@
           "type": "VAE",
           "links": [
             46,
-            460
+            496
           ]
         }
       ],
@@ -1074,7 +1027,7 @@
           "name": "CLIP_VISION",
           "type": "CLIP_VISION",
           "links": [
-            463
+            499
           ]
         }
       ],
@@ -1114,7 +1067,7 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            464
+            500
           ]
         }
       ],
@@ -1154,7 +1107,7 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            465
+            501
           ]
         }
       ],
@@ -1260,7 +1213,7 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            461
+            497
           ]
         }
       ],
@@ -1309,7 +1262,7 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            462
+            498
           ]
         }
       ],
@@ -1439,7 +1392,7 @@
           "name": "MODEL",
           "type": "MODEL",
           "links": [
-            458
+            494
           ]
         }
       ],
@@ -1460,6 +1413,183 @@
       "bgcolor": "#335"
     },
     {
+      "id": 152,
+      "type": "PrimitiveNode",
+      "pos": [
+        1724.7124016897023,
+        4971.0909267727675
+      ],
+      "size": [
+        210,
+        60
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "BOOLEAN",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "replacement_mode"
+          },
+          "links": [
+            401
+          ]
+        }
+      ],
+      "title": "replacement_mode",
+      "properties": {
+        "Run widget replace on values": false,
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.8",
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        true
+      ]
+    },
+    {
+      "id": 49,
+      "type": "WanChunkFeedForward",
+      "pos": [
+        1103.0651929437588,
+        3523.667311498903
+      ],
+      "size": [
+        270,
+        137.328125
+      ],
+      "flags": {},
+      "order": 17,
+      "mode": 4,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 365
+        }
+      ],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "links": [
+            366
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "WanChunkFeedForward",
+        "ue_properties": {
+          "widget_ue_connectable": {
+            "chunks": true,
+            "dim_threshold": true
+          },
+          "version": "7.8",
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        2,
+        4096
+      ]
+    },
+    {
+      "id": 71,
+      "type": "VHS_VideoCombine",
+      "pos": [
+        2453.1101842532335,
+        3688.4894528477025
+      ],
+      "size": [
+        816.515625,
+        1741.90234375
+      ],
+      "flags": {},
+      "order": 35,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 502
+        },
+        {
+          "name": "audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": 404
+        },
+        {
+          "name": "meta_batch",
+          "shape": 7,
+          "type": "VHS_BatchManager",
+          "link": null
+        },
+        {
+          "name": "vae",
+          "shape": 7,
+          "type": "VAE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Filenames",
+          "type": "VHS_FILENAMES",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_VideoCombine",
+        "ue_properties": {
+          "widget_ue_connectable": {
+            "frame_rate": true,
+            "loop_count": true,
+            "filename_prefix": true,
+            "format": true,
+            "pingpong": true,
+            "save_output": true,
+            "pix_fmt": true,
+            "crf": true,
+            "save_metadata": true,
+            "trim_to_audio": true
+          },
+          "version": "7.8",
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": {
+        "frame_rate": 16,
+        "loop_count": 0,
+        "filename_prefix": "Wan21_SCAIL2",
+        "format": "video/h264-mp4",
+        "pix_fmt": "yuv420p",
+        "crf": 19,
+        "save_metadata": true,
+        "trim_to_audio": false,
+        "pingpong": false,
+        "save_output": true,
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "filename": "Wan21_SCAIL2_00011-audio.mp4",
+            "subfolder": "",
+            "type": "output",
+            "format": "video/h264-mp4",
+            "frame_rate": 16,
+            "workflow": "Wan21_SCAIL2_00011.png",
+            "fullpath": "D:\\SM\\Packages\\NEOBABAE\\output\\Wan21_SCAIL2_00011-audio.mp4"
+          }
+        }
+      }
+    },
+    {
       "id": 30,
       "type": "LoadImage",
       "pos": [
@@ -1471,7 +1601,7 @@
         377.6947302337194
       ],
       "flags": {},
-      "order": 13,
+      "order": 14,
       "mode": 0,
       "inputs": [],
       "outputs": [
@@ -1500,48 +1630,8 @@
         }
       },
       "widgets_values": [
-        "ZIT_00070_.png",
+        "KakaoTalk_20260607_212354061.png",
         "image"
-      ]
-    },
-    {
-      "id": 152,
-      "type": "PrimitiveNode",
-      "pos": [
-        1724.7124016897023,
-        4971.0909267727675
-      ],
-      "size": [
-        210,
-        60
-      ],
-      "flags": {},
-      "order": 14,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "BOOLEAN",
-          "type": "BOOLEAN",
-          "widget": {
-            "name": "replacement_mode"
-          },
-          "links": [
-            401
-          ]
-        }
-      ],
-      "title": "replacement_mode",
-      "properties": {
-        "Run widget replace on values": false,
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.8",
-          "input_ue_unconnectable": {}
-        }
-      },
-      "widgets_values": [
-        true
       ]
     },
     {
@@ -1616,11 +1706,11 @@
         }
       },
       "widgets_values": {
-        "video": "downhill01.mp4",
+        "video": "발차기챌린지03.mp4",
         "force_rate": 16,
         "custom_width": 0,
         "custom_height": 0,
-        "frame_load_cap": 0,
+        "frame_load_cap": 81,
         "skip_first_frames": 0,
         "select_every_nth": 1,
         "format": "AnimateDiff",
@@ -1628,13 +1718,13 @@
           "hidden": false,
           "paused": false,
           "params": {
-            "filename": "downhill01.mp4",
+            "filename": "발차기챌린지03.mp4",
             "type": "input",
             "format": "video/mp4",
             "force_rate": 16,
             "custom_width": 0,
             "custom_height": 0,
-            "frame_load_cap": 0,
+            "frame_load_cap": 81,
             "skip_first_frames": 0,
             "select_every_nth": 1
           }
@@ -1642,152 +1732,62 @@
       }
     },
     {
-      "id": 49,
-      "type": "WanChunkFeedForward",
+      "id": 22,
+      "type": "SetNode",
       "pos": [
-        1103.0651929437588,
-        3523.667311498903
+        983.931691363477,
+        4174.859307330864
       ],
       "size": [
-        270,
-        137.328125
+        225,
+        34
       ],
-      "flags": {},
-      "order": 17,
-      "mode": 4,
+      "flags": {
+        "collapsed": true
+      },
+      "order": 18,
+      "mode": 0,
       "inputs": [
         {
-          "name": "model",
-          "type": "MODEL",
-          "link": 365
+          "name": "VAE",
+          "type": "VAE",
+          "link": 46
         }
       ],
       "outputs": [
         {
-          "name": "model",
-          "type": "MODEL",
-          "links": [
-            366
-          ]
+          "name": "VAE",
+          "type": "VAE",
+          "links": null
         }
       ],
+      "title": "Set_VAE",
       "properties": {
-        "Node name for S&R": "WanChunkFeedForward",
+        "Node name for S&R": "SetNode",
+        "aux_id": "kijai/ComfyUI-KJNodes",
+        "previousName": "VAE",
         "ue_properties": {
-          "widget_ue_connectable": {
-            "chunks": true,
-            "dim_threshold": true
-          },
+          "widget_ue_connectable": {},
           "version": "7.8",
           "input_ue_unconnectable": {}
         }
       },
       "widgets_values": [
-        2,
-        4096
-      ]
+        "VAE"
+      ],
+      "color": "#322",
+      "bgcolor": "#533"
     },
     {
-      "id": 71,
-      "type": "VHS_VideoCombine",
-      "pos": [
-        2453.1101842532335,
-        3688.4894528477025
-      ],
-      "size": [
-        816.515625,
-        1741.90234375
-      ],
-      "flags": {},
-      "order": 35,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 466
-        },
-        {
-          "name": "audio",
-          "shape": 7,
-          "type": "AUDIO",
-          "link": 404
-        },
-        {
-          "name": "meta_batch",
-          "shape": 7,
-          "type": "VHS_BatchManager",
-          "link": null
-        },
-        {
-          "name": "vae",
-          "shape": 7,
-          "type": "VAE",
-          "link": null
-        }
-      ],
-      "outputs": [
-        {
-          "name": "Filenames",
-          "type": "VHS_FILENAMES",
-          "links": null
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "VHS_VideoCombine",
-        "ue_properties": {
-          "widget_ue_connectable": {
-            "frame_rate": true,
-            "loop_count": true,
-            "filename_prefix": true,
-            "format": true,
-            "pingpong": true,
-            "save_output": true,
-            "pix_fmt": true,
-            "crf": true,
-            "save_metadata": true,
-            "trim_to_audio": true
-          },
-          "version": "7.8",
-          "input_ue_unconnectable": {}
-        }
-      },
-      "widgets_values": {
-        "frame_rate": 16,
-        "loop_count": 0,
-        "filename_prefix": "Wan21_SCAIL2",
-        "format": "video/h264-mp4",
-        "pix_fmt": "yuv420p",
-        "crf": 19,
-        "save_metadata": true,
-        "trim_to_audio": false,
-        "pingpong": false,
-        "save_output": true,
-        "videopreview": {
-          "hidden": false,
-          "paused": false,
-          "params": {
-            "filename": "Wan21_SCAIL2_00011-audio.mp4",
-            "subfolder": "",
-            "type": "output",
-            "format": "video/h264-mp4",
-            "frame_rate": 16,
-            "workflow": "Wan21_SCAIL2_00011.png",
-            "fullpath": "D:\\SM\\Packages\\NEOBABAE\\output\\Wan21_SCAIL2_00011-audio.mp4"
-          }
-        }
-      }
-    },
-    {
-      "id": 186,
+      "id": 190,
       "type": "ToobusyWanSCAILExtendSampler",
       "pos": [
-        1997.756525485999,
-        4390.968912656594
+        1948.8670000405002,
+        4308.52107394611
       ],
       "size": [
-        344.58349758102213,
-        698.3266696299625
+        400,
+        1172
       ],
       "flags": {},
       "order": 33,
@@ -1796,45 +1796,45 @@
         {
           "name": "model",
           "type": "MODEL",
-          "link": 458
+          "link": 494
         },
         {
           "name": "clip",
           "type": "CLIP",
-          "link": 459
+          "link": 495
         },
         {
           "name": "vae",
           "type": "VAE",
-          "link": 460
+          "link": 496
         },
         {
           "name": "reference_image",
           "type": "IMAGE",
-          "link": 461
+          "link": 497
         },
         {
           "name": "pose_video",
           "type": "IMAGE",
-          "link": 462
+          "link": 498
         },
         {
           "name": "clip_vision",
           "shape": 7,
           "type": "CLIP_VISION",
-          "link": 463
+          "link": 499
         },
         {
           "name": "pose_video_mask",
           "shape": 7,
           "type": "IMAGE",
-          "link": 464
+          "link": 500
         },
         {
           "name": "reference_image_mask",
           "shape": 7,
           "type": "IMAGE",
-          "link": 465
+          "link": 501
         }
       ],
       "outputs": [
@@ -1842,7 +1842,7 @@
           "name": "images",
           "type": "IMAGE",
           "links": [
-            466
+            502
           ]
         },
         {
@@ -1856,17 +1856,18 @@
           "widget_ue_connectable": {},
           "input_ue_unconnectable": {}
         },
-        "Node name for S&R": "ToobusyWanSCAILExtendSampler"
+        "Node name for S&R": "ToobusyWanSCAILExtendSampler",
+        "toobusy_advanced": false
       },
       "widgets_values": [
-        "a green grasshopper fullbody suit man riding a board,floating wings and antenas",
+        "a anime character rolling 360 kicking",
         "",
         512,
         896,
         81,
-        2,
-        1,
-        "fixed",
+        0,
+        215710809037990,
+        "randomize",
         6,
         1,
         "euler",
@@ -1882,7 +1883,7 @@
         "none",
         81,
         "remove",
-        29,
+        81,
         "remove",
         81,
         "remove",
@@ -2104,72 +2105,72 @@
       "AUDIO"
     ],
     [
-      458,
+      494,
       95,
       0,
-      186,
+      190,
       0,
       "MODEL"
     ],
     [
-      459,
+      495,
       9,
       0,
-      186,
+      190,
       1,
       "CLIP"
     ],
     [
-      460,
+      496,
       7,
       0,
-      186,
+      190,
       2,
       "VAE"
     ],
     [
-      461,
+      497,
       116,
       0,
-      186,
+      190,
       3,
       "IMAGE"
     ],
     [
-      462,
+      498,
       127,
       0,
-      186,
+      190,
       4,
       "IMAGE"
     ],
     [
-      463,
+      499,
       75,
       0,
-      186,
+      190,
       5,
       "CLIP_VISION"
     ],
     [
-      464,
+      500,
       178,
       0,
-      186,
+      190,
       6,
       "IMAGE"
     ],
     [
-      465,
+      501,
       179,
       0,
-      186,
+      190,
       7,
       "IMAGE"
     ],
     [
-      466,
-      186,
+      502,
+      190,
       0,
       71,
       0,
@@ -2205,10 +2206,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.6034931246089063,
+      "scale": 0.5486301132808252,
       "offset": [
-        -252.40364234385015,
-        -3828.050248924577
+        166.7508142172067,
+        -4025.999646073743
       ]
     },
     "frontendVersion": "1.45.15",
