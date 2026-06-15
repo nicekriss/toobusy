@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <rect width="1600" height="900" fill="#171717"/>
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#2b2b2b"/>
+      <stop offset="1" stop-color="#3a3a3a"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <text x="80" y="82" fill="#f3f3f3" font-size="42" font-family="Arial, sans-serif" font-weight="700">toobusy Flux2 Klein</text>
+  <text x="80" y="122" fill="#bdbdbd" font-size="22" font-family="Arial, sans-serif">Load Image → one folded Flux2 Klein node → Save Image</text>
+
+  <g filter="url(#shadow)">
+    <rect x="80" y="190" rx="20" ry="20" width="310" height="420" fill="url(#g)" stroke="#4a4a4a"/>
+    <rect x="80" y="190" rx="20" ry="20" width="310" height="58" fill="#303030"/>
+    <text x="116" y="228" fill="#d8d8d8" font-size="28" font-family="Arial, sans-serif">Load Image</text>
+    <rect x="125" y="285" width="220" height="220" rx="110" fill="#f6f6f6"/>
+    <text x="235" y="380" text-anchor="middle" fill="#222" font-size="24" font-family="Arial, sans-serif" font-weight="700">reference</text>
+    <text x="235" y="415" text-anchor="middle" fill="#555" font-size="18" font-family="Arial, sans-serif">identity / costume</text>
+    <circle cx="381" cy="245" r="7" fill="#63b3ff"/>
+    <text x="285" y="554" fill="#bdbdbd" font-size="20" font-family="Arial, sans-serif">IMAGE</text>
+  </g>
+
+  <path d="M395 245 C465 245, 475 245, 545 245" stroke="#62b5ff" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <circle cx="545" cy="245" r="9" fill="#62b5ff"/>
+
+  <g filter="url(#shadow)">
+    <rect x="545" y="150" rx="20" ry="20" width="520" height="610" fill="url(#g)" stroke="#4a4a4a"/>
+    <rect x="545" y="150" rx="20" ry="20" width="520" height="58" fill="#303030"/>
+    <text x="585" y="188" fill="#d8d8d8" font-size="28" font-family="Arial, sans-serif">toobusy Flux2 Klein</text>
+    <circle cx="559" cy="245" r="7" fill="#63b3ff"/>
+    <text x="582" y="253" fill="#dcdcdc" font-size="20" font-family="Arial, sans-serif">reference_1_image</text>
+    <text x="760" y="302" fill="#ffffff" font-size="21" font-family="Arial, sans-serif" text-anchor="middle">FLUX2\flux-2-klein-9b-kv-fp8.safetensors</text>
+    <text x="760" y="346" fill="#ffffff" font-size="21" font-family="Arial, sans-serif" text-anchor="middle">flux2\qwen38BFluxKlein9BTE_38b.safetensors</text>
+    <text x="760" y="390" fill="#ffffff" font-size="21" font-family="Arial, sans-serif" text-anchor="middle">flux2-vae.safetensors</text>
+    <rect x="595" y="430" width="420" height="140" rx="10" fill="#1f1f1f" stroke="#555"/>
+    <text x="625" y="466" fill="#d7d7d7" font-size="20" font-family="Arial, sans-serif">Full-length vertical shot</text>
+    <text x="625" y="501" fill="#d7d7d7" font-size="20" font-family="Arial, sans-serif">same face / same costume</text>
+    <text x="625" y="536" fill="#d7d7d7" font-size="20" font-family="Arial, sans-serif">stadium crowd + confetti</text>
+    <text x="595" y="626" fill="#9ed3ff" font-size="22" font-family="Arial, sans-serif" font-weight="700">9:16 · 1.00MP · steps 4 · euler · fixed seed</text>
+    <circle cx="1051" cy="245" r="7" fill="#63b3ff"/>
+    <text x="1005" y="253" fill="#dcdcdc" font-size="20" font-family="Arial, sans-serif" text-anchor="end">image</text>
+  </g>
+
+  <path d="M1065 245 C1135 245, 1145 245, 1215 245" stroke="#62b5ff" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <circle cx="1215" cy="245" r="9" fill="#62b5ff"/>
+
+  <g filter="url(#shadow)">
+    <rect x="1215" y="190" rx="20" ry="20" width="310" height="420" fill="url(#g)" stroke="#4a4a4a"/>
+    <rect x="1215" y="190" rx="20" ry="20" width="310" height="58" fill="#303030"/>
+    <text x="1252" y="228" fill="#d8d8d8" font-size="28" font-family="Arial, sans-serif">Save Image</text>
+    <rect x="1260" y="285" width="220" height="220" rx="8" fill="#222" stroke="#666"/>
+    <text x="1370" y="378" text-anchor="middle" fill="#f3f3f3" font-size="24" font-family="Arial, sans-serif" font-weight="700">736 × 1344</text>
+    <text x="1370" y="415" text-anchor="middle" fill="#bdbdbd" font-size="18" font-family="Arial, sans-serif">output preview</text>
+    <circle cx="1229" cy="245" r="7" fill="#63b3ff"/>
+    <text x="1252" y="554" fill="#bdbdbd" font-size="20" font-family="Arial, sans-serif">images</text>
+  </g>
+
+  <text x="80" y="830" fill="#9a9a9a" font-size="20" font-family="Arial, sans-serif">Example workflow: docs/workflows/toobusy_flux2klein.json</text>
+</svg>
