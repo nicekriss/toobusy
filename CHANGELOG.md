@@ -2,6 +2,18 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [Unreleased]
+
+### Changed
+- `toobusy Wan SCAIL Extend Sampler`에 **`frame_mode`** 토글 추가. 기본 `target total`
+  모드에서는 **원하는 총 프레임(`target_total_frames`) 하나만** 입력하면 노드가
+  `base_frames` 크기 청크로 자동 분할해 필요한 만큼 익스텐드를 돌립니다 — 중간 청크는
+  모두 같은 크기, 마지막 청크만 목표에 가장 가깝게(4k+1 격자) 자동 조절. 익스텐드
+  슬롯을 한 칸씩 쌓을 필요가 없고, readout이 실제 분할 내역(`81 + 76 = 157 frames ·
+  ~9.8s · 1 extend`)과 청크 수를 보여줍니다. `manual segments` 모드는 기존 +/- 슬롯
+  방식 그대로(파워유저용). auto 모드는 슬롯 상한(8)에 안 묶이고 내부 안전 상한 64까지
+  분할합니다. 포즈 영상보다 긴 목표는 콘솔 경고. (운영자 제안)
+
 ## [0.2.10] - 2026-06-13
 
 ### Added

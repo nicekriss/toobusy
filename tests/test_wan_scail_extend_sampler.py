@@ -157,6 +157,57 @@ def test_kept_frame_counts_trims_overlap_on_extends_only():
     assert _mod._kept_frame_counts(plan, 5) == [65, 76, 76]
 
 
+# --- auto ("target total") planning -----------------------------------------
+
+def test_round_to_grid_snaps_to_4k_plus_1():
+    assert _mod._round_to_grid(80, 5) == 81
+    assert _mod._round_to_grid(82, 5) == 81
+    assert _mod._round_to_grid(84, 5) == 85
+    assert _mod._round_to_grid(83, 5) == 81  # equidistant 81/85 breaks downward
+    assert _mod._round_to_grid(7, 9) == 9  # below minimum is lifted to a valid grid
+    assert _mod._round_to_grid(81, 5) == 81  # already on grid is untouched
+
+
+def test_auto_plan_clean_two_chunk_target():
+    # base 81 + (81-5) = 157 lands exactly on the default target.
+    plan = _mod._auto_plan(157, 81, 5, 7)
+    assert plan == [(81, 7), (81, 8)]
+    assert sum(_mod._kept_frame_counts(plan, 5)) == 157
+
+
+def test_auto_plan_uniform_middle_chunks_with_adjusted_last():
+    plan = _mod._auto_plan(300, 81, 5, 0)
+    lengths = [length for length, _seed in plan]
+    # base + full extends are the chunk size; only the last is resized.
+    assert lengths[0] == 81 and all(l == 81 for l in lengths[1:-1])
+    total = sum(_mod._kept_frame_counts(plan, 5))
+    assert abs(total - 300) <= 4  # closest the 4k+1 grid allows
+
+
+def test_auto_plan_seeds_step_per_chunk():
+    plan = _mod._auto_plan(300, 81, 5, 100)
+    seeds = [seed for _length, seed in plan]
+    assert seeds == list(range(100, 100 + len(plan)))
+
+
+def test_auto_plan_single_chunk_when_target_below_chunk():
+    # Target smaller than a chunk: just the base, no tiny trailing extend.
+    plan = _mod._auto_plan(40, 81, 5, 1)
+    assert plan == [(41, 1)]
+
+
+def test_auto_plan_no_extra_chunk_for_tiny_remainder():
+    # base 81, one full extend reaches 157; target 159 is only 2 over — adding a
+    # whole chunk (min +4) would overshoot further than stopping, so stop.
+    plan = _mod._auto_plan(159, 81, 5, 0)
+    assert plan == [(81, 0), (81, 1)]
+
+
+def test_auto_plan_respects_segment_cap():
+    plan = _mod._auto_plan(100000, 81, 5, 0, max_segments=3)
+    assert len(plan) == 1 + 3  # base + capped extends
+
+
 # --- INPUT_TYPES -------------------------------------------------------------
 
 def test_exposes_dynamic_segment_widgets():
@@ -165,6 +216,16 @@ def test_exposes_dynamic_segment_widgets():
     assert required["extend_segments"][1]["max"] == _mod.MAX_EXTEND_SEGMENTS
     for slot in range(1, _mod.MAX_EXTEND_SEGMENTS + 1):
         assert required[f"extend_{slot}_frames"][0] == "INT"
+
+
+def test_exposes_frame_mode_and_target_total():
+    required = _mod.ToobusyWanSCAILExtendSampler.INPUT_TYPES()["required"]
+    assert required["frame_mode"][0] == ["target total", "manual segments"]
+    assert required["frame_mode"][1]["default"] == "target total"
+    assert required["target_total_frames"][0] == "INT"
+    # Appended after the extend slots so saved widget-value order stays stable.
+    keys = list(required.keys())
+    assert keys.index("frame_mode") > keys.index(f"extend_{_mod.MAX_EXTEND_SEGMENTS}_frames")
 
 
 def test_masks_and_clip_vision_are_optional_inputs():
@@ -196,6 +257,23 @@ def test_two_extends_chain_offset_and_previous_frames():
     assert scail[2]["video_frame_offset"] == 141
     # output: 65 + 76 + 76
     assert frame_count == 65 + 76 + 76 == images.count
+
+
+def test_target_total_mode_auto_splits_into_chunks():
+    images, frame_count = _generate(frame_mode="target total", target_total_frames=157, base_frames=81)
+    scail = _called("WanSCAILToVideo")
+    assert len(scail) == 2  # base + one auto extend, no slots needed
+    assert frame_count == 157 == images.count
+
+
+def test_target_total_mode_ignores_manual_segment_widgets():
+    # In auto mode the +/- slot values are irrelevant; the plan comes from target.
+    _, frame_count = _generate(
+        frame_mode="target total", target_total_frames=157, base_frames=81,
+        extend_segments=5, extend_1_frames=300,
+    )
+    assert len(_called("WanSCAILToVideo")) == 2
+    assert frame_count == 157
 
 
 def test_each_chunk_gets_fresh_text_conditioning_and_own_seed():

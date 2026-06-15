@@ -1,6 +1,58 @@
 import { app } from "../../scripts/app.js";
 
 const MAX_EXTEND_SEGMENTS = 8;
+// Auto mode plans internally, not from slots — mirror the Python sanity cap.
+const MAX_AUTO_SEGMENTS = 64;
+
+// ----- Auto ("target total") planning — mirrors _auto_plan in Python so the
+// on-canvas readout shows exactly the chunk breakdown that will run. -----
+
+function roundToGrid(value, minimum) {
+    value = Math.round(Number(value) || 0);
+    if (value < minimum) value = minimum;
+    const remainder = (value - 1) % 4;
+    let grid;
+    if (remainder === 0) grid = value;
+    else if (remainder <= 2) grid = value - remainder;
+    else grid = value + (4 - remainder);
+    while (grid < minimum) grid += 4;
+    return grid;
+}
+
+function autoPlanLengths(target, chunkFrames, overlap, maxSegments) {
+    overlap = Math.max(0, Math.round(Number(overlap) || 0));
+    const chunk = roundToGrid(chunkFrames, 9);
+    const goal = Math.max(1, Math.round(Number(target) || 0));
+    const base = roundToGrid(Math.min(chunk, goal), 5);
+    const lengths = [base];
+    const perExtend = chunk - overlap;
+    if (perExtend <= 0) return lengths;
+
+    let remaining = goal - base;
+    const minLast = Math.max(9, overlap + 4);
+    let index = 1;
+    while (remaining > 0 && index <= maxSegments) {
+        if (remaining >= perExtend) {
+            lengths.push(chunk);
+            remaining -= perExtend;
+            index += 1;
+            continue;
+        }
+        const lastLength = roundToGrid(remaining + overlap, minLast);
+        const contributed = lastLength - overlap;
+        if (Math.abs(remaining - contributed) < remaining) lengths.push(lastLength);
+        break;
+    }
+    return lengths;
+}
+
+function frameMode(node) {
+    return findWidget(node, "frame_mode")?.value || "manual segments";
+}
+
+function isAuto(node) {
+    return frameMode(node) === "target total";
+}
 
 // Expert tuning hidden by default (Basic view). The extend segment controls
 // are NOT here — growing the video is the whole point of this node, so the
@@ -246,19 +298,33 @@ function updateSegments(node) {
 function updateFramesReadout(node) {
     const readout = findWidget(node, "frames_readout");
     if (!readout) return;
-    const base = Math.max(0, Number(findWidget(node, "base_frames")?.value ?? 0));
     const overlap = Math.max(0, Number(findWidget(node, "previous_frame_count")?.value ?? 5));
-    const count = activeSegmentCount(node);
-    const parts = [base];
-    for (let slot = 1; slot <= count; slot += 1) {
-        const frames = Math.max(0, Number(findWidget(node, `extend_${slot}_frames`)?.value ?? 0));
-        parts.push(Math.max(0, frames - overlap));
+    const mode = findWidget(node, "replacement_mode")?.value ? "Replacement" : "Animation";
+
+    let parts;
+    let extendCount;
+    if (isAuto(node)) {
+        const target = Math.max(0, Number(findWidget(node, "target_total_frames")?.value ?? 0));
+        const chunk = Math.max(0, Number(findWidget(node, "base_frames")?.value ?? 81));
+        const lengths = autoPlanLengths(target, chunk, overlap, MAX_AUTO_SEGMENTS);
+        parts = lengths.map((len, i) => (i === 0 ? len : Math.max(0, len - overlap)));
+        extendCount = lengths.length - 1;
+    } else {
+        const base = Math.max(0, Number(findWidget(node, "base_frames")?.value ?? 0));
+        const count = activeSegmentCount(node);
+        parts = [base];
+        for (let slot = 1; slot <= count; slot += 1) {
+            const frames = Math.max(0, Number(findWidget(node, `extend_${slot}_frames`)?.value ?? 0));
+            parts.push(Math.max(0, frames - overlap));
+        }
+        extendCount = count;
     }
+
     const total = parts.reduce((sum, value) => sum + value, 0);
     const seconds = (total / 16).toFixed(1);
     const sum = parts.length > 1 ? `${parts.join(" + ")} = ` : "";
-    const mode = findWidget(node, "replacement_mode")?.value ? "Replacement" : "Animation";
-    readout.value = `${sum}${total} frames · ~${seconds}s @ 16fps · ${mode}`;
+    const segLabel = isAuto(node) ? ` · ${extendCount} extend${extendCount === 1 ? "" : "s"}` : "";
+    readout.value = `${sum}${total} frames · ~${seconds}s @ 16fps${segLabel} · ${mode}`;
     node.setDirtyCanvas?.(true, true);
 }
 
@@ -272,6 +338,27 @@ function hookReadout(node, name) {
     };
 }
 
+// Show the extend surface (slots + Add) only in manual mode; show
+// target_total_frames only in auto mode. base_frames stays in both (it's the
+// per-chunk size auto mode extends with).
+function applyMode(node) {
+    const auto = isAuto(node);
+    setWidgetVisible(node, findWidget(node, "target_total_frames"), auto);
+    if (auto) {
+        for (let slot = 1; slot <= MAX_EXTEND_SEGMENTS; slot += 1) {
+            setWidgetVisible(node, findWidget(node, `extend_${slot}_frames`), false);
+            setWidgetVisible(node, node[`_toobusyRemoveSegment${slot}`], false);
+        }
+        if (node._toobusyAddBtn) setWidgetVisible(node, node._toobusyAddBtn, false);
+        updateFramesReadout(node);
+        node.setDirtyCanvas?.(true, true);
+        app.graph?.setDirtyCanvas?.(true, true);
+    } else {
+        if (node._toobusyAddBtn) setWidgetVisible(node, node._toobusyAddBtn, true);
+        updateSegments(node);
+    }
+}
+
 function applyAdvanced(node) {
     const advanced = isAdvanced(node);
     for (const name of ADVANCED_WIDGETS) {
@@ -280,7 +367,7 @@ function applyAdvanced(node) {
     if (node._toobusyAdvButton) {
         node._toobusyAdvButton.name = advanced ? "Hide advanced settings" : "Show advanced settings";
     }
-    updateSegments(node);
+    applyMode(node);
 }
 
 app.registerExtension({
@@ -302,6 +389,34 @@ app.registerExtension({
                 segmentsWidget.callback = (...args) => {
                     callback?.apply(segmentsWidget, args);
                     updateSegments(this);
+                };
+            }
+
+            // frame_mode + target_total_frames are appended last in INPUT_TYPES
+            // (to keep saved widget order stable); move them right under
+            // base_frames so the "how long" controls read as one group.
+            {
+                const widgets = this.widgets;
+                const baseFrames = findWidget(this, "base_frames");
+                let anchor = baseFrames ? widgets.indexOf(baseFrames) + 1 : widgets.length;
+                for (const name of ["frame_mode", "target_total_frames"]) {
+                    const widget = findWidget(this, name);
+                    if (!widget) continue;
+                    const from = widgets.indexOf(widget);
+                    if (from >= 0) {
+                        widgets.splice(from, 1);
+                        if (from < anchor) anchor -= 1;
+                    }
+                    widgets.splice(anchor, 0, widget);
+                    anchor += 1;
+                }
+            }
+            const modeWidget = findWidget(this, "frame_mode");
+            if (modeWidget) {
+                const callback = modeWidget.callback;
+                modeWidget.callback = (...args) => {
+                    callback?.apply(modeWidget, args);
+                    applyMode(this);
                 };
             }
 
@@ -350,6 +465,7 @@ app.registerExtension({
                 widgets.splice(anchor, 0, readout);
             }
             hookReadout(this, "base_frames");
+            hookReadout(this, "target_total_frames");
             hookReadout(this, "previous_frame_count");
             hookReadout(this, "replacement_mode");
             for (let slot = 1; slot <= MAX_EXTEND_SEGMENTS; slot += 1) {
