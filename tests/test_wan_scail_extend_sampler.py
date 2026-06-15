@@ -228,6 +228,14 @@ def test_exposes_frame_mode_and_target_total():
     assert keys.index("frame_mode") > keys.index(f"extend_{_mod.MAX_EXTEND_SEGMENTS}_frames")
 
 
+def test_exposes_color_sample_and_strength():
+    required = _mod.ToobusyWanSCAILExtendSampler.INPUT_TYPES()["required"]
+    assert required["color_sample"][0] == ["whole chunk", "last frame"]
+    assert required["color_match_strength"][0] == "FLOAT"
+    assert required["color_match_strength"][1]["min"] == 0.0
+    assert required["color_match_strength"][1]["max"] == 1.0
+
+
 def test_masks_and_clip_vision_are_optional_inputs():
     optional = _mod.ToobusyWanSCAILExtendSampler.INPUT_TYPES()["optional"]
     assert optional["pose_video_mask"][0] == "IMAGE"
@@ -284,6 +292,38 @@ def test_each_chunk_gets_fresh_text_conditioning_and_own_seed():
     assert all(kw["positive"] == "<CLIPTextEncode-out>" for kw in scail)
     seeds = [kw["noise_seed"] for kw in _called("SamplerCustom")]
     assert seeds == [10, 11]
+
+
+def test_color_sample_controls_reference_frame_count():
+    # 'last frame' anchors on a single seam frame; 'whole chunk' on every frame
+    # of the anchor chunk (so a color-atypical tail can't dominate).
+    captured = {}
+    real = _mod._match_color_to_reference
+    _mod._match_color_to_reference = lambda images, reference, strength=1.0: (
+        captured.__setitem__("n", reference.count),
+        images,
+    )[1]
+    try:
+        _generate(extend_segments=1, extend_1_frames=81, base_frames=65,
+                  color_match=True, color_sample="last frame")
+        assert captured["n"] == 1
+        _generate(extend_segments=1, extend_1_frames=81, base_frames=65,
+                  color_match=True, color_sample="whole chunk")
+        assert captured["n"] == 65  # the whole first (anchor) chunk
+    finally:
+        _mod._match_color_to_reference = real
+
+
+def test_color_match_strength_zero_skips_transfer():
+    # strength 0 must not call the transfer at all (same as color_match off).
+    calls = []
+    real = _mod._match_color_to_reference
+    _mod._match_color_to_reference = lambda *a, **k: calls.append(1) or a[0]
+    try:
+        _generate(extend_segments=1, extend_1_frames=81, color_match=True, color_match_strength=0.0)
+        assert calls == []
+    finally:
+        _mod._match_color_to_reference = real
 
 
 def test_clip_vision_encoded_only_when_connected():
@@ -451,6 +491,38 @@ def test_color_match_moves_toward_reference_stats():
     matched = _mod._match_color_to_reference(dark, bright)
     assert matched.mean() > dark.mean() + 0.2, "transfer should pull means toward the reference"
     assert matched.min() >= 0.0 and matched.max() <= 1.0
+
+
+def test_color_match_strength_scales_effect():
+    if not _HAS_TORCH:
+        print("SKIP test_color_match_strength_scales_effect (no torch)")
+        return
+    import torch
+
+    dark = torch.full((2, 8, 8, 3), 0.2)
+    bright = torch.full((1, 8, 8, 3), 0.8)
+    none = _mod._match_color_to_reference(dark, bright, strength=0.0)
+    half = _mod._match_color_to_reference(dark, bright, strength=0.5)
+    full = _mod._match_color_to_reference(dark, bright, strength=1.0)
+    assert torch.allclose(none, dark, atol=1e-3), "strength 0 is a no-op"
+    assert dark.mean() < half.mean() < full.mean(), "strength scales the pull"
+
+
+def test_color_match_pools_reference_over_all_frames():
+    # A reference whose tail frame is an outlier (bright) shouldn't dominate when
+    # the whole chunk is the reference: pooled stats pull less than the lone tail.
+    if not _HAS_TORCH:
+        print("SKIP test_color_match_pools_reference_over_all_frames (no torch)")
+        return
+    import torch
+
+    bulk = torch.full((4, 8, 8, 3), 0.2)
+    outlier = torch.full((1, 8, 8, 3), 0.9)
+    whole = torch.cat([bulk, outlier], dim=0)  # last frame is the bright outlier
+    src = torch.full((2, 8, 8, 3), 0.5)
+    to_last = _mod._match_color_to_reference(src, whole[-1:])
+    to_whole = _mod._match_color_to_reference(src, whole)
+    assert to_last.mean() > to_whole.mean(), "matching the whole chunk dilutes the outlier tail"
 
 
 if __name__ == "__main__":

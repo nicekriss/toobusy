@@ -66,6 +66,8 @@ const ADVANCED_WIDGETS = [
     "previous_frame_count",
     "color_match",
     "color_anchor",
+    "color_sample",
+    "color_match_strength",
     "pose_strength",
     "pose_start",
     "pose_end",
@@ -418,6 +420,26 @@ app.registerExtension({
                     callback?.apply(modeWidget, args);
                     applyMode(this);
                 };
+            }
+
+            // color_sample + color_match_strength are appended last in
+            // INPUT_TYPES too; move them next to color_anchor so the color
+            // controls read as one group (all under Advanced).
+            {
+                const widgets = this.widgets;
+                const colorAnchor = findWidget(this, "color_anchor");
+                let anchor = colorAnchor ? widgets.indexOf(colorAnchor) + 1 : widgets.length;
+                for (const name of ["color_sample", "color_match_strength"]) {
+                    const widget = findWidget(this, name);
+                    if (!widget) continue;
+                    const from = widgets.indexOf(widget);
+                    if (from >= 0) {
+                        widgets.splice(from, 1);
+                        if (from < anchor) anchor -= 1;
+                    }
+                    widgets.splice(anchor, 0, widget);
+                    anchor += 1;
+                }
             }
 
             // Per-segment remove button placed right under its frames widget.

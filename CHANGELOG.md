@@ -5,6 +5,15 @@
 ## [Unreleased]
 
 ### Changed
+- `toobusy Wan SCAIL Extend Sampler`의 **color_match에 조절기 2개** 추가. ① **`color_match_strength`**
+  (0~1, 기본 1.0): 청크 색보정을 얼마나 세게 당길지. 씬 색이 실제로 바뀌는 영상(예: 파란
+  클로즈업 → 줌아웃 와이드샷)에서 풀강도 보정이 다음 씬을 파랗게 물들일 때 낮추면 됨(0 =
+  color_match off와 동일). ② **`color_sample`**(whole chunk 기본 / last frame): 앵커 청크의
+  **어느 프레임이 색 기준이 되는지**. `whole chunk`는 청크 전체 색을 평균내 색이 튀는 마지막
+  프레임(클로즈업 등) 하나가 다음 청크를 끌어당기는 걸 막고, `last frame`은 이음새 프레임에
+  정확히 맞춤(가장 매끄러운 이음새, 단 튀는 꼬리 프레임에 취약). 내부 Reinhard LAB 통계를
+  단일 프레임 → 참조 프레임 전체 풀링으로 바꿔 평균 앵커를 지원(단일 프레임 동작은 불변).
+  (운영자 제안 — 색 드리프트 불만 대응)
 - `toobusy Wan SCAIL Extend Sampler`에 **`frame_mode`** 토글 추가. 기본 `target total`
   모드에서는 **원하는 총 프레임(`target_total_frames`) 하나만** 입력하면 노드가
   `base_frames` 크기 청크로 자동 분할해 필요한 만큼 익스텐드를 돌립니다 — 중간 청크는

@@ -295,13 +295,18 @@ def _lab_to_rgb(lab):
 
 def _match_color_to_reference(images, reference, strength=1.0):
     """Per-frame Reinhard LAB transfer of `images` [T,H,W,C] toward the color
-    statistics of `reference` [1,H,W,C]."""
+    statistics of `reference` [N,H,W,C].
+
+    Reference stats are pooled over all reference frames AND pixels, so passing
+    a whole chunk averages out a color-atypical tail (e.g. a blue close-up at
+    the very end) instead of letting one frame set the target. For a single
+    reference frame this is identical to the old per-frame behavior."""
     import torch
 
     source = images[..., :3].float()
     ref_lab = _rgb_to_lab(reference[..., :3].float().to(source.device))
-    ref_mean = ref_lab.mean(dim=(1, 2), keepdim=True)
-    ref_std = ref_lab.std(dim=(1, 2), keepdim=True)
+    ref_mean = ref_lab.mean(dim=(0, 1, 2), keepdim=True)
+    ref_std = ref_lab.std(dim=(0, 1, 2), keepdim=True)
 
     lab = _rgb_to_lab(source)
     mean = lab.mean(dim=(1, 2), keepdim=True)
@@ -402,7 +407,7 @@ class ToobusyWanSCAILExtendSampler:
                     ["first chunk", "previous chunk"],
                     {
                         "default": "first chunk",
-                        "tooltip": "What color_match aims at. 'first chunk' anchors every chunk to the first chunk's last frame, stopping the cumulative fade that chunk-by-chunk VAE round-trips cause. 'previous chunk' matches each chunk to the one before it (smoothest seams, but follows the drift).",
+                        "tooltip": "Which chunk color_match aims at. 'first chunk' anchors every chunk to the first chunk, stopping the cumulative fade that chunk-by-chunk VAE round-trips cause. 'previous chunk' matches each chunk to the one before it (smoothest seams, but follows the drift). See color_sample for which frames set the target.",
                     },
                 ),
                 "replacement_mode": ("BOOLEAN", {"default": False, "label_on": "replacement mode", "label_off": "animation mode"}),
@@ -455,6 +460,34 @@ class ToobusyWanSCAILExtendSampler:
                 "tooltip": "Goal output frames in 'target total' mode. The readout shows the actual landed total (4k+1 grid means it may differ by a few frames).",
             },
         )
+        # Color-match tuning — appended last (like frame_mode) to keep saved
+        # widget-value order stable; the JS moves them next to color_anchor.
+        base["required"]["color_sample"] = (
+            ["whole chunk", "last frame"],
+            {
+                "default": "whole chunk",
+                "tooltip": (
+                    "Which frames of the anchor chunk set the color target. 'whole chunk' "
+                    "averages the chunk's color so a color-atypical tail (e.g. a blue close-up "
+                    "right before a zoom-out) can't drag the next chunk's color. 'last frame' "
+                    "matches the seam frame exactly (tightest seam, but vulnerable to that tail)."
+                ),
+            },
+        )
+        base["required"]["color_match_strength"] = (
+            "FLOAT",
+            {
+                "default": 1.0,
+                "min": 0.0,
+                "max": 1.0,
+                "step": 0.05,
+                "tooltip": (
+                    "How hard color_match pulls each chunk toward the target color. 1.0 = full "
+                    "transfer, 0.0 = none (same as turning color_match off). Lower it when scenes "
+                    "legitimately change color and full matching tints them."
+                ),
+            },
+        )
 
         return base
 
@@ -492,6 +525,8 @@ class ToobusyWanSCAILExtendSampler:
         clip_vision_crop,
         frame_mode="manual segments",
         target_total_frames=157,
+        color_sample="whole chunk",
+        color_match_strength=1.0,
         clip_vision=None,
         pose_video_mask=None,
         reference_image_mask=None,
@@ -634,12 +669,16 @@ class ToobusyWanSCAILExtendSampler:
                 kept = decoded
             else:
                 kept = decoded[overlap:]
-                if color_match and chunks:
-                    # Anchor to the first chunk's last frame to stop cumulative
-                    # fade (every chunk targets the same un-drifted color), or
-                    # to the previous chunk for the smoothest seam.
-                    reference = chunks[0][-1:] if color_anchor == "first chunk" else chunks[-1][-1:]
-                    kept = _match_color_to_reference(kept, reference)
+                strength = max(0.0, min(1.0, float(color_match_strength)))
+                if color_match and strength > 0.0 and chunks:
+                    # Anchor to the first chunk (stops cumulative fade — every
+                    # chunk targets the same un-drifted color) or the previous
+                    # chunk (smoothest seam). color_sample decides whether the
+                    # whole anchor chunk sets the target color (robust to a
+                    # color-atypical tail) or just its last/seam frame.
+                    anchor_chunk = chunks[0] if color_anchor == "first chunk" else chunks[-1]
+                    reference = anchor_chunk if color_sample == "whole chunk" else anchor_chunk[-1:]
+                    kept = _match_color_to_reference(kept, reference, strength=strength)
             chunks.append(kept)
             previous_frames = kept
 
