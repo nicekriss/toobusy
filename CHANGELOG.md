@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [0.2.11] - 2026-06-15
+
 ### Changed
 - `toobusy Wan SCAIL Extend Sampler`의 **color_match에 조절기 2개** 추가. ① **`color_match_strength`**
   (0~1, 기본 1.0): 청크 색보정을 얼마나 세게 당길지. 씬 색이 실제로 바뀌는 영상(예: 파란
@@ -22,6 +24,9 @@
   ~9.8s · 1 extend`)과 청크 수를 보여줍니다. `manual segments` 모드는 기존 +/- 슬롯
   방식 그대로(파워유저용). auto 모드는 슬롯 상한(8)에 안 묶이고 내부 안전 상한 64까지
   분할합니다. 포즈 영상보다 긴 목표는 콘솔 경고. (운영자 제안)
+- SCAIL-2 예제 워크플로우 `docs/workflows/wan21_scail2.json`을 최신
+  `toobusy Wan SCAIL Extend Sampler` 중심 예제로 교체했습니다. 새 예제는
+  `frame_mode`와 color_match 조절기를 테스트하기 쉬운 36노드 구성입니다.
 
 ## [0.2.10] - 2026-06-13
 

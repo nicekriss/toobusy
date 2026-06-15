@@ -1,11 +1,11 @@
 # toobusy · 너무바쁜베짱이
 
 **번거로운 여러 단계를 노드 하나로 접어버리는** ComfyUI 커스텀 노드 모음입니다.  
-12개 노드를 일일이 배선하기 귀찮은 사람을 위해, 한 노드가 체인 전체를 삼킵니다.
+여러 노드를 일일이 배선하기 귀찮은 사람을 위해, 한 노드가 체인 전체를 삼킵니다.
 
 > **Fold the graph.** — toobusy folds tedious multi-step ComfyUI workflows into single production nodes.
 
-현재 문서는 **v0.2.10** 기준입니다.
+현재 문서는 **v0.2.11** 기준입니다.
 
 ## Quick Start
 
@@ -62,6 +62,12 @@ ComfyUI를 재시작하세요. 프런트엔드(JS) 변경을 받은 뒤에는 �
 
 - **`toobusy/Plan`** — 기획·연출·프롬프트·스토리보드 작업을 접습니다.
 - **`toobusy/Make`** — 이미지/영상 생성 파이프라인을 접습니다.
+
+## v0.2.11에서 특히 달라진 점
+
+- **`toobusy Wan SCAIL Extend Sampler` 프레임 계획 추가**: `frame_mode`를 `target total`로 두면 원하는 총 프레임만 입력하고, 노드가 base/extend 청크를 자동 분할합니다. 기존 +/- 방식은 `manual segments`로 그대로 쓸 수 있습니다.
+- **SCAIL color_match 조절 강화**: `color_match_strength`와 `color_sample`이 추가되어, 클로즈업/와이드샷 전환에서 다음 청크가 한 색으로 물드는 상황을 줄이기 쉬워졌습니다.
+- **SCAIL-2 예제 워크플로우 교체**: `docs/workflows/wan21_scail2.json`을 최신 SCAIL 노드 중심 예제로 갱신했습니다.
 
 ## v0.2.10에서 특히 달라진 점
 
@@ -169,7 +175,7 @@ vae_name   : flux2-vae.safetensors
 
 `docs/workflows/`에 “열면 돌아가는” 워크플로우를 둡니다.
 
-- [`wan21_scail2.json`](docs/workflows/wan21_scail2.json) — **Wan 2.1 SCAIL-2 모션 트랜스퍼 풀 그래프.** 레퍼런스 이미지 + 댄스 영상 → SAM3 세그멘테이션 → 베이스 생성 + 익스텐드 흐름입니다. 결과: [`wan21_scail2_sample.mp4`](docs/workflows/wan21_scail2_sample.mp4).
+- [`wan21_scail2.json`](docs/workflows/wan21_scail2.json) — **Wan 2.1 SCAIL-2 모션 트랜스퍼 예제(36노드).** 레퍼런스 이미지 + 댄스 영상 → `toobusy Wan SCAIL Extend Sampler` 중심 구성으로 베이스 생성 + 익스텐드 흐름을 확인합니다. 결과: [`wan21_scail2_sample.mp4`](docs/workflows/wan21_scail2_sample.mp4).
 - [`toobusy_flux2klein.json`](docs/workflows/toobusy_flux2klein.json) — **`toobusy Flux2 Klein` 한 노드로 레퍼런스 이미지 기반 생성 그래프를 접는 예제.** Load Image → Flux2 Klein → Save Image 구성입니다.
 - [`korean_scene_to_ideogram4.json`](docs/workflows/korean_scene_to_ideogram4.json) — **한국어 장면 → Prompt Polish → Layout Builder → Ideogram4 T2I.** 처음 사용자는 이 워크플로우를 먼저 열어 전체 흐름을 확인하는 것을 권장합니다.
 - [`z_image_turbo.json`](docs/workflows/z_image_turbo.json) — **`toobusy Z-Image Turbo` 한 노드로 t2i/img2img 기본 그래프를 접는 예제.** `image` 입력에 Load Image를 연결하면 자동으로 img2img로 전환됩니다.
@@ -258,7 +264,7 @@ Storyboard Board와 Paint Canvas는 이미지를 `board_data` / `canvas_data`에
 
 단기 계획:
 
-1. 0.2.10 기준 예제 워크플로우와 문서 정리.
+1. 0.2.11 기준 예제 워크플로우와 문서 정리.
 2. 메인 README는 가볍게 유지하고, 노드별 상세 설명은 `docs/`로 분리.
 3. ComfyUI-Manager / Registry 배포 기준 점검.
 

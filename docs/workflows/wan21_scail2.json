@@ -1,8 +1,8 @@
 {
   "id": "5e3b2cd8-2119-4be4-87d6-b524515abe69",
   "revision": 0,
-  "last_node_id": 190,
-  "last_link_id": 502,
+  "last_node_id": 197,
+  "last_link_id": 531,
   "nodes": [
     {
       "id": 87,
@@ -386,7 +386,7 @@
       ],
       "size": [
         399.93744417948983,
-        334
+        1012.8905273141072
       ],
       "flags": {},
       "order": 30,
@@ -919,7 +919,7 @@
       "widgets_values": [
         "",
         "left_to_right",
-        true
+        false
       ]
     },
     {
@@ -942,7 +942,7 @@
           "name": "CLIP",
           "type": "CLIP",
           "links": [
-            495
+            524
           ]
         }
       ],
@@ -987,7 +987,7 @@
           "type": "VAE",
           "links": [
             46,
-            496
+            525
           ]
         }
       ],
@@ -1027,7 +1027,7 @@
           "name": "CLIP_VISION",
           "type": "CLIP_VISION",
           "links": [
-            499
+            528
           ]
         }
       ],
@@ -1048,86 +1048,6 @@
       "bgcolor": "#355"
     },
     {
-      "id": 178,
-      "type": "GetNode",
-      "pos": [
-        1649.3502012801746,
-        4704.158163556741
-      ],
-      "size": [
-        210,
-        60
-      ],
-      "flags": {},
-      "order": 8,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            500
-          ]
-        }
-      ],
-      "title": "Get_pose_video_mask",
-      "properties": {
-        "Node name for S&R": "GetNode",
-        "aux_id": "kijai/ComfyUI-KJNodes",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.8",
-          "input_ue_unconnectable": {}
-        }
-      },
-      "widgets_values": [
-        "pose_video_mask"
-      ],
-      "color": "#2a363b",
-      "bgcolor": "#3f5159"
-    },
-    {
-      "id": 179,
-      "type": "GetNode",
-      "pos": [
-        1668.212934480167,
-        4816.278488288717
-      ],
-      "size": [
-        222.884375,
-        60
-      ],
-      "flags": {},
-      "order": 9,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            501
-          ]
-        }
-      ],
-      "title": "Get_reference_image_mask",
-      "properties": {
-        "Node name for S&R": "GetNode",
-        "aux_id": "kijai/ComfyUI-KJNodes",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.8",
-          "input_ue_unconnectable": {}
-        }
-      },
-      "widgets_values": [
-        "reference_image_mask"
-      ],
-      "color": "#2a363b",
-      "bgcolor": "#3f5159"
-    },
-    {
       "id": 180,
       "type": "MarkdownNote",
       "pos": [
@@ -1139,7 +1059,7 @@
         910.5482151642691
       ],
       "flags": {},
-      "order": 10,
+      "order": 8,
       "mode": 0,
       "inputs": [],
       "outputs": [],
@@ -1168,7 +1088,7 @@
         805.6961823958063
       ],
       "flags": {},
-      "order": 11,
+      "order": 9,
       "mode": 0,
       "inputs": [],
       "outputs": [],
@@ -1184,55 +1104,6 @@
       ],
       "color": "#432",
       "bgcolor": "#653"
-    },
-    {
-      "id": 116,
-      "type": "SetNode",
-      "pos": [
-        1222.1926879504535,
-        4484.651473178227
-      ],
-      "size": [
-        210,
-        60
-      ],
-      "flags": {
-        "collapsed": true
-      },
-      "order": 19,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "link": 352
-        }
-      ],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            497
-          ]
-        }
-      ],
-      "title": "Set_reference_image",
-      "properties": {
-        "Node name for S&R": "SetNode",
-        "aux_id": "kijai/ComfyUI-KJNodes",
-        "previousName": "reference_image",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.8",
-          "input_ue_unconnectable": {}
-        }
-      },
-      "widgets_values": [
-        "reference_image"
-      ],
-      "color": "#2a363b",
-      "bgcolor": "#3f5159"
     },
     {
       "id": 127,
@@ -1262,7 +1133,7 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            498
+            527
           ]
         }
       ],
@@ -1329,130 +1200,6 @@
       ]
     },
     {
-      "id": 154,
-      "type": "GetNode",
-      "pos": [
-        2202.1265374909544,
-        4198.290106960094
-      ],
-      "size": [
-        210,
-        60
-      ],
-      "flags": {},
-      "order": 12,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "AUDIO",
-          "type": "AUDIO",
-          "links": [
-            404
-          ]
-        }
-      ],
-      "title": "Get_audio",
-      "properties": {
-        "Node name for S&R": "GetNode",
-        "aux_id": "kijai/ComfyUI-KJNodes",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.8",
-          "input_ue_unconnectable": {}
-        }
-      },
-      "widgets_values": [
-        "audio"
-      ]
-    },
-    {
-      "id": 95,
-      "type": "ModelSamplingSD3",
-      "pos": [
-        1630.6426771833594,
-        4258.054715906626
-      ],
-      "size": [
-        270,
-        80.328125
-      ],
-      "flags": {},
-      "order": 29,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 270
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            494
-          ]
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "ModelSamplingSD3",
-        "ue_properties": {
-          "widget_ue_connectable": {
-            "shift": true
-          },
-          "version": "7.8",
-          "input_ue_unconnectable": {}
-        }
-      },
-      "widgets_values": [
-        5
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 152,
-      "type": "PrimitiveNode",
-      "pos": [
-        1724.7124016897023,
-        4971.0909267727675
-      ],
-      "size": [
-        210,
-        60
-      ],
-      "flags": {},
-      "order": 13,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "BOOLEAN",
-          "type": "BOOLEAN",
-          "widget": {
-            "name": "replacement_mode"
-          },
-          "links": [
-            401
-          ]
-        }
-      ],
-      "title": "replacement_mode",
-      "properties": {
-        "Run widget replace on values": false,
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.8",
-          "input_ue_unconnectable": {}
-        }
-      },
-      "widgets_values": [
-        true
-      ]
-    },
-    {
       "id": 49,
       "type": "WanChunkFeedForward",
       "pos": [
@@ -1499,15 +1246,315 @@
       ]
     },
     {
+      "id": 22,
+      "type": "SetNode",
+      "pos": [
+        983.931691363477,
+        4174.859307330864
+      ],
+      "size": [
+        225,
+        34
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "link": 46
+        }
+      ],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": null
+        }
+      ],
+      "title": "Set_VAE",
+      "properties": {
+        "Node name for S&R": "SetNode",
+        "aux_id": "kijai/ComfyUI-KJNodes",
+        "previousName": "VAE",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.8",
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        "VAE"
+      ],
+      "color": "#322",
+      "bgcolor": "#533"
+    },
+    {
+      "id": 116,
+      "type": "SetNode",
+      "pos": [
+        955.7747937994129,
+        4504.570568068026
+      ],
+      "size": [
+        210,
+        60
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "link": 352
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            526
+          ]
+        }
+      ],
+      "title": "Set_reference_image",
+      "properties": {
+        "Node name for S&R": "SetNode",
+        "aux_id": "kijai/ComfyUI-KJNodes",
+        "previousName": "reference_image",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.8",
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        "reference_image"
+      ],
+      "color": "#2a363b",
+      "bgcolor": "#3f5159"
+    },
+    {
+      "id": 195,
+      "type": "GetNode",
+      "pos": [
+        1204.105296750671,
+        4479.829536361262
+      ],
+      "size": [
+        210,
+        60
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            529
+          ]
+        }
+      ],
+      "title": "Get_pose_video_mask",
+      "properties": {
+        "Node name for S&R": "GetNode",
+        "aux_id": "kijai/ComfyUI-KJNodes",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.8",
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        "pose_video_mask"
+      ],
+      "color": "#2a363b",
+      "bgcolor": "#3f5159"
+    },
+    {
+      "id": 196,
+      "type": "GetNode",
+      "pos": [
+        1180.8761233976006,
+        4599.303653144937
+      ],
+      "size": [
+        222.884375,
+        58
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            530
+          ]
+        }
+      ],
+      "title": "Get_reference_image_mask",
+      "properties": {
+        "Node name for S&R": "GetNode",
+        "aux_id": "kijai/ComfyUI-KJNodes",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.8",
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        "reference_image_mask"
+      ],
+      "color": "#2a363b",
+      "bgcolor": "#3f5159"
+    },
+    {
+      "id": 152,
+      "type": "PrimitiveNode",
+      "pos": [
+        1214.2855951386432,
+        4938.722397576846
+      ],
+      "size": [
+        210,
+        60
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "BOOLEAN",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "replacement_mode"
+          },
+          "links": [
+            401
+          ]
+        }
+      ],
+      "title": "replacement_mode",
+      "properties": {
+        "Run widget replace on values": false,
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.8",
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        false
+      ]
+    },
+    {
+      "id": 154,
+      "type": "GetNode",
+      "pos": [
+        1904.1866756768109,
+        4159.198883238871
+      ],
+      "size": [
+        210,
+        60
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "AUDIO",
+          "type": "AUDIO",
+          "links": [
+            404
+          ]
+        }
+      ],
+      "title": "Get_audio",
+      "properties": {
+        "Node name for S&R": "GetNode",
+        "aux_id": "kijai/ComfyUI-KJNodes",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.8",
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        "audio"
+      ]
+    },
+    {
+      "id": 95,
+      "type": "ModelSamplingSD3",
+      "pos": [
+        1605.8819972919114,
+        4116.970256689052
+      ],
+      "size": [
+        270,
+        80.328125
+      ],
+      "flags": {},
+      "order": 29,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 270
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            523
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ModelSamplingSD3",
+        "ue_properties": {
+          "widget_ue_connectable": {
+            "shift": true
+          },
+          "version": "7.8",
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        5
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
       "id": 71,
       "type": "VHS_VideoCombine",
       "pos": [
-        2453.1101842532335,
-        3688.4894528477025
+        1915.0329351195865,
+        4259.427805495028
       ],
       "size": [
-        816.515625,
-        1741.90234375
+        490,
+        1170.5
       ],
       "flags": {},
       "order": 35,
@@ -1516,7 +1563,7 @@
         {
           "name": "images",
           "type": "IMAGE",
-          "link": 502
+          "link": 531
         },
         {
           "name": "audio",
@@ -1578,13 +1625,13 @@
           "hidden": false,
           "paused": false,
           "params": {
-            "filename": "Wan21_SCAIL2_00011-audio.mp4",
+            "filename": "Wan21_SCAIL2_00016-audio.mp4",
             "subfolder": "",
             "type": "output",
             "format": "video/h264-mp4",
             "frame_rate": 16,
-            "workflow": "Wan21_SCAIL2_00011.png",
-            "fullpath": "D:\\SM\\Packages\\NEOBABAE\\output\\Wan21_SCAIL2_00011-audio.mp4"
+            "workflow": "Wan21_SCAIL2_00016.png",
+            "fullpath": "D:\\SM\\Packages\\NEOBABAE\\output\\Wan21_SCAIL2_00016-audio.mp4"
           }
         }
       }
@@ -1630,7 +1677,7 @@
         }
       },
       "widgets_values": [
-        "KakaoTalk_20260607_212354061.png",
+        "ComfyUI_00110_.png",
         "image"
       ]
     },
@@ -1710,7 +1757,7 @@
         "force_rate": 16,
         "custom_width": 0,
         "custom_height": 0,
-        "frame_load_cap": 81,
+        "frame_load_cap": 180,
         "skip_first_frames": 0,
         "select_every_nth": 1,
         "format": "AnimateDiff",
@@ -1724,7 +1771,7 @@
             "force_rate": 16,
             "custom_width": 0,
             "custom_height": 0,
-            "frame_load_cap": 81,
+            "frame_load_cap": 180,
             "skip_first_frames": 0,
             "select_every_nth": 1
           }
@@ -1732,62 +1779,15 @@
       }
     },
     {
-      "id": 22,
-      "type": "SetNode",
-      "pos": [
-        983.931691363477,
-        4174.859307330864
-      ],
-      "size": [
-        225,
-        34
-      ],
-      "flags": {
-        "collapsed": true
-      },
-      "order": 18,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "VAE",
-          "type": "VAE",
-          "link": 46
-        }
-      ],
-      "outputs": [
-        {
-          "name": "VAE",
-          "type": "VAE",
-          "links": null
-        }
-      ],
-      "title": "Set_VAE",
-      "properties": {
-        "Node name for S&R": "SetNode",
-        "aux_id": "kijai/ComfyUI-KJNodes",
-        "previousName": "VAE",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.8",
-          "input_ue_unconnectable": {}
-        }
-      },
-      "widgets_values": [
-        "VAE"
-      ],
-      "color": "#322",
-      "bgcolor": "#533"
-    },
-    {
-      "id": 190,
+      "id": 197,
       "type": "ToobusyWanSCAILExtendSampler",
       "pos": [
-        1948.8670000405002,
-        4308.52107394611
+        1476.1635524984365,
+        4272.890923396904
       ],
       "size": [
-        400,
-        1172
+        392.46809224479534,
+        1076.689543017802
       ],
       "flags": {},
       "order": 33,
@@ -1796,45 +1796,45 @@
         {
           "name": "model",
           "type": "MODEL",
-          "link": 494
+          "link": 523
         },
         {
           "name": "clip",
           "type": "CLIP",
-          "link": 495
+          "link": 524
         },
         {
           "name": "vae",
           "type": "VAE",
-          "link": 496
+          "link": 525
         },
         {
           "name": "reference_image",
           "type": "IMAGE",
-          "link": 497
+          "link": 526
         },
         {
           "name": "pose_video",
           "type": "IMAGE",
-          "link": 498
+          "link": 527
         },
         {
           "name": "clip_vision",
           "shape": 7,
           "type": "CLIP_VISION",
-          "link": 499
+          "link": 528
         },
         {
           "name": "pose_video_mask",
           "shape": 7,
           "type": "IMAGE",
-          "link": 500
+          "link": 529
         },
         {
           "name": "reference_image_mask",
           "shape": 7,
           "type": "IMAGE",
-          "link": 501
+          "link": 530
         }
       ],
       "outputs": [
@@ -1842,7 +1842,7 @@
           "name": "images",
           "type": "IMAGE",
           "links": [
-            502
+            531
           ]
         },
         {
@@ -1852,21 +1852,24 @@
         }
       ],
       "properties": {
+        "Node name for S&R": "ToobusyWanSCAILExtendSampler",
         "ue_properties": {
           "widget_ue_connectable": {},
-          "input_ue_unconnectable": {}
+          "input_ue_unconnectable": {},
+          "version": "7.8"
         },
-        "Node name for S&R": "ToobusyWanSCAILExtendSampler",
-        "toobusy_advanced": false
+        "toobusy_advanced": true
       },
       "widgets_values": [
-        "a anime character rolling 360 kicking",
+        "the green hero doing spinning 360 kick",
         "",
         512,
         896,
         81,
+        "target total",
+        181,
         0,
-        215710809037990,
+        54177985180640,
         "randomize",
         6,
         1,
@@ -1876,7 +1879,9 @@
         5,
         true,
         "first chunk",
-        true,
+        "whole chunk",
+        1,
+        false,
         1,
         0,
         1,
@@ -1899,7 +1904,7 @@
         "remove",
         "add",
         null,
-        "advanced"
+        null
       ]
     }
   ],
@@ -2105,72 +2110,72 @@
       "AUDIO"
     ],
     [
-      494,
+      523,
       95,
       0,
-      190,
+      197,
       0,
       "MODEL"
     ],
     [
-      495,
+      524,
       9,
       0,
-      190,
+      197,
       1,
       "CLIP"
     ],
     [
-      496,
+      525,
       7,
       0,
-      190,
+      197,
       2,
       "VAE"
     ],
     [
-      497,
+      526,
       116,
       0,
-      190,
+      197,
       3,
       "IMAGE"
     ],
     [
-      498,
+      527,
       127,
       0,
-      190,
+      197,
       4,
       "IMAGE"
     ],
     [
-      499,
+      528,
       75,
       0,
-      190,
+      197,
       5,
       "CLIP_VISION"
     ],
     [
-      500,
-      178,
+      529,
+      195,
       0,
-      190,
+      197,
       6,
       "IMAGE"
     ],
     [
-      501,
-      179,
+      530,
+      196,
       0,
-      190,
+      197,
       7,
       "IMAGE"
     ],
     [
-      502,
-      190,
+      531,
+      197,
       0,
       71,
       0,
@@ -2206,10 +2211,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.5486301132808252,
+      "scale": 0.6638424370698031,
       "offset": [
-        166.7508142172067,
-        -4025.999646073743
+        349.0164850050823,
+        -3837.1485729528204
       ]
     },
     "frontendVersion": "1.45.15",
