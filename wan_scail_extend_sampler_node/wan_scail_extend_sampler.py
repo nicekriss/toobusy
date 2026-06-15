@@ -24,6 +24,12 @@ from ..ltx23_compact_sampler_node.ltx23_compact_sampler import _fill_input_defau
 
 MAX_EXTEND_SEGMENTS = 8
 
+# Auto ("target total") mode builds its plan internally instead of from the
+# +/- slots, so it isn't bound by MAX_EXTEND_SEGMENTS. This is just a sanity
+# cap so a tiny chunk size against a huge target can't spin up thousands of
+# chunks (every chunk's decoded frames accumulate in memory before concat).
+MAX_AUTO_SEGMENTS = 64
+
 _SCAIL_NODE = "WanSCAILToVideo"
 _SCAIL_HINT = (
     "Update ComfyUI: WanSCAILToVideo with SCAIL-2 extend inputs "
@@ -179,6 +185,65 @@ def _kept_frame_counts(plan, previous_frame_count):
     return counts
 
 
+def _round_to_grid(value, minimum):
+    """Nearest valid Wan length (4k+1) that is >= minimum. Wan 2.1 wants chunk
+    lengths of the form 4k+1 (5, 9, ..., 65, 81); off-grid lengths degrade or
+    error in the sampler, so auto mode snaps every computed length here."""
+    value = int(round(float(value)))
+    if value < minimum:
+        value = minimum
+    remainder = (value - 1) % 4
+    if remainder == 0:
+        grid = value
+    elif remainder <= 2:
+        grid = value - remainder
+    else:
+        grid = value + (4 - remainder)
+    while grid < minimum:
+        grid += 4
+    return grid
+
+
+def _auto_plan(target_total, chunk_frames, overlap, seed, max_segments=MAX_AUTO_SEGMENTS):
+    """Build [(length, noise_seed), ...] that lands as close to `target_total`
+    output frames as the 4k+1 grid allows.
+
+    The base chunk and every full extend use `chunk_frames`; the base keeps all
+    its frames while each extend contributes `chunk_frames - overlap` (the
+    overlap is re-rendered from the previous tail and trimmed). The final extend
+    is resized to close the gap, and is only added when doing so lands closer to
+    the target than stopping — so a 1-2 frame remainder doesn't spawn a whole
+    extra chunk. Mirrors the JS readout's planning so the on-canvas breakdown
+    matches what actually runs."""
+    overlap = int(overlap)
+    chunk = _round_to_grid(chunk_frames, 9)
+    target = max(1, int(target_total))
+
+    base = _round_to_grid(min(chunk, target), 5)
+    plan = [(base, int(seed))]
+
+    per_extend = chunk - overlap
+    if per_extend <= 0:
+        return plan
+
+    remaining = target - base
+    min_last = max(9, overlap + 4)
+    index = 1
+    while remaining > 0 and index <= max_segments:
+        if remaining >= per_extend:
+            plan.append((chunk, int(seed) + index))
+            remaining -= per_extend
+            index += 1
+            continue
+        # Final partial chunk: snap to grid, keep only if it beats stopping.
+        last_length = _round_to_grid(remaining + overlap, min_last)
+        contributed = last_length - overlap
+        if abs(remaining - contributed) < remaining:
+            plan.append((last_length, int(seed) + index))
+        break
+    return plan
+
+
 # ----- Reinhard color transfer in CIELAB (folds the per-chunk ColorTransfer
 # nodes; matches each frame's LAB mean/std to the previous chunk's last frame
 # so chunk seams don't drift in color). -----
@@ -286,7 +351,7 @@ class ToobusyWanSCAILExtendSampler:
                         "min": 5,
                         "max": 1024,
                         "step": 4,
-                        "tooltip": "Frames of the first chunk. Wan wants 4k+1 lengths (65, 81, ...).",
+                        "tooltip": "Frames of the first chunk, and the per-chunk size auto mode extends with. Wan wants 4k+1 lengths (65, 81, ...).",
                     },
                 ),
                 "extend_segments": ("INT", {"default": 0, "min": 0, "max": MAX_EXTEND_SEGMENTS}),
@@ -365,6 +430,32 @@ class ToobusyWanSCAILExtendSampler:
                 },
             )
 
+        # Appended AFTER the slots so saved-workflow widget value order (which
+        # ends with extend_N_frames) stays intact; the JS repositions them for
+        # display. 'target total' lets you type one goal frame count and let the
+        # node decide how many extends to run, instead of stacking slots.
+        base["required"]["frame_mode"] = (
+            ["target total", "manual segments"],
+            {
+                "default": "target total",
+                "tooltip": (
+                    "target total: enter a goal frame count; the node auto-splits it into "
+                    "base_frames-sized chunks and extends as needed (last chunk trims to fit). "
+                    "manual segments: drive each extend chunk yourself with the +/- slots."
+                ),
+            },
+        )
+        base["required"]["target_total_frames"] = (
+            "INT",
+            {
+                "default": 157,
+                "min": 5,
+                "max": 100000,
+                "step": 4,
+                "tooltip": "Goal output frames in 'target total' mode. The readout shows the actual landed total (4k+1 grid means it may differ by a few frames).",
+            },
+        )
+
         return base
 
     RETURN_TYPES = ("IMAGE", "INT")
@@ -399,6 +490,8 @@ class ToobusyWanSCAILExtendSampler:
         pose_start,
         pose_end,
         clip_vision_crop,
+        frame_mode="manual segments",
+        target_total_frames=157,
         clip_vision=None,
         pose_video_mask=None,
         reference_image_mask=None,
@@ -411,17 +504,39 @@ class ToobusyWanSCAILExtendSampler:
                 f"{'/'.join(missing)} input(s). {_SCAIL_HINT}"
             )
 
-        extend_segments = max(0, min(MAX_EXTEND_SEGMENTS, int(extend_segments)))
-        segment_frames = [
-            int(segment_kwargs.get(f"extend_{slot}_frames", 81))
-            for slot in range(1, MAX_EXTEND_SEGMENTS + 1)
-        ]
         overlap = int(previous_frame_count)
-        for index in range(extend_segments):
-            if segment_frames[index] <= overlap:
-                raise ValueError(
-                    f"extend_{index + 1}_frames ({segment_frames[index]}) must be larger than "
-                    f"previous_frame_count ({overlap}); the chunk would only re-render the overlap."
+        auto_mode = str(frame_mode) == "target total"
+
+        if auto_mode:
+            plan = _auto_plan(target_total_frames, base_frames, overlap, seed)
+        else:
+            extend_segments = max(0, min(MAX_EXTEND_SEGMENTS, int(extend_segments)))
+            segment_frames = [
+                int(segment_kwargs.get(f"extend_{slot}_frames", 81))
+                for slot in range(1, MAX_EXTEND_SEGMENTS + 1)
+            ]
+            for index in range(extend_segments):
+                if segment_frames[index] <= overlap:
+                    raise ValueError(
+                        f"extend_{index + 1}_frames ({segment_frames[index]}) must be larger than "
+                        f"previous_frame_count ({overlap}); the chunk would only re-render the overlap."
+                    )
+            plan = _chunk_plan(base_frames, extend_segments, segment_frames, seed)
+
+        # SCAIL-2 is pose-driven: each chunk walks the pose video at its offset,
+        # so the output can't outrun the pose. Warn (don't hard-clamp) when the
+        # plan asks for more frames than the pose supplies.
+        if pose_video is not None:
+            try:
+                pose_len = int(pose_video.shape[0])
+            except Exception:
+                pose_len = None
+            requested = sum(_kept_frame_counts(plan, overlap))
+            if pose_len and requested > pose_len:
+                print(
+                    f"[toobusy Wan SCAIL] Warning: planned {requested} output frames exceed "
+                    f"pose_video length ({pose_len}). The video can't run longer than the driving "
+                    "pose — shorten the target or supply a longer pose_video."
                 )
 
         if pose_video_mask is not None:
@@ -435,8 +550,6 @@ class ToobusyWanSCAILExtendSampler:
                     "value on this node and on 'Create SCAIL-2 Colored Mask' — mismatched mask "
                     "conventions degrade quality, especially with multiple people."
                 )
-
-        plan = _chunk_plan(base_frames, extend_segments, segment_frames, seed)
 
         # Shared conditioning: fresh text encodes for every chunk (each chunk
         # attaches its own reference latent exactly once), one optional CLIP
