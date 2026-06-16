@@ -181,15 +181,46 @@ def _merge_adjacent_runs(runs):
     return merged
 
 
+def _split_axis(text, bbox):
+    y_min, x_min, y_max, x_max = _normalize_bbox(bbox)
+    width = max(1, x_max - x_min)
+    height = max(1, y_max - y_min)
+    if "\n" in str(text or ""):
+        return "y"
+    # Large title blocks commonly stack Latin/product text above Korean copy.
+    # Inline labels such as "First Frame (시작 프레임)" are short, so keep them
+    # split horizontally.
+    if width / height >= 2.1 and height >= 180 and len(str(text or "")) >= 18:
+        return "y"
+    return "x"
+
+
+def _run_bbox(axis, y_min, x_min, y_max, x_max, start, end):
+    if axis == "y":
+        run_y0 = _clamp_int(start)
+        run_y1 = _clamp_int(end)
+        if run_y1 - run_y0 < MIN_BOX_SIZE:
+            run_y1 = min(1000, run_y0 + MIN_BOX_SIZE)
+        return [run_y0, x_min, run_y1, x_max]
+    run_x0 = _clamp_int(start)
+    run_x1 = _clamp_int(end)
+    if run_x1 - run_x0 < MIN_BOX_SIZE:
+        run_x1 = min(1000, run_x0 + MIN_BOX_SIZE)
+    return [y_min, run_x0, y_max, run_x1]
+
+
 def _split_mixed_hangul_runs(text, bbox):
     original = str(text or "").strip()
     if not _has_hangul(original):
         return []
 
     y_min, x_min, y_max, x_max = _normalize_bbox(bbox)
-    total_width = max(1, x_max - x_min)
+    axis = _split_axis(original, bbox)
+    span_start = y_min if axis == "y" else x_min
+    span_end = y_max if axis == "y" else x_max
+    total_span = max(1, span_end - span_start)
     total_weight = sum(_char_width_weight(char) for char in original) or 1.0
-    cursor = float(x_min)
+    cursor = float(span_start)
     runs = []
     current_kind = None
     current_text = []
@@ -215,17 +246,17 @@ def _split_mixed_hangul_runs(text, bbox):
             run_kind = "hangul"
         cleaned = _clean_split_run("".join(current_text), run_kind)
         if cleaned:
-            run_x0 = _clamp_int(current_start)
-            run_x1 = _clamp_int(end_x)
-            if run_x1 - run_x0 < MIN_BOX_SIZE:
-                run_x1 = min(1000, run_x0 + MIN_BOX_SIZE)
-            runs.append({"kind": run_kind, "text": cleaned, "bbox": [y_min, run_x0, y_max, run_x1]})
+            runs.append({
+                "kind": run_kind,
+                "text": cleaned,
+                "bbox": _run_bbox(axis, y_min, x_min, y_max, x_max, current_start, end_x),
+            })
         current_text = []
         current_kind = None
         current_start = end_x
 
     for char in original:
-        width = total_width * (_char_width_weight(char) / total_weight)
+        width = total_span * (_char_width_weight(char) / total_weight)
         next_cursor = cursor + width
         kind = char_kind(char)
         if current_kind is None:
@@ -237,7 +268,7 @@ def _split_mixed_hangul_runs(text, bbox):
             current_start = cursor
         current_text.append(char)
         cursor = next_cursor
-    flush(float(x_max))
+    flush(float(span_end))
     return _merge_adjacent_runs(runs)
 
 

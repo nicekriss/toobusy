@@ -500,7 +500,7 @@ function installEditor(node) {
             .toobusy-ideogram .preset-bar select { flex: 1; min-width: 0; }
             .toobusy-ideogram .editor {
                 display: grid;
-                grid-template-columns: minmax(0, 0.62fr) minmax(420px, 1.35fr) minmax(150px, 0.36fr);
+                grid-template-columns: minmax(300px, 0.58fr) minmax(560px, 1.6fr) minmax(190px, 0.42fr);
                 gap: 14px;
                 align-items: start;
             }
@@ -564,8 +564,8 @@ function installEditor(node) {
                 display: flex;
                 flex-direction: column;
                 gap: 3px;
-                max-height: 220px;
-                overflow-y: auto;
+                max-height: none;
+                overflow: visible;
             }
             .toobusy-ideogram .layer-row {
                 display: flex;
@@ -599,8 +599,8 @@ function installEditor(node) {
             .toobusy-ideogram .canvas-frame {
                 width: 100%;
                 aspect-ratio: 1 / 1;
-                max-height: 620px;
-                min-height: 320px;
+                max-height: 680px;
+                min-height: 300px;
                 border: 1px solid #58616d;
                 border-radius: 6px;
                 background: #0e1319;
@@ -1012,6 +1012,7 @@ function installEditor(node) {
 
     function applyResolution() {
         const frame = canvas.parentElement;
+        frame.style.aspectRatio = `${resolution.width} / ${resolution.height}`;
         const frameWidth = frame.clientWidth || 560;
         const frameHeight = frame.clientHeight || 560;
         const scale = Math.min(frameWidth / resolution.width, frameHeight / resolution.height);
@@ -2445,8 +2446,8 @@ function installEditor(node) {
     renderElementPanel();
     applyResolution();
 
-    const PREFERRED_WIDTH = 980;
-    const MIN_WIDTH = 900;
+    const PREFERRED_WIDTH = 1180;
+    const MIN_WIDTH = 1080;
     root.style.overflowY = "visible";
 
     // Height tracks the actual content so the node fits snugly (no empty gap or

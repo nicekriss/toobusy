@@ -169,6 +169,26 @@ def test_mixed_latin_hangul_text_is_split_before_builder():
     assert elements[2]["bbox"][1] < elements[3]["bbox"][1]
 
 
+def test_wide_title_split_uses_vertical_stack():
+    payload = {
+        "compositional_deconstruction": {
+            "elements": [
+                {
+                    "type": "text",
+                    "bbox": [40, 60, 340, 720],
+                    "desc": "Stacked title",
+                    "text": "SCAIL-2 캐릭터 교체 모션 트랜스퍼",
+                },
+            ]
+        }
+    }
+    out = _mod._split_mixed_text_elements(payload)
+    elements = out["compositional_deconstruction"]["elements"]
+    assert [element["text"] for element in elements] == ["SCAIL-2", "캐릭터 교체 모션 트랜스퍼"]
+    assert elements[0]["bbox"][0] < elements[1]["bbox"][0]
+    assert elements[0]["bbox"][1] == elements[1]["bbox"][1]
+
+
 if __name__ == "__main__":
     failures = 0
     for name, fn in sorted(globals().items()):
