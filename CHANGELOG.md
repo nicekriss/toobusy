@@ -4,6 +4,19 @@
 
 ## [Unreleased]
 
+### Added
+- **`toobusy Image → Ideogram Layout`** 신규 노드: 일반 이미지 1장을 **Florence-2로 분석**해
+  Ideogram4 structured-JSON **초안**(high_level_description + style + bbox 박힌 text/obj
+  요소)으로 변환합니다. 출력 `ideogram_json`을 기존 `Ideogram Layout Builder`의
+  `elements_json`에 물리면 **캔버스에 박스가 그려지고 그대로 수정 가능** — "자동 완성"이
+  아니라 "수정 가능한 초안 이식"이 목적입니다. Florence-2 추론은 설치된
+  `kijai/ComfyUI-Florence2`(`Florence2Run` + `FL2MODEL`)에 **위임**(모델 번들/다운로드
+  없음 → 의존성·Registry 영향 0), 미설치 시 명확한 설치 안내 에러. bbox는 픽셀/정규화
+  자동 판별 후 0~1000 `[y_min,x_min,y_max,x_max]`로 변환(공식 좌표계). 옵션:
+  `max_elements`/`include_ocr_text`/`include_color_palette`/`simplify_small_text`/
+  `caption_detail`. v1은 **Full Setup 모드**만(Composition/Style은 TODO 스캐폴드).
+  수동 빌더는 0 변경. (운영자 발주)
+
 ## [0.2.11] - 2026-06-15
 
 ### Changed
