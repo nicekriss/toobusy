@@ -85,6 +85,11 @@ def test_text_overlay_mode_splits_text_out():
     assert placeholder["type"] == "obj"
     assert placeholder["bbox"] == [100, 100, 220, 900]
     assert "no readable text" in placeholder["desc"]
+    assert "no Korean characters" in placeholder["desc"]
+    generation_payload = out[0]
+    assert "제목" not in generation_payload
+    assert "title" not in placeholder["desc"].lower()
+    assert "Generate artwork only" in generation_payload
     assert text and all(e["type"] == "text" for e in text)  # text_json is text-only
 
 
