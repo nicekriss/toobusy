@@ -1356,13 +1356,20 @@ function installEditor(node) {
         (checked) => syncScene("reinforce_text", checked),
         "Off = compact JSON: rely on the text field without repeating it in desc.",
     );
+    const textOverlayField = makeCheckboxField(
+        "Split text for overlay (Korean)",
+        widget(node, "text_overlay_mode")?.value ?? false,
+        (checked) => syncScene("text_overlay_mode", checked),
+        "On: drop text from ideogram_json (Ideogram makes art only) and route it to the text_json output for Layout Text Overlay — crisp Korean. Off: text stays in the image.",
+    );
     // Map each toggle widget to its checkbox so presets can refresh the view.
     const toggleInputs = {
         include_global_palette: includePaletteField.querySelector("input"),
         strict_text: strictTextField.querySelector("input"),
         reinforce_text: reinforceTextField.querySelector("input"),
+        text_overlay_mode: textOverlayField.querySelector("input"),
     };
-    outputOptions.append(includePaletteField, strictTextField, reinforceTextField);
+    outputOptions.append(includePaletteField, strictTextField, reinforceTextField, textOverlayField);
     scene.append(outputTitle, outputOptions);
 
     // ----- Layout templates (seed a starting set of boxes) -----
