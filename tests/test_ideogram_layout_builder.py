@@ -63,6 +63,42 @@ def test_no_bridge_returns_plain_tuple():
     assert isinstance(result[0], str)  # ideogram_json
 
 
+def test_text_json_output_exposed():
+    assert _Builder.RETURN_NAMES == ("ideogram_json", "width", "height", "text_json")
+    required = _Builder.INPUT_TYPES()["required"]
+    assert required["text_overlay_mode"][0] == "BOOLEAN"
+
+
+_MIXED = json.dumps([
+    {"bbox": [100, 100, 900, 220], "text": "제목", "desc": "title"},
+    {"bbox": [100, 300, 900, 700], "desc": "a photo"},
+])
+
+
+def test_text_overlay_mode_splits_text_out():
+    out = _build(elements_json=_MIXED, text_overlay_mode=True)
+    gen = json.loads(out[0])["compositional_deconstruction"]["elements"]
+    text = json.loads(out[3])["compositional_deconstruction"]["elements"]
+    assert "text" not in [e["type"] for e in gen]  # generation art has no text
+    assert text and all(e["type"] == "text" for e in text)  # text_json is text-only
+
+
+def test_text_overlay_off_keeps_text_in_generation():
+    out = _build(elements_json=_MIXED, text_overlay_mode=False)
+    gen = json.loads(out[0])["compositional_deconstruction"]["elements"]
+    assert "text" in [e["type"] for e in gen]  # text stays in the image
+    # text_json is still produced (text-only) regardless of the toggle.
+    text = json.loads(out[3])["compositional_deconstruction"]["elements"]
+    assert text and all(e["type"] == "text" for e in text)
+
+
+def test_split_with_only_text_gets_fallback_obj():
+    only_text = json.dumps([{"bbox": [100, 100, 900, 220], "text": "제목", "desc": "title"}])
+    out = _build(elements_json=only_text, text_overlay_mode=True)
+    gen = json.loads(out[0])["compositional_deconstruction"]["elements"]
+    assert gen and all(e["type"] == "obj" for e in gen)  # fallback subject so art isn't empty
+
+
 def test_imported_json_goes_to_ui_not_output():
     bridge = '{"compositional_deconstruction": {"elements": [{"type": "obj", "bbox": [0, 0, 100, 100], "desc": "imported thing"}]}}'
     out = _build(imported_json=bridge)

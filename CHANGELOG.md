@@ -5,6 +5,11 @@
 ## [Unreleased]
 
 ### Added
+- `toobusy Ideogram Layout Builder`에 **`text_overlay_mode` 토글 + `text_json` 출력** 추가 —
+  한글 반자동 파이프라인의 완결. 토글 ON이면 `ideogram_json`에서 **텍스트 요소를 빼서**(Ideogram이
+  그림/배경만 생성, 깨진 한글 안 그림) 새 `text_json` 출력으로 분리하고, 그걸 `Layout Text Overlay`에
+  물려 **크리스피한 한글**을 얹습니다. OFF면 텍스트가 이미지에 포함(영어 등 기존 동작). `text_json`은
+  항상 텍스트 전용으로 나옵니다. (출력은 뒤에 append라 기존 워크플로우 슬롯 호환.)
 - **`toobusy Layout Text Overlay`** 신규 노드: 생성된 이미지 **위에 실제 글자를 렌더**해 — Ideogram4가
   한글을 못 그려도 **크리스피한 한글 헤드라인**을 얹습니다. **인터랙티브 에디터**(이미지 배경 위에
   텍스트를 띄워 **드래그·인라인 편집·폰트크기(모서리 핸들/슬라이더)·색·정렬**) + Pillow 렌더로
