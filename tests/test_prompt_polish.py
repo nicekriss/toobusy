@@ -114,6 +114,32 @@ def test_image_is_forwarded_to_generator():
     assert "from image" in out_json
 
 
+def test_enrich_palette_fills_empty_from_image():
+    try:
+        import torch
+    except ImportError:
+        print("SKIP test_enrich_palette_fills_empty_from_image (no torch)")
+        return
+    # Top half red, bottom half blue.
+    image = torch.zeros(1, 100, 100, 3)
+    image[:, :50, :, 0] = 1.0
+    image[:, 50:, :, 2] = 1.0
+    payload = {
+        "style_description": {"color_palette": []},
+        "compositional_deconstruction": {
+            "elements": [
+                {"type": "obj", "bbox": [0, 0, 400, 1000]},      # top region -> red
+                {"type": "obj", "bbox": [600, 0, 1000, 1000], "color_palette": ["#ABCDEF"]},  # kept
+            ]
+        },
+    }
+    out = _mod._enrich_palette(payload, image)
+    assert out["style_description"]["color_palette"], "style palette filled from image"
+    elements = out["compositional_deconstruction"]["elements"]
+    assert elements[0]["color_palette"][0] == "#F01010"  # red region (255->0xF0)
+    assert elements[1]["color_palette"] == ["#ABCDEF"]   # existing palette untouched
+
+
 if __name__ == "__main__":
     failures = 0
     for name, fn in sorted(globals().items()):
