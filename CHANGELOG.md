@@ -5,6 +5,15 @@
 ## [Unreleased]
 
 ### Added
+- **`toobusy Layout Text Overlay`** 신규 노드: 생성된 이미지 **위에 실제 글자를 렌더**해 — Ideogram4가
+  한글을 못 그려도 **크리스피한 한글 헤드라인**을 얹습니다. **인터랙티브 에디터**(이미지 배경 위에
+  텍스트를 띄워 **드래그·인라인 편집·폰트크기(모서리 핸들/슬라이더)·색·정렬**) + Pillow 렌더로
+  출력이 미리보기와 일치. `layout_json`(Prompt Polish 출력 등)을 연결하면 `type:"text"` 요소가
+  자동 시드되어 손 안 대도 헤드라인이 배치됨. 한글 폰트(malgun) 폴백. 좌표는 0~1 정규화라
+  해상도 무관. 흐름: `Ideogram4 → Layout Text Overlay(+layout_json) → 한글 박힌 최종 이미지`.
+- `toobusy Ideogram Prompt Polish` 이미지 모드에 **이미지 색 자동 추출** 추가: 비전 LLM이 팔레트를
+  비워 보내 결과가 탁해지던 문제를 보완 — 비어 있으면 **실제 이미지 픽셀에서 전체 팔레트 + 각 요소
+  bbox 영역의 대표색**을 뽑아 채웁니다(LLM이 채운 색은 보존).
 - **`toobusy Ideogram Prompt Polish`에 이미지 분석 모드** 추가: optional `image` 입력 + 비전
   모델(예: Gemma 4)을 연결하면, 씬 텍스트 변환 대신 **이미지 1장을 분석해 같은 Ideogram4
   레이아웃 JSON 초안**으로 만듭니다 — 보이는 텍스트를 **원문 그대로(한글 포함)** 읽고, 의미 있는

@@ -149,6 +149,75 @@ def _build_prompt(scene, style_mode, language, preserve_intent, fill_missing, ex
     return "\n".join(lines)
 
 
+def _quantize_palette(pixels, limit):
+    """Dominant #RRGGBB colors of an (N,3) uint8 pixel array, coarse-quantized so
+    a few big regions win. Returns [] on any failure / no numpy."""
+    try:
+        import numpy as np
+
+        if pixels.size == 0:
+            return []
+        buckets = ((pixels // 32) * 32 + 16).astype("int32")
+        keys = buckets[:, 0] * 65536 + buckets[:, 1] * 256 + buckets[:, 2]
+        values, counts = np.unique(keys, return_counts=True)
+        order = counts.argsort()[::-1][: int(limit)]
+        hexes = []
+        for key in values[order]:
+            r, g, b = (int(key) >> 16) & 255, (int(key) >> 8) & 255, int(key) & 255
+            hexes.append(f"#{r:02X}{g:02X}{b:02X}")
+        return hexes
+    except Exception:
+        return []
+
+
+def _frame_pixels(image):
+    """First IMAGE frame as an (H,W,3) uint8 numpy array, or None."""
+    try:
+        import numpy as np  # noqa: F401
+
+        frame = image[0].detach().cpu().numpy()
+        return (frame[..., :3].clip(0.0, 1.0) * 255.0).astype("uint8")
+    except Exception:
+        return None
+
+
+def _enrich_palette(payload, image, element_colors=5, style_colors=8):
+    """Fill empty color palettes from the actual image so the result keeps the
+    source colors instead of going murky. Vision LLMs frequently return an empty
+    color_palette; we sample the real pixels (whole image for style, each
+    element's bbox region for elements). bbox is Ideogram order
+    [y_min, x_min, y_max, x_max] in 0-1000."""
+    frame = _frame_pixels(image)
+    if frame is None:
+        return payload
+    height, width = frame.shape[0], frame.shape[1]
+
+    style = payload.get("style_description")
+    if isinstance(style, dict) and not style.get("color_palette"):
+        style["color_palette"] = _quantize_palette(frame.reshape(-1, 3), style_colors)
+
+    comp = payload.get("compositional_deconstruction")
+    elements = comp.get("elements") if isinstance(comp, dict) else None
+    if isinstance(elements, list):
+        for element in elements:
+            if not isinstance(element, dict) or element.get("color_palette"):
+                continue
+            bbox = element.get("bbox")
+            if not (isinstance(bbox, list) and len(bbox) == 4):
+                continue
+            y0 = max(0, min(height, int(bbox[0] / 1000.0 * height)))
+            x0 = max(0, min(width, int(bbox[1] / 1000.0 * width)))
+            y1 = max(0, min(height, int(bbox[2] / 1000.0 * height)))
+            x1 = max(0, min(width, int(bbox[3] / 1000.0 * width)))
+            if y1 - y0 < 2 or x1 - x0 < 2:
+                continue
+            region = frame[y0:y1, x0:x1].reshape(-1, 3)
+            palette = _quantize_palette(region, element_colors)
+            if palette:
+                element["color_palette"] = palette
+    return payload
+
+
 class ToobusyIdeogramPromptPolish:
     """Folds Korean/English scene writing -> English translation -> Ideogram prompt structuring into one node.
 
@@ -242,6 +311,10 @@ class ToobusyIdeogramPromptPolish:
             return (json.dumps(payload, ensure_ascii=False, indent=2), raw or "")
 
         payload = _ensure_shape(data, scene, fill_missing_fields)
+        if image is not None:
+            # Vision LLMs often leave palettes empty -> murky generations. Backfill
+            # from the real image pixels (whole image + per-element regions).
+            payload = _enrich_palette(payload, image)
         return (json.dumps(payload, ensure_ascii=False, indent=2), raw or "")
 
 
