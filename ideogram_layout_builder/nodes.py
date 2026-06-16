@@ -273,6 +273,15 @@ class IdeogramLayoutBuilder:
                         "step": 1,
                     },
                 ),
+                "text_overlay_mode": (
+                    "BOOLEAN",
+                    {
+                        "default": False,
+                        "label_on": "split text for overlay (Korean)",
+                        "label_off": "text in image",
+                        "tooltip": "On: drop text elements from ideogram_json (Ideogram generates art only) and route them to the text_json output for Layout Text Overlay — crisp Korean instead of garbled rendering. Off: text stays in the generated image (fine for English).",
+                    },
+                ),
             },
             "optional": {
                 # Bridge inputs for the "⟳ Pull from input" button: connect an
@@ -292,8 +301,8 @@ class IdeogramLayoutBuilder:
             },
         }
 
-    RETURN_TYPES = ("STRING", "INT", "INT")
-    RETURN_NAMES = ("ideogram_json", "width", "height")
+    RETURN_TYPES = ("STRING", "INT", "INT", "STRING")
+    RETURN_NAMES = ("ideogram_json", "width", "height", "text_json")
     FUNCTION = "build"
     CATEGORY = "toobusy/Plan"
     OUTPUT_NODE = True
@@ -313,6 +322,7 @@ class IdeogramLayoutBuilder:
         include_global_palette=True,
         strict_text=True,
         reinforce_text=True,
+        text_overlay_mode=False,
         imported_json="",
         image=None,
     ):
@@ -375,16 +385,33 @@ class IdeogramLayoutBuilder:
                 global_palette, ["#111111", "#FFFFFF", "#D8C7A3"], limit=STYLE_PALETTE_MAX
             )
 
-        payload = {
-            "high_level_description": high_level_description.strip(),
-            "style_description": style_description,
-            "compositional_deconstruction": {
-                "background": background.strip(),
-                "elements": elements,
-            },
-        }
+        def _payload(elems):
+            return {
+                "high_level_description": high_level_description.strip(),
+                "style_description": style_description,
+                "compositional_deconstruction": {
+                    "background": background.strip(),
+                    "elements": elems,
+                },
+            }
 
-        result = (json.dumps(payload, ensure_ascii=False, indent=2), int(width), int(height))
+        # Korean overlay mode: split text out so Ideogram generates the art
+        # WITHOUT trying to render the (garbled) text, and the text-only payload
+        # feeds Layout Text Overlay for crisp glyphs. Off = text stays in the
+        # generation payload (fine for English).
+        text_elements = [el for el in elements if el.get("type") == "text"]
+        non_text_elements = [el for el in elements if el.get("type") != "text"]
+        if text_overlay_mode and not non_text_elements:
+            non_text_elements = [{
+                "type": "obj",
+                "bbox": [250, 250, 750, 750],
+                "desc": high_level_description.strip() or "main subject",
+            }]
+        gen_elements = non_text_elements if text_overlay_mode else elements
+
+        ideogram_json = json.dumps(_payload(gen_elements), ensure_ascii=False, indent=2)
+        text_json = json.dumps(_payload(text_elements), ensure_ascii=False, indent=2)
+        result = (ideogram_json, int(width), int(height), text_json)
 
         # Send the bridge inputs back to the frontend so the "⟳ Pull from input"
         # button can load them onto the canvas / backdrop. This never changes the
