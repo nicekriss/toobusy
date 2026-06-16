@@ -193,7 +193,19 @@ class ToobusyImageToIdeogramLayout:
         return {
             "required": {
                 "image": ("IMAGE",),
-                "florence2_model": ("FL2MODEL",),
+                "florence2_model": (
+                    "FL2MODEL",
+                    {
+                        "tooltip": (
+                            "From a Florence-2 loader (kijai/ComfyUI-Florence2 "
+                            "'DownloadAndLoadFlorence2Model'). Recommended: "
+                            "Florence-2-large-ft (best object/region/OCR boxes) or "
+                            "Florence-2-base-ft (lighter/faster). Avoid caption-only "
+                            "community fine-tunes (CogFlorence / PromptGen): they weaken "
+                            "the region & OCR tasks this node relies on for boxes."
+                        ),
+                    },
+                ),
                 "analysis_mode": (
                     ["Full Setup", "Composition Only (TODO)", "Style Only (TODO)"],
                     {
