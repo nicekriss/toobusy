@@ -1,18 +1,18 @@
 {
   "id": "fdcfc2b2-168f-4f3d-a1d0-6986b802fce5",
   "revision": 0,
-  "last_node_id": 218,
-  "last_link_id": 310,
+  "last_node_id": 256,
+  "last_link_id": 472,
   "nodes": [
     {
-      "id": 99,
+      "id": 100,
       "type": "MarkdownNote",
       "pos": [
-        4570,
-        530
+        3510,
+        -560
       ],
       "size": [
-        530,
+        640,
         990
       ],
       "flags": {},
@@ -20,32 +20,14 @@
       "mode": 0,
       "inputs": [],
       "outputs": [],
-      "title": "Note: Model link",
-      "properties": {},
-      "widgets_values": [
-        "Guide: [Subgraph](https://docs.comfy.org/interface/features/subgraph)\n\n## Model Links (for Local Users)\n\n**vae**\n\n- [flux2-vae.safetensors](https://huggingface.co/Comfy-Org/flux2-dev/resolve/main/split_files/vae/flux2-vae.safetensors)\n\n**diffusion_models**\n\n- [ideogram4_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/diffusion_models/ideogram4_fp8_scaled.safetensors)\n- [ideogram4_unconditional_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/diffusion_models/ideogram4_unconditional_fp8_scaled.safetensors)\n\n**text_encoders**\n\n- [qwen3vl_8b_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Qwen3-VL/resolve/main/text_encoders/qwen3vl_8b_fp8_scaled.safetensors)\n- [gemma4_e4b_it_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/gemma-4/resolve/main/text_encoders/gemma4_e4b_it_fp8_scaled.safetensors)\n\n\n## Model Storage Location\n\n```\n📂 ComfyUI/\n├── 📂 models/\n│   ├── 📂 vae/\n│   │   └── flux2-vae.safetensors\n│   ├── 📂 diffusion_models/\n│   │   ├── ideogram4_fp8_scaled.safetensors\n│   │   └── ideogram4_unconditional_fp8_scaled.safetensors\n│   └── 📂 text_encoders/\n│       ├── qwen3vl_8b_fp8_scaled.safetensors\n│       └── gemma4_e4b_it_fp8_scaled.safetensors\n```\n\n## Report Issue\n\nNote: Please update ComfyUI first ([guide](https://docs.comfy.org/installation/update_comfyui)) and prepare required models. Desktop/Cloud updates follow stable releases, so some nightly-supported models may not be available yet.\n\n- Cannot run / runtime errors: [ComfyUI/issues](https://github.com/comfyanonymous/ComfyUI/issues)\n- UI / frontend issues: [ComfyUI_frontend/issues](https://github.com/Comfy-Org/ComfyUI_frontend/issues)\n- Workflow issues: [workflow_templates/issues](https://github.com/Comfy-Org/workflow_templates/issues)\n"
-      ],
-      "color": "#222",
-      "bgcolor": "#000"
-    },
-    {
-      "id": 100,
-      "type": "MarkdownNote",
-      "pos": [
-        4500.194658834783,
-        -577.9874629085717
-      ],
-      "size": [
-        640,
-        990
-      ],
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [],
       "title": "Note: Ideogram 4.0",
-      "properties": {},
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.8",
+          "input_ue_unconnectable": {}
+        }
+      },
       "widgets_values": [
         "### About the model\n\nThe model is trained on **structured JSON captions** (scene summary, style block, background, and optional per-object descriptions with bounding boxes and hex color palettes). Official inference validates prompts against that schema. Guidance uses **flow-matching** with **asymmetric classifier-free guidance** (the unconditional pass drops text tokens)—not a separate negative prompt string.\n\n**NOTE: If you see \"Image blocked by safety filter\" it is because of safety training in the model itself, ComfyUI does not have any safety filter.**\n---\n\n### How to build prompts here\n\n**(a) Raw input**: Paste or type directly into the subgraph. You may use plain natural language, but **structured JSON** (as in the subgraph default) gives the most predictable layout and style control.\n\n**(b) Model-assisted (LLM):** Use the **Ideogram4 Caption Prompt Template** output with any LLM tools to obtain the JSON format prompt"
       ],
@@ -53,266 +35,60 @@
       "bgcolor": "#000"
     },
     {
-      "id": 218,
-      "type": "IdeogramLayoutBuilder",
+      "id": 99,
+      "type": "MarkdownNote",
       "pos": [
-        5250,
-        -570
+        3580,
+        550
       ],
       "size": [
-        980,
-        1062
+        530,
+        990
       ],
       "flags": {},
-      "order": 2,
+      "order": 1,
       "mode": 0,
       "inputs": [],
-      "outputs": [
-        {
-          "name": "ideogram_json",
-          "type": "STRING",
-          "links": [
-            307,
-            310
-          ]
-        },
-        {
-          "name": "width",
-          "type": "INT",
-          "links": [
-            308
-          ]
-        },
-        {
-          "name": "height",
-          "type": "INT",
-          "links": [
-            309
-          ]
-        }
-      ],
+      "outputs": [],
+      "title": "Note: Model link",
       "properties": {
-        "ideogram_layout_resolution": {
-          "preset": "landscape_16_9",
-          "width": 1792,
-          "height": 1024
-        },
-        "Node name for S&R": "IdeogramLayoutBuilder"
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.8",
+          "input_ue_unconnectable": {}
+        }
       },
       "widgets_values": [
-        "",
-        "A powerful samurai executing an incredible swordsmanship technique, enveloped by an ethereal aura of unknown light, with visible sword energy manifesting at the blade tip like ancient script.",
-        "cinematic composition, dramatic mood, high contrast, filmic color",
-        "dramatic cinematic key light with subtle rim light",
-        "professional portrait photography, 50mm lens, shallow depth of field",
-        "digital illustration",
-        "#000000, #FFFFFF, #A0A0FF, #FFD700",
-        true,
-        true,
-        true,
-        "Dark, atmospheric setting, perhaps a misty training ground or ancient ruins, providing depth against the bright energy.",
-        "[\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      0,\n      50,\n      1000,\n      1000\n    ],\n    \"text\": \"\",\n    \"desc\": \"An intense, luminous, and otherworldly aura surrounding the samurai, suggesting immense spiritual or magical power.\",\n    \"role\": \"\",\n    \"color_palette\": []\n  },\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      297,\n      316,\n      734,\n      838\n    ],\n    \"text\": \"\",\n    \"desc\": \"The samurai's katana blade, emanating visible, intricate sword energy that resembles glowing, ancient, runic script.\",\n    \"role\": \"\",\n    \"color_palette\": []\n  },\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      445,\n      100,\n      750,\n      949\n    ],\n    \"text\": \"\",\n    \"desc\": \"A formidable samurai warrior in dynamic motion, mid-strike, embodying intense focus and power.\",\n    \"role\": \"\",\n    \"color_palette\": []\n  },\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      5,\n      3,\n      1000,\n      430\n    ],\n    \"text\": \"\",\n    \"desc\": \"Night sky, falling stars\",\n    \"role\": \"\",\n    \"color_palette\": []\n  },\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      0,\n      387,\n      466,\n      991\n    ],\n    \"text\": \"\",\n    \"desc\": \"bodies\",\n    \"role\": \"\",\n    \"color_palette\": []\n  }\n]",
-        1792,
-        1024
-      ]
+        "Guide: [Subgraph](https://docs.comfy.org/interface/features/subgraph)\n\n## Model Links (for Local Users)\n\n**vae**\n\n- [flux2-vae.safetensors](https://huggingface.co/Comfy-Org/flux2-dev/resolve/main/split_files/vae/flux2-vae.safetensors)\n\n**diffusion_models**\n\n- [ideogram4_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/diffusion_models/ideogram4_fp8_scaled.safetensors)\n- [ideogram4_unconditional_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Ideogram-4/resolve/main/diffusion_models/ideogram4_unconditional_fp8_scaled.safetensors)\n\n**text_encoders**\n\n- [qwen3vl_8b_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Qwen3-VL/resolve/main/text_encoders/qwen3vl_8b_fp8_scaled.safetensors)\n- [gemma4_e4b_it_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/gemma-4/resolve/main/text_encoders/gemma4_e4b_it_fp8_scaled.safetensors)\n\n\n## Model Storage Location\n\n```\n📂 ComfyUI/\n├── 📂 models/\n│   ├── 📂 vae/\n│   │   └── flux2-vae.safetensors\n│   ├── 📂 diffusion_models/\n│   │   ├── ideogram4_fp8_scaled.safetensors\n│   │   └── ideogram4_unconditional_fp8_scaled.safetensors\n│   └── 📂 text_encoders/\n│       ├── qwen3vl_8b_fp8_scaled.safetensors\n│       └── gemma4_e4b_it_fp8_scaled.safetensors\n```\n\n## Report Issue\n\nNote: Please update ComfyUI first ([guide](https://docs.comfy.org/installation/update_comfyui)) and prepare required models. Desktop/Cloud updates follow stable releases, so some nightly-supported models may not be available yet.\n\n- Cannot run / runtime errors: [ComfyUI/issues](https://github.com/comfyanonymous/ComfyUI/issues)\n- UI / frontend issues: [ComfyUI_frontend/issues](https://github.com/Comfy-Org/ComfyUI_frontend/issues)\n- Workflow issues: [workflow_templates/issues](https://github.com/Comfy-Org/workflow_templates/issues)\n"
+      ],
+      "color": "#222",
+      "bgcolor": "#000"
     },
     {
-      "id": 212,
-      "type": "PreviewAny",
-      "pos": [
-        5250,
-        540
-      ],
-      "size": [
-        957.9756240086808,
-        970.7416311879113
-      ],
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "source",
-          "type": "*",
-          "link": 310
-        }
-      ],
-      "outputs": [
-        {
-          "name": "STRING",
-          "type": "STRING",
-          "links": null
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "PreviewAny"
-      },
-      "widgets_values": [
-        null,
-        null,
-        null
-      ]
-    },
-    {
-      "id": 208,
-      "type": "ToobusyIdeogram4T2I",
-      "pos": [
-        6291.605511785023,
-        -553.8257714211953
-      ],
-      "size": [
-        400,
-        812
-      ],
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "prompt",
-          "type": "STRING",
-          "widget": {
-            "name": "prompt"
-          },
-          "link": 307
-        },
-        {
-          "name": "width",
-          "shape": 7,
-          "type": "INT",
-          "widget": {
-            "name": "width"
-          },
-          "link": 308
-        },
-        {
-          "name": "height",
-          "shape": 7,
-          "type": "INT",
-          "widget": {
-            "name": "height"
-          },
-          "link": 309
-        }
-      ],
-      "outputs": [
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "links": [
-            287
-          ]
-        },
-        {
-          "name": "latent",
-          "type": "LATENT",
-          "links": null
-        },
-        {
-          "name": "width",
-          "type": "INT",
-          "links": []
-        },
-        {
-          "name": "height",
-          "type": "INT",
-          "links": []
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "ToobusyIdeogram4T2I"
-      },
-      "widgets_values": [
-        "ideogram4_fp8_scaled.safetensors",
-        "ideogram4_unconditional_fp8_scaled.safetensors",
-        "qwen3vl_8b_fp8_scaled.safetensors",
-        "FLUX2\\flux2-vae.safetensors",
-        "{\n  \"high_level_description\": \"\",\n  \"style_description\": {\n    \"aesthetics\": \"\",\n    \"lighting\": \"\",\n    \"photo\": \"\",\n    \"medium\": \"photography\",\n    \"color_palette\": []\n  },\n  \"compositional_deconstruction\": {\n    \"background\": \"\",\n    \"elements\": []\n  }\n}",
-        "Quality",
-        0,
-        "3:4",
-        1,
-        235085806502615,
-        "randomize",
-        "res_multistep",
-        7,
-        0,
-        false,
-        "None",
-        1,
-        false,
-        "None",
-        1,
-        false,
-        "None",
-        1,
-        false,
-        "None",
-        1,
-        false,
-        "None",
-        1,
-        0,
-        0,
-        0.5,
-        1.75,
-        3,
-        0.9,
-        1
-      ]
-    },
-    {
-      "id": 215,
-      "type": "CLIPLoader",
-      "pos": [
-        6292.9861360380755,
-        330.0126924284177
-      ],
-      "size": [
-        270,
-        106
-      ],
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "CLIP",
-          "type": "CLIP",
-          "links": [
-            301
-          ]
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CLIPLoader"
-      },
-      "widgets_values": [
-        "gemma4_e4b_it_fp8_scaled.safetensors",
-        "stable_diffusion",
-        "default"
-      ]
-    },
-    {
-      "id": 214,
+      "id": 256,
       "type": "ToobusyIdeogramPromptPolish",
       "pos": [
-        6591.263955555564,
-        333.3694000000015
+        4558.084271700112,
+        -578.3587811528319
       ],
       "size": [
         400,
         306
       ],
       "flags": {},
-      "order": 6,
+      "order": 4,
       "mode": 0,
       "inputs": [
         {
           "name": "clip",
           "type": "CLIP",
-          "link": 301
+          "link": 468
+        },
+        {
+          "name": "image",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 469
         }
       ],
       "outputs": [
@@ -320,7 +96,7 @@
           "name": "ideogram_json",
           "type": "STRING",
           "links": [
-            302
+            471
           ]
         },
         {
@@ -330,10 +106,14 @@
         }
       ],
       "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
         "Node name for S&R": "ToobusyIdeogramPromptPolish"
       },
       "widgets_values": [
-        "엄청난 검술을 펼치는 무사의 주변에 알수없는 빛의 오오라가 흐르고 무사의 칼끝에 검기가 고대언어처럼 펼쳐진다. ",
+        "",
         "Cinematic",
         "Auto",
         true,
@@ -344,48 +124,240 @@
       ]
     },
     {
-      "id": 216,
-      "type": "PreviewAny",
+      "id": 230,
+      "type": "ToobusyIdeogram4T2I",
       "pos": [
-        7035.710289940785,
-        333.61428199932845
+        6301.8686741496385,
+        -553.5421829127481
       ],
       "size": [
-        957.9756240086808,
-        970.7416311879113
+        400,
+        1108
       ],
       "flags": {},
-      "order": 8,
+      "order": 6,
       "mode": 0,
       "inputs": [
         {
-          "name": "source",
-          "type": "*",
-          "link": 302
+          "name": "model_override",
+          "shape": 7,
+          "type": "MODEL",
+          "link": null
+        },
+        {
+          "name": "uncond_model_override",
+          "shape": 7,
+          "type": "MODEL",
+          "link": null
+        },
+        {
+          "name": "clip_override",
+          "shape": 7,
+          "type": "CLIP",
+          "link": null
+        },
+        {
+          "name": "vae_override",
+          "shape": 7,
+          "type": "VAE",
+          "link": null
+        },
+        {
+          "name": "prompt",
+          "type": "STRING",
+          "widget": {
+            "name": "prompt"
+          },
+          "link": 464
+        },
+        {
+          "name": "width",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "width"
+          },
+          "link": 465
+        },
+        {
+          "name": "height",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": 466
         }
       ],
       "outputs": [
         {
-          "name": "STRING",
-          "type": "STRING",
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            366
+          ]
+        },
+        {
+          "name": "latent",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "width",
+          "type": "INT",
+          "links": null
+        },
+        {
+          "name": "height",
+          "type": "INT",
           "links": null
         }
       ],
       "properties": {
-        "Node name for S&R": "PreviewAny"
+        "Node name for S&R": "ToobusyIdeogram4T2I",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
       },
       "widgets_values": [
-        null,
-        null,
-        null
+        "ideogram4_fp8_scaled.safetensors",
+        "ideogram4_unconditional_fp8_scaled.safetensors",
+        "qwen3vl_8b_fp8_scaled.safetensors",
+        "flux2\\flux2-vae.safetensors",
+        "{\n  \"high_level_description\": \"\",\n  \"style_description\": {\n    \"aesthetics\": \"\",\n    \"lighting\": \"\",\n    \"photo\": \"\",\n    \"medium\": \"photography\",\n    \"color_palette\": []\n  },\n  \"compositional_deconstruction\": {\n    \"background\": \"\",\n    \"elements\": []\n  }\n}",
+        "Quality",
+        0,
+        "3:4",
+        1,
+        1,
+        "fixed",
+        "euler",
+        7,
+        0,
+        false,
+        "None",
+        1,
+        "remove",
+        false,
+        "None",
+        1,
+        "remove",
+        false,
+        "None",
+        1,
+        "remove",
+        false,
+        "None",
+        1,
+        "remove",
+        false,
+        "None",
+        1,
+        "remove",
+        0,
+        0,
+        0.5,
+        1.75,
+        3,
+        0.9,
+        1,
+        "add"
       ]
     },
     {
-      "id": 209,
+      "id": 255,
+      "type": "IdeogramLayoutBuilder",
+      "pos": [
+        5035.005325821891,
+        -586.8827776878229
+      ],
+      "size": [
+        1180,
+        1218
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "imported_json",
+          "shape": 7,
+          "type": "STRING",
+          "link": 471
+        },
+        {
+          "name": "image",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 462
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ideogram_json",
+          "type": "STRING",
+          "links": [
+            464
+          ]
+        },
+        {
+          "name": "width",
+          "type": "INT",
+          "links": [
+            465
+          ]
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "links": [
+            466
+          ]
+        },
+        {
+          "name": "text_json",
+          "type": "STRING",
+          "links": []
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "ideogram_layout_resolution": {
+          "preset": "landscape_16_9",
+          "width": 1792,
+          "height": 1024
+        },
+        "Node name for S&R": "IdeogramLayoutBuilder"
+      },
+      "widgets_values": [
+        "",
+        "A cozy, dimly lit living room scene featuring a person dressed in Korean sports attire sitting on a sofa, surrounded by warm ambient lighting and home decor.",
+        "cinematic composition, dramatic mood, high contrast, filmic color",
+        "Warm, low-key, ambient",
+        "Photograph",
+        "photography",
+        "#65321D, #8B4513, #A0522D, #FFD700, #4F4F4F",
+        true,
+        true,
+        true,
+        "A warmly decorated living room interior with wooden floors, bookshelves, and ambient lighting fixtures.",
+        "[\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      23,\n      393,\n      315,\n      989\n    ],\n    \"text\": \"\",\n    \"desc\": \"Large flat-screen television set, black, positioned on a low stand in the foreground left.\",\n    \"role\": \"\",\n    \"color_palette\": [\n      \"#101010\",\n      \"#301010\",\n      \"#503010\",\n      \"#703010\",\n      \"#303010\"\n    ]\n  },\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      344,\n      388,\n      883,\n      793\n    ],\n    \"text\": \"\",\n    \"desc\": \"Light-colored, plush sofa where the main figure is seated.\",\n    \"role\": \"\",\n    \"color_palette\": [\n      \"#301010\",\n      \"#101010\",\n      \"#501010\",\n      \"#503010\",\n      \"#303010\"\n    ]\n  },\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      393,\n      275,\n      692,\n      640\n    ],\n    \"text\": \"\",\n    \"desc\": \"Person wearing a red and white Korean sports jersey (likely fan gear), sitting on the sofa, smiling, looking towards the viewer.\",\n    \"role\": \"\",\n    \"color_palette\": [\n      \"#301010\",\n      \"#501010\",\n      \"#503010\",\n      \"#101010\",\n      \"#701010\"\n    ]\n  },\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      318,\n      597,\n      635,\n      874\n    ],\n    \"text\": \"\",\n    \"desc\": \"Low, round coffee table in front of the sofa, holding snacks and drinks.\",\n    \"role\": \"\",\n    \"color_palette\": [\n      \"#301010\",\n      \"#101010\",\n      \"#503010\",\n      \"#303010\",\n      \"#703010\"\n    ]\n  },\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      155,\n      153,\n      340,\n      540\n    ],\n    \"text\": \"\",\n    \"desc\": \"Deciduous tree or large bush, illuminated by a nearby floor lamp, located in the background left.\",\n    \"role\": \"\",\n    \"color_palette\": [\n      \"#101010\",\n      \"#503010\",\n      \"#301010\",\n      \"#703010\",\n      \"#905010\"\n    ]\n  },\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      298,\n      283,\n      355,\n      531\n    ],\n    \"text\": \"\",\n    \"desc\": \"Tall, textured floor lamp with a glowing orange/amber light, positioned near the tree.\",\n    \"role\": \"\",\n    \"color_palette\": [\n      \"#703010\",\n      \"#905010\",\n      \"#503010\",\n      \"#B05010\",\n      \"#D07010\"\n    ]\n  },\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      438,\n      292,\n      523,\n      466\n    ],\n    \"text\": \"\",\n    \"desc\": \"Pillow or cushion on the sofa featuring Korean text and a design.\",\n    \"role\": \"\",\n    \"color_palette\": [\n      \"#503010\",\n      \"#301010\",\n      \"#101010\",\n      \"#303010\",\n      \"#B03010\"\n    ]\n  },\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      447,\n      377,\n      514,\n      477\n    ],\n    \"text\": \"대한민국\",\n    \"desc\": \"White text on red fabric, curved slightly, reading '대한민국'\",\n    \"role\": \"\",\n    \"color_palette\": [\n      \"#B03010\",\n      \"#301010\",\n      \"#D09050\",\n      \"#101010\",\n      \"#903010\"\n    ]\n  },\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      450,\n      470,\n      514,\n      537\n    ],\n    \"text\": \"KOREA\",\n    \"desc\": \"White text on red fabric, straight, reading 'KOREA'\",\n    \"role\": \"\",\n    \"color_palette\": [\n      \"#901010\",\n      \"#B07050\",\n      \"#B03010\",\n      \"#301010\",\n      \"#701010\"\n    ]\n  },\n  {\n    \"type\": \"obj\",\n    \"bbox\": [\n      486,\n      117,\n      648,\n      241\n    ],\n    \"text\": \"\",\n    \"desc\": \"Framed picture hanging on the wall above a wooden cabinet.\",\n    \"role\": \"\",\n    \"color_palette\": [\n      \"#101010\",\n      \"#703010\",\n      \"#301010\",\n      \"#503010\",\n      \"#905030\"\n    ]\n  }\n]",
+        1792,
+        1024,
+        false
+      ]
+    },
+    {
+      "id": 238,
       "type": "SaveImage",
       "pos": [
-        6726.42860692004,
-        -552.4739670256928
+        6741.057675685307,
+        -548.3165701316792
       ],
       "size": [
         1267.8652379956884,
@@ -398,12 +370,17 @@
         {
           "name": "images",
           "type": "IMAGE",
-          "link": 287
+          "link": 366
         }
       ],
       "outputs": [],
       "properties": {
         "Node name for S&R": "SaveImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.8",
+          "input_ue_unconnectable": {}
+        },
         "enableTabs": false,
         "tabWidth": 65,
         "tabXOffset": 10,
@@ -417,62 +394,151 @@
       "widgets_values": [
         "Ideogram_4.0"
       ]
+    },
+    {
+      "id": 215,
+      "type": "CLIPLoader",
+      "pos": [
+        4239.068856851639,
+        -573.0158717592633
+      ],
+      "size": [
+        270,
+        106
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            468
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPLoader",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.8",
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        "gemma4_e4b_it_fp8_scaled.safetensors",
+        "stable_diffusion",
+        "default"
+      ]
+    },
+    {
+      "id": 221,
+      "type": "LoadImage",
+      "pos": [
+        4230.690858744725,
+        -398.0160679626014
+      ],
+      "size": [
+        282.798828125,
+        314
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            462,
+            469
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "ChatGPT Image 2026년 6월 13일 오전 08_58_54.png",
+        "image"
+      ]
     }
   ],
   "links": [
     [
-      287,
-      208,
+      366,
+      230,
       0,
-      209,
+      238,
       0,
       "IMAGE"
     ],
     [
-      301,
+      462,
+      221,
+      0,
+      255,
+      1,
+      "IMAGE"
+    ],
+    [
+      464,
+      255,
+      0,
+      230,
+      4,
+      "STRING"
+    ],
+    [
+      465,
+      255,
+      1,
+      230,
+      5,
+      "INT"
+    ],
+    [
+      466,
+      255,
+      2,
+      230,
+      6,
+      "INT"
+    ],
+    [
+      468,
       215,
       0,
-      214,
+      256,
       0,
       "CLIP"
     ],
     [
-      302,
-      214,
+      469,
+      221,
       0,
-      216,
-      0,
-      "STRING"
-    ],
-    [
-      307,
-      218,
-      0,
-      208,
-      0,
-      "STRING"
-    ],
-    [
-      308,
-      218,
+      256,
       1,
-      208,
-      1,
-      "INT"
+      "IMAGE"
     ],
     [
-      309,
-      218,
-      2,
-      208,
-      2,
-      "INT"
-    ],
-    [
-      310,
-      218,
+      471,
+      256,
       0,
-      212,
+      255,
       0,
       "STRING"
     ]
@@ -481,17 +547,19 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.6588450000000047,
+      "scale": 0.598950000000028,
       "offset": [
-        -4366.548669858685,
-        851.9851623514767
+        -3459.2122396575714,
+        916.5977767565078
       ]
     },
-    "frontendVersion": "1.44.19",
+    "frontendVersion": "1.45.15",
     "VHS_latentpreview": false,
     "VHS_latentpreviewrate": 0,
     "VHS_MetadataImage": true,
-    "VHS_KeepIntermediate": true
+    "VHS_KeepIntermediate": true,
+    "ue_links": [],
+    "links_added_by_ue": []
   },
   "version": 0.4
 }
