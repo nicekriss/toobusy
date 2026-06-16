@@ -137,6 +137,127 @@ def _has_hangul(value):
     return False
 
 
+def _is_ascii_label_char(char):
+    return char.isascii() and (char.isalnum() or char in ".+-_:/")
+
+
+def _char_width_weight(char):
+    if _has_hangul(char):
+        return 1.0
+    if char.isspace():
+        return 0.35
+    if char.isascii() and char.isalnum():
+        return 0.62
+    return 0.35
+
+
+def _clean_split_run(text, keep):
+    value = str(text or "")
+    if keep == "gen":
+        value = re.sub(r"\([^A-Za-z0-9]*\)", "", value)
+        value = value.strip(" -_:/|()[]")
+    else:
+        value = re.sub(r"\(\s*([^)]+?)\s*\)", r"\1", value)
+        value = value.strip(" -_:/|()[]")
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def _join_split_text(left, right):
+    if not left:
+        return right
+    if not right:
+        return left
+    if _has_hangul(left[-1]) and right[0].isdigit():
+        return f"{left} {right}"
+    if left[-1].isdigit() and _has_hangul(right[0]):
+        return f"{left}{right}"
+    if left[-1].isascii() and left[-1].isalnum() and right[0].isascii() and right[0].isalnum():
+        return f"{left} {right}"
+    return f"{left}{right}"
+
+
+def _merge_adjacent_runs(runs):
+    merged = []
+    for run in runs:
+        if merged and merged[-1]["kind"] == run["kind"]:
+            merged[-1]["text"] = _join_split_text(merged[-1]["text"], run["text"])
+            merged[-1]["bbox"][2] = max(merged[-1]["bbox"][2], run["bbox"][2])
+            merged[-1]["bbox"][3] = max(merged[-1]["bbox"][3], run["bbox"][3])
+        else:
+            merged.append(dict(run))
+    return merged
+
+
+def _split_mixed_hangul_runs(text, bbox):
+    """Split a mixed label into approximate horizontal sub-bboxes.
+
+    The layout JSON only gives one bbox for a full text string. When a label
+    mixes English/product text and Hangul, estimate sub-boxes by character width
+    so generation can keep the English part while overlay receives only Hangul.
+    """
+    original = str(text or "").strip()
+    if not _has_hangul(original):
+        return []
+
+    y_min, x_min, y_max, x_max = bbox
+    total_width = max(1, x_max - x_min)
+    total_weight = sum(_char_width_weight(char) for char in original) or 1.0
+    cursor = float(x_min)
+    runs = []
+    current_kind = None
+    current_text = []
+    current_start = cursor
+
+    def char_kind(char):
+        if _has_hangul(char):
+            return "overlay"
+        if _is_ascii_label_char(char):
+            return "gen"
+        return current_kind or "overlay"
+
+    def flush(end_x):
+        nonlocal current_kind, current_text, current_start
+        if not current_text or not current_kind:
+            current_text = []
+            current_kind = None
+            current_start = end_x
+            return
+        run_kind = current_kind
+        has_ascii_word = any(char.isascii() and char.isalpha() for char in current_text)
+        if run_kind == "gen" and not has_ascii_word:
+            run_kind = "overlay"
+        cleaned = _clean_split_run("".join(current_text), run_kind)
+        if cleaned:
+            run_x0 = _clamp_int(current_start)
+            run_x1 = _clamp_int(end_x)
+            if run_x1 - run_x0 < MIN_BOX_SIZE:
+                run_x1 = min(1000, run_x0 + MIN_BOX_SIZE)
+            runs.append({
+                "kind": run_kind,
+                "text": cleaned,
+                "bbox": [y_min, run_x0, y_max, run_x1],
+            })
+        current_text = []
+        current_kind = None
+        current_start = end_x
+
+    for char in original:
+        width = total_width * (_char_width_weight(char) / total_weight)
+        next_cursor = cursor + width
+        kind = char_kind(char)
+        if current_kind is None:
+            current_kind = kind
+            current_start = cursor
+        elif kind != current_kind:
+            flush(cursor)
+            current_kind = kind
+            current_start = cursor
+        current_text.append(char)
+        cursor = next_cursor
+    flush(float(x_max))
+    return _merge_adjacent_runs(runs)
+
+
 def _is_split_overlay_text(element):
     return bool(element.get("_split_for_overlay"))
 
@@ -379,6 +500,8 @@ class IdeogramLayoutBuilder:
             if element_type == "text":
                 element["text"] = text
                 element["_split_for_overlay"] = _has_hangul(text)
+                if element["_split_for_overlay"]:
+                    element["_split_runs"] = _split_mixed_hangul_runs(text, ideogram_bbox)
             element["desc"] = _build_desc(
                 text, desc, role=role, strict_text=strict_text, reinforce_text=reinforce_text
             )
@@ -420,10 +543,10 @@ class IdeogramLayoutBuilder:
             comp_background = background.strip()
             if suppress_text:
                 text_policy = (
-                    "Generate artwork only. Leave all reserved panels blank. "
-                    "Do not render visible text, typography, letters, words, "
-                    "logos, symbols, subtitles, captions, or Korean characters; "
-                    "real text will be added later by a separate overlay."
+                    "Preserve non-Korean labels and product names that remain "
+                    "in the layout. For reserved Korean overlay panels only, "
+                    "leave the area blank and do not render Hangul or Korean "
+                    "characters; Korean text will be added later by a separate overlay."
                 )
                 high_level = f"{high_level} {text_policy}".strip()
                 style["aesthetics"] = f"{style.get('aesthetics', '').strip()} {text_policy}".strip()
@@ -440,24 +563,58 @@ class IdeogramLayoutBuilder:
         # Korean overlay mode: split Hangul text out so Ideogram generates the
         # art WITHOUT trying to render the (garbled) Korean glyphs. Non-Hangul
         # text stays in the generation payload so labels like "LTX2.3" remain.
-        text_elements = [
-            el for el in elements
-            if _is_split_overlay_text(el)
-        ]
+        text_elements = []
+        for el in elements:
+            if not _is_split_overlay_text(el):
+                continue
+            overlay_runs = [run for run in el.get("_split_runs", []) if run["kind"] == "overlay"]
+            if not overlay_runs:
+                text_elements.append(el)
+                continue
+            for run in overlay_runs:
+                overlay_el = {
+                    "type": "text",
+                    "bbox": run["bbox"],
+                    "text": run["text"],
+                    "desc": _build_desc(run["text"], "Korean overlay text", strict_text=strict_text, reinforce_text=reinforce_text),
+                }
+                if el.get("color_palette"):
+                    overlay_el["color_palette"] = el["color_palette"]
+                text_elements.append(overlay_el)
         if text_overlay_mode:
             gen_elements = []
             for el in elements:
                 if not _is_split_overlay_text(el):
                     gen_elements.append(el)
                     continue
-                placeholder = {
-                    "type": "obj",
-                    "bbox": el["bbox"],
-                    "desc": _text_placeholder_desc(el),
-                }
-                if el.get("color_palette"):
-                    placeholder["color_palette"] = el["color_palette"]
-                gen_elements.append(placeholder)
+                split_runs = el.get("_split_runs", [])
+                if not split_runs:
+                    placeholder = {
+                        "type": "obj",
+                        "bbox": el["bbox"],
+                        "desc": _text_placeholder_desc(el),
+                    }
+                    if el.get("color_palette"):
+                        placeholder["color_palette"] = el["color_palette"]
+                    gen_elements.append(placeholder)
+                    continue
+                for run in split_runs:
+                    if run["kind"] == "gen":
+                        gen_el = {
+                            "type": "text",
+                            "bbox": run["bbox"],
+                            "text": run["text"],
+                            "desc": _build_desc(run["text"], "non-Korean label text", strict_text=strict_text, reinforce_text=reinforce_text),
+                        }
+                    else:
+                        gen_el = {
+                            "type": "obj",
+                            "bbox": run["bbox"],
+                            "desc": _text_placeholder_desc(el),
+                        }
+                    if el.get("color_palette"):
+                        gen_el["color_palette"] = el["color_palette"]
+                    gen_elements.append(gen_el)
             if not gen_elements:
                 gen_elements = [{
                     "type": "obj",
