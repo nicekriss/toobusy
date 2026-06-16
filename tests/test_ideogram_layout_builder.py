@@ -79,7 +79,12 @@ def test_text_overlay_mode_splits_text_out():
     out = _build(elements_json=_MIXED, text_overlay_mode=True)
     gen = json.loads(out[0])["compositional_deconstruction"]["elements"]
     text = json.loads(out[3])["compositional_deconstruction"]["elements"]
-    assert "text" not in [e["type"] for e in gen]  # generation art has no text
+    assert "text" not in [e["type"] for e in gen]  # generation art has no literal text
+    assert len(gen) == 2  # text bbox stays as a placeholder, so structure remains
+    placeholder = gen[0]
+    assert placeholder["type"] == "obj"
+    assert placeholder["bbox"] == [100, 100, 220, 900]
+    assert "no readable text" in placeholder["desc"]
     assert text and all(e["type"] == "text" for e in text)  # text_json is text-only
 
 
@@ -96,7 +101,8 @@ def test_split_with_only_text_gets_fallback_obj():
     only_text = json.dumps([{"bbox": [100, 100, 900, 220], "text": "제목", "desc": "title"}])
     out = _build(elements_json=only_text, text_overlay_mode=True)
     gen = json.loads(out[0])["compositional_deconstruction"]["elements"]
-    assert gen and all(e["type"] == "obj" for e in gen)  # fallback subject so art isn't empty
+    assert gen and all(e["type"] == "obj" for e in gen)
+    assert gen[0]["bbox"] == [100, 100, 220, 900]  # original title space is preserved
 
 
 def test_imported_json_goes_to_ui_not_output():

@@ -7,18 +7,24 @@ import { app } from "../../scripts/app.js";
 
 const NODE_CLASS = "ToobusyLayoutTextOverlay";
 const ACCENT = "#7fc8ff";
+const FONT_OPTIONS = [
+    ["malgun", "Malgun Gothic"],
+    ["serif", "Serif"],
+    ["mono", "Mono"],
+];
 
 function injectStyle() {
     if (document.getElementById("toobusy-overlay-style")) return;
     const style = document.createElement("style");
     style.id = "toobusy-overlay-style";
     style.textContent = `
-    .tb-overlay { display:flex; flex-direction:column; gap:6px; width:100%; font-family:sans-serif; }
+    .tb-overlay { display:flex; flex-direction:column; gap:6px; width:100%; height:420px; min-height:360px; font-family:sans-serif; }
     .tb-overlay-bar { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
     .tb-overlay-bar button { background:#2a2f37; color:#cfd6de; border:1px solid #3a414b; border-radius:5px; padding:3px 8px; cursor:pointer; font-size:11px; }
     .tb-overlay-bar button:hover { border-color:${ACCENT}; }
     .tb-overlay-bar label { color:#9aa4b0; font-size:11px; display:flex; gap:4px; align-items:center; }
-    .tb-overlay-stage { position:relative; width:100%; background:#15191e center/contain no-repeat; border:1px solid #2d3642; border-radius:6px; overflow:hidden; user-select:none; }
+    .tb-overlay-bar select { background:#1f252c; color:#cfd6de; border:1px solid #3a414b; border-radius:5px; padding:2px 5px; font-size:11px; }
+    .tb-overlay-stage { position:relative; flex:1 1 auto; min-height:260px; width:100%; background:#15191e center/contain no-repeat; border:1px solid #2d3642; border-radius:6px; overflow:hidden; user-select:none; }
     .tb-overlay-hint { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#6b7785; font-size:12px; text-align:center; padding:12px; }
     .tb-text { position:absolute; box-sizing:border-box; cursor:move; outline:1px dashed transparent; line-height:1.1; white-space:pre-wrap; word-break:break-word; }
     .tb-text.sel { outline:1px dashed ${ACCENT}; }
@@ -32,12 +38,20 @@ function clamp(v, lo, hi) {
     return Math.max(lo, Math.min(hi, v));
 }
 
+function hideWidget(widget) {
+    if (!widget) return;
+    widget.type = "hidden";
+    widget.computeSize = () => [0, -4];
+    widget.hidden = true;
+}
+
 function install(node) {
     injectStyle();
     const overlayWidget = node.widgets?.find((w) => w.name === "overlay_data");
 
     let items = [];
     let selected = -1;
+    let editingIndex = -1;
     let backdropAspect = 16 / 9;
 
     function loadItems() {
@@ -70,24 +84,31 @@ function install(node) {
     stage.appendChild(hint);
 
     root.append(bar, stage);
+    node._toobusyOverlayRoot = root;
 
     function stageSize() {
         const w = stage.clientWidth || 320;
-        return { w, h: w / backdropAspect };
+        const h = stage.clientHeight || Math.max(260, w / backdropAspect);
+        return { w, h };
     }
 
     function applyStageHeight() {
-        const { h } = stageSize();
-        stage.style.height = `${Math.max(80, Math.round(h))}px`;
+        const w = stage.clientWidth || 320;
+        stage.style.minHeight = `${Math.max(260, Math.round(w / backdropAspect))}px`;
     }
 
     function renderItems() {
+        if (editingIndex >= 0) {
+            syncToolbar();
+            return;
+        }
         // Remove old text nodes (keep hint).
         stage.querySelectorAll(".tb-text").forEach((el) => el.remove());
         const { w, h } = stageSize();
         hint.style.display = items.length ? "none" : "flex";
 
         items.forEach((item, index) => {
+            if (index === editingIndex) return;
             const el = document.createElement("div");
             el.className = "tb-text" + (index === selected ? " sel" : "");
             el.style.left = `${clamp(item.x ?? 0, 0, 1) * 100}%`;
@@ -95,17 +116,34 @@ function install(node) {
             el.style.width = `${clamp(item.w ?? 0.5, 0.02, 1) * 100}%`;
             el.style.fontSize = `${(item.fontSize ?? 0.08) * h}px`;
             el.style.color = item.color || "#FFFFFF";
+            el.style.fontFamily = cssFontFamily(item.fontFamily);
             el.style.textAlign = item.align || "center";
             el.style.fontWeight = "700";
             el.style.textShadow = `0 0 ${Math.max(1, (item.strokeWidth ?? 3))}px ${item.stroke || "#000"}, 0 1px 2px ${item.stroke || "#000"}`;
             el.textContent = item.text || "";
 
             el.addEventListener("pointerdown", (e) => startDrag(e, index, el));
-            el.addEventListener("dblclick", () => beginEdit(el, index));
+            el.addEventListener("dblclick", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                beginEdit(el, index);
+            });
             el.addEventListener("blur", () => {
                 el.contentEditable = "false";
                 item.text = el.textContent;
+                editingIndex = -1;
                 persist();
+                renderItems();
+            });
+            el.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") {
+                    e.preventDefault();
+                    editingIndex = -1;
+                    renderItems();
+                } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    el.blur();
+                }
             });
 
             const handle = document.createElement("div");
@@ -120,9 +158,16 @@ function install(node) {
 
     function beginEdit(el, index) {
         selected = index;
+        editingIndex = index;
+        el.classList.add("sel");
         el.contentEditable = "true";
         el.focus();
-        renderItems();
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+        syncToolbar();
     }
 
     function startDrag(event, index, el) {
@@ -130,6 +175,7 @@ function install(node) {
         event.preventDefault();
         event.stopPropagation();
         selected = index;
+        editingIndex = -1;
         const { w, h } = stageSize();
         const startX = event.clientX;
         const startY = event.clientY;
@@ -155,6 +201,7 @@ function install(node) {
         event.preventDefault();
         event.stopPropagation();
         selected = index;
+        editingIndex = -1;
         const { h } = stageSize();
         const startY = event.clientY;
         const item = items[index];
@@ -176,8 +223,9 @@ function install(node) {
     const addBtn = document.createElement("button");
     addBtn.textContent = "＋ Text";
     addBtn.onclick = () => {
-        items.push({ text: "텍스트", x: 0.3, y: 0.45, w: 0.4, h: 0.1, fontSize: 0.07, color: "#FFFFFF", stroke: "#000000", strokeWidth: 3, align: "center" });
+        items.push({ text: "텍스트", x: 0.3, y: 0.45, w: 0.4, h: 0.1, fontSize: 0.07, color: "#FFFFFF", stroke: "#000000", strokeWidth: 3, align: "center", fontFamily: "malgun" });
         selected = items.length - 1;
+        editingIndex = -1;
         persist();
         renderItems();
     };
@@ -188,6 +236,7 @@ function install(node) {
         if (selected < 0) return;
         items.splice(selected, 1);
         selected = -1;
+        editingIndex = -1;
         persist();
         renderItems();
     };
@@ -220,6 +269,23 @@ function install(node) {
     colorInput.onchange = persist;
     colorLabel.appendChild(colorInput);
 
+    const fontLabel = document.createElement("label");
+    fontLabel.textContent = "font";
+    const fontSelect = document.createElement("select");
+    for (const [value, label] of FONT_OPTIONS) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label;
+        fontSelect.appendChild(option);
+    }
+    fontSelect.onchange = () => {
+        if (selected < 0) return;
+        items[selected].fontFamily = fontSelect.value;
+        persist();
+        renderItems();
+    };
+    fontLabel.appendChild(fontSelect);
+
     const alignBtn = document.createElement("button");
     alignBtn.textContent = "align: center";
     alignBtn.onclick = () => {
@@ -232,7 +298,7 @@ function install(node) {
         renderItems();
     };
 
-    bar.append(addBtn, delBtn, sizeLabel, colorLabel, alignBtn);
+    bar.append(addBtn, delBtn, sizeLabel, colorLabel, fontLabel, alignBtn);
 
     function syncToolbar() {
         const item = selected >= 0 ? items[selected] : null;
@@ -240,10 +306,12 @@ function install(node) {
         delBtn.disabled = !has;
         sizeInput.disabled = !has;
         colorInput.disabled = !has;
+        fontSelect.disabled = !has;
         alignBtn.disabled = !has;
         if (item) {
             sizeInput.value = String((item.fontSize ?? 0.08) * 100);
             colorInput.value = item.color || "#ffffff";
+            fontSelect.value = item.fontFamily || "malgun";
             alignBtn.textContent = `align: ${item.align || "center"}`;
         }
     }
@@ -252,12 +320,24 @@ function install(node) {
     stage.addEventListener("pointerdown", (e) => {
         if (e.target === stage || e.target === hint) {
             selected = -1;
+            editingIndex = -1;
             renderItems();
         }
     });
 
+    function cssFontFamily(value) {
+        const key = String(value || "malgun").toLowerCase();
+        if (key === "serif") return `"Batang", "Noto Serif CJK KR", Georgia, serif`;
+        if (key === "mono") return `"D2Coding", Consolas, monospace`;
+        return `"Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans CJK KR", sans-serif`;
+    }
+
     if (node.addDOMWidget) {
-        node.addDOMWidget("overlay_editor", "toobusy_overlay", root, { serialize: false });
+        node.addDOMWidget("overlay_editor", "toobusy_overlay", root, {
+            serialize: false,
+            getMinHeight: () => 360,
+            getHeight: () => root.offsetHeight || 420,
+        });
     }
 
     // Receive backdrop image + seed items after a run.
@@ -302,6 +382,28 @@ function install(node) {
 app.registerExtension({
     name: "toobusy.layoutTextOverlay",
     async nodeCreated(node) {
-        if (node.comfyClass === NODE_CLASS) install(node);
+        if (node.comfyClass !== NODE_CLASS) return;
+        const overlayWidget = node.widgets?.find((w) => w.name === "overlay_data");
+        hideWidget(overlayWidget);
+        install(node);
+        const syncHeight = () => {
+            const root = node._toobusyOverlayRoot;
+            if (root) root.style.height = `${Math.max(360, Math.round((node.size?.[1] || 620) - 150))}px`;
+        };
+        if (!node.size || node.size[1] < 560) node.setSize?.([Math.max(node.size?.[0] || 760, 760), 620]);
+        syncHeight();
+        const prevResize = node.onResize;
+        node.onResize = function () {
+            const result = prevResize?.apply(this, arguments);
+            syncHeight();
+            return result;
+        };
+        const prevConfigure = node.onConfigure;
+        node.onConfigure = function () {
+            const result = prevConfigure?.apply(this, arguments);
+            requestAnimationFrame(syncHeight);
+            return result;
+        };
+        requestAnimationFrame(syncHeight);
     },
 });

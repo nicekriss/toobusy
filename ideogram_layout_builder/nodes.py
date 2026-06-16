@@ -129,6 +129,24 @@ def _build_desc(text, desc, role="", strict_text=False, reinforce_text=True):
     return ". ".join(clauses)
 
 
+def _text_placeholder_desc(element):
+    """Keep a text box's layout footprint without asking Ideogram to draw the
+    actual lettering. The real glyphs are rendered later by Layout Text Overlay."""
+    role = str(element.get("role", "")).strip().lower()
+    desc = str(element.get("desc", "")).strip()
+    palette_hint = "empty graphic text area"
+    if role in {"headline", "subtitle", "body", "footer"}:
+        palette_hint = f"empty {role} area"
+    elif role in {"product label", "sign", "ui label", "logo"}:
+        palette_hint = f"blank {role} panel"
+    elif desc and desc.lower() not in PLACEHOLDER_DESCS:
+        palette_hint = f"blank area reserved for {desc}"
+    return (
+        f"{palette_hint}, preserve the layout space and background design, "
+        "clean surface, no letters, no words, no readable text"
+    )
+
+
 def _element_type(text, desc):
     return "text" if text else "obj"
 
@@ -400,14 +418,28 @@ class IdeogramLayoutBuilder:
         # feeds Layout Text Overlay for crisp glyphs. Off = text stays in the
         # generation payload (fine for English).
         text_elements = [el for el in elements if el.get("type") == "text"]
-        non_text_elements = [el for el in elements if el.get("type") != "text"]
-        if text_overlay_mode and not non_text_elements:
-            non_text_elements = [{
-                "type": "obj",
-                "bbox": [250, 250, 750, 750],
-                "desc": high_level_description.strip() or "main subject",
-            }]
-        gen_elements = non_text_elements if text_overlay_mode else elements
+        if text_overlay_mode:
+            gen_elements = []
+            for el in elements:
+                if el.get("type") != "text":
+                    gen_elements.append(el)
+                    continue
+                placeholder = {
+                    "type": "obj",
+                    "bbox": el["bbox"],
+                    "desc": _text_placeholder_desc(el),
+                }
+                if el.get("color_palette"):
+                    placeholder["color_palette"] = el["color_palette"]
+                gen_elements.append(placeholder)
+            if not gen_elements:
+                gen_elements = [{
+                    "type": "obj",
+                    "bbox": [250, 250, 750, 750],
+                    "desc": high_level_description.strip() or "main subject",
+                }]
+        else:
+            gen_elements = elements
 
         ideogram_json = json.dumps(_payload(gen_elements), ensure_ascii=False, indent=2)
         text_json = json.dumps(_payload(text_elements), ensure_ascii=False, indent=2)

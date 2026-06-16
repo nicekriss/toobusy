@@ -41,11 +41,21 @@ def _hex_rgb(value, default=(255, 255, 255)):
     return default
 
 
-def _font(size):
+FONT_CANDIDATES = {
+    "malgun": ("malgun.ttf", "malgunsl.ttf", "arial.ttf", "DejaVuSans.ttf"),
+    "gothic": ("malgun.ttf", "arial.ttf", "DejaVuSans.ttf"),
+    "serif": ("batang.ttc", "gulim.ttc", "Georgia.ttf", "Times New Roman.ttf", "DejaVuSerif.ttf"),
+    "mono": ("consola.ttf", "D2Coding.ttf", "DejaVuSansMono.ttf"),
+}
+
+
+def _font(size, family="malgun"):
     """malgun first so Korean renders with real glyphs on Windows."""
     from PIL import ImageFont
 
-    for name in ("malgun.ttf", "arial.ttf", "DejaVuSans.ttf"):
+    family_key = str(family or "malgun").strip().lower()
+    candidates = FONT_CANDIDATES.get(family_key, FONT_CANDIDATES["malgun"])
+    for name in candidates:
         try:
             return ImageFont.truetype(name, max(8, int(size)))
         except Exception:
@@ -92,6 +102,7 @@ def seed_items_from_layout(layout_json):
             "stroke": "#000000",
             "strokeWidth": 3,
             "align": "center",
+            "fontFamily": "malgun",
         })
     return items
 
@@ -121,11 +132,11 @@ def _wrap(draw, text, font, max_width):
     return out_lines or [""]
 
 
-def _fit_font_size(draw, text, box_w, box_h, max_size):
+def _fit_font_size(draw, text, box_w, box_h, max_size, family="malgun"):
     """Largest font size (<= max_size) whose wrapped text fits the box."""
     size = max(8, int(max_size))
     while size > 8:
-        font = _font(size)
+        font = _font(size, family)
         lines = _wrap(draw, text, font, box_w)
         line_h = (draw.textbbox((0, 0), "Ag", font=font)[3]) * 1.15
         if len(lines) * line_h <= box_h and all(draw.textlength(l, font=font) <= box_w for l in lines):
@@ -146,11 +157,11 @@ def _draw_item(draw, item, width, height, font_scale):
     # fontSize is a fraction of image height; 0 = auto-fit to the box.
     size_frac = float(item.get("fontSize") or 0)
     if size_frac <= 0:
-        size = _fit_font_size(draw, text, box_w, box_h, max_size=box_h)
+        size = _fit_font_size(draw, text, box_w, box_h, max_size=box_h, family=item.get("fontFamily", "malgun"))
     else:
         size = int(size_frac * height)
     size = max(8, int(size * float(font_scale)))
-    font = _font(size)
+    font = _font(size, item.get("fontFamily", "malgun"))
 
     color = _hex_rgb(item.get("color"), (255, 255, 255))
     stroke = _hex_rgb(item.get("stroke"), (0, 0, 0))
