@@ -598,9 +598,8 @@ function installEditor(node) {
             .toobusy-ideogram .layer-btn:disabled { opacity: 0.35; cursor: default; }
             .toobusy-ideogram .canvas-frame {
                 width: 100%;
-                aspect-ratio: 1 / 1;
-                max-height: 680px;
-                min-height: 300px;
+                height: 620px;
+                min-height: 620px;
                 border: 1px solid #58616d;
                 border-radius: 6px;
                 background: #0e1319;
@@ -1013,7 +1012,6 @@ function installEditor(node) {
 
     function applyResolution() {
         const frame = canvas.parentElement;
-        frame.style.aspectRatio = `${resolution.width} / ${resolution.height}`;
         const frameWidth = frame.clientWidth || 560;
         const frameHeight = frame.clientHeight || 560;
         const scale = Math.min(frameWidth / resolution.width, frameHeight / resolution.height);
@@ -1027,7 +1025,6 @@ function installEditor(node) {
         resolutionReadout.textContent = `${resolution.width} x ${resolution.height}`;
         persistResolution();
         draw();
-        requestAnimationFrame(() => fitNodeToContent());
     }
 
     function point(event) {

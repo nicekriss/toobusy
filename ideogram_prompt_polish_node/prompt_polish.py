@@ -314,6 +314,34 @@ def _split_mixed_text_elements(payload):
     return payload
 
 
+def _enrich_element_descriptions(payload):
+    comp = payload.get("compositional_deconstruction")
+    elements = comp.get("elements") if isinstance(comp, dict) else None
+    if not isinstance(elements, list):
+        return payload
+
+    figure_words = ("person", "man", "woman", "male", "female", "figure", "character", "anime", "boy", "girl")
+    for element in elements:
+        if not isinstance(element, dict):
+            continue
+        desc = str(element.get("desc", "")).strip()
+        bbox = _normalize_bbox(element.get("bbox"))
+        height = bbox[2] - bbox[0]
+        width = bbox[3] - bbox[1]
+        lower = desc.lower()
+        if element.get("type") == "obj" and any(word in lower for word in figure_words):
+            if height > width * 1.5 and "full" not in lower and "upper" not in lower and "cropped" not in lower:
+                desc = (
+                    f"{desc}. Full-body head-to-toe character inside the frame, "
+                    "standing pose, visible legs and feet, preserve the full figure silhouette"
+                )
+        if element.get("type") == "obj" and "panel" in lower and "showing" in lower and len(desc) < 90:
+            desc = f"{desc}. Include the visible internal layout, small UI cards, icons, arrows, thumbnails, and labels as seen in the reference."
+        if desc:
+            element["desc"] = desc
+    return payload
+
+
 _SCHEMA_LINES = [
     "Return VALID JSON ONLY (no markdown fences, no commentary) with exactly these top-level keys:",
     '- "high_level_description": string',
@@ -333,6 +361,11 @@ def _build_prompt(scene, style_mode, language, preserve_intent, fill_missing, ex
             "Report what is ACTUALLY in the image — its text, objects, and composition.",
             "Read all visible text EXACTLY, keeping its original language (Korean stays Korean) in the \"text\" field; write \"desc\" fields in English.",
             "Use type \"text\" for readable text (include the exact string), type \"obj\" for everything else (people, icons, panels, products, shapes).",
+            "For every text element, describe visible styling in desc: color, weight, outline/glow, roughness, and orientation such as tilted, slanted, skewed, perspective, arched, stacked, or straight.",
+            "If a text block is visually tilted or distorted, mention that in desc; bbox stays axis-aligned, so desc must carry the tilt/perspective cue.",
+            "For every object element, make desc specific: subject type, full-body vs upper-body/cropped view, pose/action, clothing, expression, important colors, panel/frame shape, icons, arrows, UI controls, and whether it is foreground/background.",
+            "For human/character figures, explicitly state full body, head-to-toe, visible feet/hands, standing pose, or cropped/upper-body if that is what the image shows.",
+            "For large panels and diagrams, describe their internal contents and labels, not just 'panel'.",
             "If one visible label mixes Latin/product text and Korean text, split it into separate text elements with separate bboxes (example: \"LTX2.3 두두등장!\" becomes one bbox for \"LTX2.3\" and another bbox for \"두두등장!\").",
             "If a panel has an English label plus Korean text in parentheses, split them too (example: \"First Frame (시작 프레임)\" becomes separate text elements).",
             "Estimate each bbox from the image. Output ONE element per distinct thing — never duplicate or near-identical boxes for the same item.",
@@ -530,6 +563,7 @@ class ToobusyIdeogramPromptPolish:
 
         payload = _ensure_shape(data, scene, fill_missing_fields)
         payload = _split_mixed_text_elements(payload)
+        payload = _enrich_element_descriptions(payload)
         if image is not None:
             # Vision LLMs often leave palettes empty -> murky generations. Backfill
             # from the real image pixels (whole image + per-element regions).
