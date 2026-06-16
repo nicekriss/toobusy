@@ -14,6 +14,7 @@ STYLE_EMPHASIS = {
 }
 
 TOP_KEYS = ("high_level_description", "style_description", "compositional_deconstruction")
+MIN_BOX_SIZE = 40
 
 
 def _extract_json(text):
@@ -98,6 +99,190 @@ def _ensure_shape(data, scene, fill_missing):
     return ordered
 
 
+def _clamp_int(value, minimum=0, maximum=1000):
+    try:
+        number = int(round(float(value)))
+    except (TypeError, ValueError):
+        number = minimum
+    return max(minimum, min(maximum, number))
+
+
+def _normalize_bbox(value):
+    if not isinstance(value, list) or len(value) != 4:
+        return [100, 100, 900, 900]
+    y_min, x_min, y_max, x_max = [_clamp_int(item) for item in value]
+    if x_max - x_min < MIN_BOX_SIZE:
+        x_max = min(1000, x_min + MIN_BOX_SIZE)
+    if y_max - y_min < MIN_BOX_SIZE:
+        y_max = min(1000, y_min + MIN_BOX_SIZE)
+    if x_max - x_min < MIN_BOX_SIZE:
+        x_min = max(0, x_max - MIN_BOX_SIZE)
+    if y_max - y_min < MIN_BOX_SIZE:
+        y_min = max(0, y_max - MIN_BOX_SIZE)
+    return [y_min, x_min, y_max, x_max]
+
+
+def _has_hangul(value):
+    for char in str(value or ""):
+        code = ord(char)
+        if 0xAC00 <= code <= 0xD7A3 or 0x1100 <= code <= 0x11FF or 0x3130 <= code <= 0x318F:
+            return True
+    return False
+
+
+def _is_ascii_label_char(char):
+    return char.isascii() and (char.isalnum() or char in ".+-_:/")
+
+
+def _char_width_weight(char):
+    if _has_hangul(char):
+        return 1.0
+    if char.isspace():
+        return 0.35
+    if char.isascii() and char.isalnum():
+        return 0.62
+    return 0.35
+
+
+def _clean_split_run(text, keep):
+    value = str(text or "")
+    if keep == "latin":
+        value = re.sub(r"\([^A-Za-z0-9]*\)", "", value)
+        value = value.strip(" -_:/|()[]")
+    else:
+        value = re.sub(r"\(\s*([^)]+?)\s*\)", r"\1", value)
+        value = value.strip(" -_:/|()[]")
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def _join_split_text(left, right):
+    if not left:
+        return right
+    if not right:
+        return left
+    if _has_hangul(left[-1]) and right[0].isdigit():
+        return f"{left} {right}"
+    if left[-1].isdigit() and _has_hangul(right[0]):
+        return f"{left}{right}"
+    if left[-1].isascii() and left[-1].isalnum() and right[0].isascii() and right[0].isalnum():
+        return f"{left} {right}"
+    return f"{left}{right}"
+
+
+def _merge_adjacent_runs(runs):
+    merged = []
+    for run in runs:
+        if merged and merged[-1]["kind"] == run["kind"]:
+            merged[-1]["text"] = _join_split_text(merged[-1]["text"], run["text"])
+            merged[-1]["bbox"][2] = max(merged[-1]["bbox"][2], run["bbox"][2])
+            merged[-1]["bbox"][3] = max(merged[-1]["bbox"][3], run["bbox"][3])
+        else:
+            merged.append(dict(run))
+    return merged
+
+
+def _split_mixed_hangul_runs(text, bbox):
+    original = str(text or "").strip()
+    if not _has_hangul(original):
+        return []
+
+    y_min, x_min, y_max, x_max = _normalize_bbox(bbox)
+    total_width = max(1, x_max - x_min)
+    total_weight = sum(_char_width_weight(char) for char in original) or 1.0
+    cursor = float(x_min)
+    runs = []
+    current_kind = None
+    current_text = []
+    current_start = cursor
+
+    def char_kind(char):
+        if _has_hangul(char):
+            return "hangul"
+        if _is_ascii_label_char(char):
+            return "latin"
+        return current_kind or "hangul"
+
+    def flush(end_x):
+        nonlocal current_kind, current_text, current_start
+        if not current_text or not current_kind:
+            current_text = []
+            current_kind = None
+            current_start = end_x
+            return
+        run_kind = current_kind
+        has_ascii_word = any(char.isascii() and char.isalpha() for char in current_text)
+        if run_kind == "latin" and not has_ascii_word:
+            run_kind = "hangul"
+        cleaned = _clean_split_run("".join(current_text), run_kind)
+        if cleaned:
+            run_x0 = _clamp_int(current_start)
+            run_x1 = _clamp_int(end_x)
+            if run_x1 - run_x0 < MIN_BOX_SIZE:
+                run_x1 = min(1000, run_x0 + MIN_BOX_SIZE)
+            runs.append({"kind": run_kind, "text": cleaned, "bbox": [y_min, run_x0, y_max, run_x1]})
+        current_text = []
+        current_kind = None
+        current_start = end_x
+
+    for char in original:
+        width = total_width * (_char_width_weight(char) / total_weight)
+        next_cursor = cursor + width
+        kind = char_kind(char)
+        if current_kind is None:
+            current_kind = kind
+            current_start = cursor
+        elif kind != current_kind:
+            flush(cursor)
+            current_kind = kind
+            current_start = cursor
+        current_text.append(char)
+        cursor = next_cursor
+    flush(float(x_max))
+    return _merge_adjacent_runs(runs)
+
+
+def _split_mixed_text_elements(payload):
+    """Normalize vision JSON so mixed Latin/Hangul labels arrive pre-separated.
+
+    This runs before Layout Builder. If a vision LLM emits one element like
+    "LTX2.3 두두등장!", split it into approximate sub-bbox text elements so the
+    builder does not have to guess later.
+    """
+    comp = payload.get("compositional_deconstruction")
+    elements = comp.get("elements") if isinstance(comp, dict) else None
+    if not isinstance(elements, list):
+        return payload
+
+    normalized = []
+    for element in elements:
+        if not isinstance(element, dict):
+            normalized.append(element)
+            continue
+        text = str(element.get("text", "")).strip()
+        if not text or not _has_hangul(text):
+            normalized.append(element)
+            continue
+        runs = _split_mixed_hangul_runs(text, element.get("bbox"))
+        if len(runs) <= 1:
+            new_element = dict(element)
+            new_element["type"] = "text"
+            new_element["bbox"] = _normalize_bbox(element.get("bbox"))
+            new_element["text"] = text
+            normalized.append(new_element)
+            continue
+        for run in runs:
+            new_element = dict(element)
+            new_element["type"] = "text"
+            new_element["bbox"] = run["bbox"]
+            new_element["text"] = run["text"]
+            suffix = "Latin label segment" if run["kind"] == "latin" else "Korean overlay text segment"
+            desc = str(element.get("desc", "")).strip()
+            new_element["desc"] = f"{desc} — {suffix}" if desc else suffix
+            normalized.append(new_element)
+    comp["elements"] = normalized
+    return payload
+
+
 _SCHEMA_LINES = [
     "Return VALID JSON ONLY (no markdown fences, no commentary) with exactly these top-level keys:",
     '- "high_level_description": string',
@@ -117,6 +302,8 @@ def _build_prompt(scene, style_mode, language, preserve_intent, fill_missing, ex
             "Report what is ACTUALLY in the image — its text, objects, and composition.",
             "Read all visible text EXACTLY, keeping its original language (Korean stays Korean) in the \"text\" field; write \"desc\" fields in English.",
             "Use type \"text\" for readable text (include the exact string), type \"obj\" for everything else (people, icons, panels, products, shapes).",
+            "If one visible label mixes Latin/product text and Korean text, split it into separate text elements with separate bboxes (example: \"LTX2.3 두두등장!\" becomes one bbox for \"LTX2.3\" and another bbox for \"두두등장!\").",
+            "If a panel has an English label plus Korean text in parentheses, split them too (example: \"First Frame (시작 프레임)\" becomes separate text elements).",
             "Estimate each bbox from the image. Output ONE element per distinct thing — never duplicate or near-identical boxes for the same item.",
             "Capture the meaningful layout pieces (title, sections, key icons/blocks), about 5-15 elements; skip tiny incidental details.",
         ]
@@ -311,6 +498,7 @@ class ToobusyIdeogramPromptPolish:
             return (json.dumps(payload, ensure_ascii=False, indent=2), raw or "")
 
         payload = _ensure_shape(data, scene, fill_missing_fields)
+        payload = _split_mixed_text_elements(payload)
         if image is not None:
             # Vision LLMs often leave palettes empty -> murky generations. Backfill
             # from the real image pixels (whole image + per-element regions).
