@@ -1,0 +1,95 @@
+"""Regression tests for the Ideogram Layout Builder's Pull-from-input bridge.
+
+The builder gained optional `imported_json` / `image` inputs and OUTPUT_NODE so
+the frontend "⟳ Pull from input" button can load an upstream Ideogram draft onto
+the canvas. These tests lock the contract that must not drift:
+
+  * the bridge inputs are exposed (imported_json forceInput + image);
+  * imported_json is echoed to the `ui` payload, NOT merged into the output;
+  * without bridge inputs the node still returns a plain tuple;
+  * OUTPUT_NODE is set.
+
+Standalone- and pytest-runnable, no ComfyUI runtime (nodes.py is self-contained).
+"""
+
+import importlib.util
+import json
+import os
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _load():
+    path = os.path.join(ROOT, "ideogram_layout_builder", "nodes.py")
+    spec = importlib.util.spec_from_file_location("toobusy_ilb_nodes", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_mod = _load()
+_Builder = _mod.IdeogramLayoutBuilder
+
+
+def _build(**overrides):
+    kwargs = dict(
+        high_level_description="A poster.",
+        aesthetics="clean",
+        lighting="soft",
+        photo="",
+        medium="graphic_design",
+        global_palette="#111111, #FFFFFF",
+        background="studio",
+        elements_json="[]",
+        width=2048,
+        height=2048,
+    )
+    kwargs.update(overrides)
+    return _Builder().build(**kwargs)
+
+
+def test_output_node_and_bridge_inputs_exposed():
+    assert _Builder.OUTPUT_NODE is True
+    optional = _Builder.INPUT_TYPES()["optional"]
+    assert optional["imported_json"][0] == "STRING"
+    assert optional["imported_json"][1]["forceInput"] is True
+    assert optional["image"][0] == "IMAGE"
+
+
+def test_no_bridge_returns_plain_tuple():
+    result = _build()
+    assert isinstance(result, tuple)
+    assert isinstance(result[0], str)  # ideogram_json
+
+
+def test_imported_json_goes_to_ui_not_output():
+    bridge = '{"compositional_deconstruction": {"elements": [{"type": "obj", "bbox": [0, 0, 100, 100], "desc": "imported thing"}]}}'
+    out = _build(imported_json=bridge)
+    assert isinstance(out, dict) and "ui" in out and "result" in out
+    assert out["ui"]["toobusy_import"] == [bridge]
+    # The node's own output must come from elements_json (empty -> default
+    # centered subject), NOT from the imported bridge json.
+    payload = json.loads(out["result"][0])
+    descs = [el.get("desc", "") for el in payload["compositional_deconstruction"]["elements"]]
+    assert "imported thing" not in " ".join(descs)
+
+
+def test_empty_imported_json_stays_plain_tuple():
+    assert isinstance(_build(imported_json="   "), tuple)
+
+
+if __name__ == "__main__":
+    failures = 0
+    for name, fn in sorted(globals().items()):
+        if name.startswith("test_") and callable(fn):
+            try:
+                fn()
+                print(f"PASS {name}")
+            except AssertionError as exc:
+                failures += 1
+                print(f"FAIL {name}: {exc}")
+    if failures:
+        print(f"\n{failures} test(s) failed")
+        sys.exit(1)
+    print("\nall tests passed")

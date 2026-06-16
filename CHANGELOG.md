@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Added
+- `toobusy Ideogram Layout Builder`에 **`⟳ Pull from input` 버튼 + 입력 소켓 2개**(`imported_json`,
+  `image`) 추가. `Image → Ideogram Layout`의 `ideogram_json`을 `imported_json`에, 원본 이미지를
+  `image`에 연결한 뒤 버튼을 누르면 — **그 빌더에 필요한 앞단 노드만 부분 실행**(전체 큐 안 돌림)
+  하고, 결과 JSON을 **캔버스에 박스로** 올리고 원본 이미지를 **반투명 백드롭으로** 깔아줘요(박스가
+  실제 이미지 위에 정확히 겹침). 빌더를 `OUTPUT_NODE`로 만들고 실행 시 값을 프론트로 돌려주는
+  방식(`onExecuted`). 기존 수동 빌더/Import polished 기능은 0 변경. (Florence는 한 번은 실행됨 —
+  같은 이미지면 ComfyUI가 캐시.)
+
 ### Fixed
 - `toobusy Image → Ideogram Layout`(Unreleased): 실런타임에서 **오브젝트 박스 0개**로 나오던
   문제 수정. 원인 = `dense_region_caption`의 `data` 출력이 **라벨 없는 맨 박스 리스트**라

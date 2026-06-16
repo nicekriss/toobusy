@@ -1,4 +1,5 @@
 import { app } from "../../scripts/app.js";
+import { api } from "../../scripts/api.js";
 
 const NODE_CLASS = "IdeogramLayoutBuilder";
 const CANVAS_SIZE = 1000;
@@ -2181,9 +2182,83 @@ function installEditor(node) {
         importDialog.open();
     }
 
+    // ----- "Pull from input": load an Ideogram JSON connected to the node's
+    // `imported_json` socket onto the canvas (and the `image` socket under it as
+    // the backdrop). Runs ONLY the nodes feeding this builder — not the whole
+    // graph — then applies the result when it arrives via onExecuted. -----
+    let pullPending = false;
+
+    function applyPulled() {
+        const raw = node._toobusyImport;
+        if (!raw) return false;
+        let parsed;
+        try {
+            parsed = JSON.parse(raw);
+        } catch {
+            return false;
+        }
+        const state = payloadToState(parsed);
+        if (!state) return false;
+        applyState(state);
+        if (node._toobusyImage) setReferenceImage(node._toobusyImage);
+        return true;
+    }
+
+    const previousOnExecuted = node.onExecuted;
+    node.onExecuted = function (message) {
+        previousOnExecuted?.apply(this, arguments);
+        if (message && message.toobusy_import) node._toobusyImport = message.toobusy_import[0];
+        if (message && message.toobusy_image) node._toobusyImage = message.toobusy_image[0];
+        if (pullPending) {
+            pullPending = false;
+            applyPulled();
+        }
+    };
+
+    async function pullFromInput() {
+        try {
+            const prompt = await app.graphToPrompt();
+            const output = prompt.output || {};
+            const targetId = String(node.id);
+            if (!output[targetId]) {
+                if (!applyPulled()) {
+                    window.alert("Connect an Ideogram JSON to 'imported_json', then press Pull.");
+                }
+                return;
+            }
+            // Keep only this builder and the nodes feeding it, so the rest of the
+            // graph (e.g. heavy generation) does not run.
+            const keep = new Set([targetId]);
+            const stack = [targetId];
+            while (stack.length) {
+                const id = stack.pop();
+                const inputs = (output[id] && output[id].inputs) || {};
+                for (const value of Object.values(inputs)) {
+                    if (Array.isArray(value) && value.length === 2 && output[String(value[0])]) {
+                        const source = String(value[0]);
+                        if (!keep.has(source)) {
+                            keep.add(source);
+                            stack.push(source);
+                        }
+                    }
+                }
+            }
+            const pruned = {};
+            for (const id of keep) pruned[id] = output[id];
+            pullPending = true;
+            await api.queuePrompt(0, { output: pruned, workflow: prompt.workflow });
+        } catch (err) {
+            pullPending = false;
+            if (!applyPulled()) {
+                window.alert(`Pull failed: ${err.message}. Try queuing the graph once.`);
+            }
+        }
+    }
+
     presetBar.append(
         presetBarTitle,
         presetSelectEl,
+        makeButton("⟳ Pull from input", "Run only the nodes feeding this builder and load the resulting Ideogram JSON onto the canvas (with the connected image as backdrop)", pullFromInput),
         makeButton("Import polished", "Paste a Prompt Polish / Ideogram JSON to load it (preview before it replaces the layout)", openImportPolishedDialog),
         makeButton("Reset", "Reset this builder to a fresh empty layout", resetLayout),
         makeButton("Save", "Save current layout as a named preset", () => {
