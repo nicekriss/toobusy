@@ -273,13 +273,30 @@ class IdeogramLayoutBuilder:
                         "step": 1,
                     },
                 ),
-            }
+            },
+            "optional": {
+                # Bridge inputs for the "⟳ Pull from input" button: connect an
+                # Image → Ideogram Layout draft here, run the upstream, then Pull
+                # to load it onto the canvas (json) and under it (image backdrop).
+                "imported_json": (
+                    "STRING",
+                    {
+                        "forceInput": True,
+                        "tooltip": "Connect an Ideogram JSON draft (e.g. from Image → Ideogram Layout). Run upstream, then press '⟳ Pull from input' on the node to load it onto the canvas.",
+                    },
+                ),
+                "image": (
+                    "IMAGE",
+                    {"tooltip": "Optional: the analyzed image. Pulling lays it under the canvas as the reference backdrop so boxes land on the real image."},
+                ),
+            },
         }
 
     RETURN_TYPES = ("STRING", "INT", "INT")
     RETURN_NAMES = ("ideogram_json", "width", "height")
     FUNCTION = "build"
     CATEGORY = "toobusy/Plan"
+    OUTPUT_NODE = True
 
     def build(
         self,
@@ -296,6 +313,8 @@ class IdeogramLayoutBuilder:
         include_global_palette=True,
         strict_text=True,
         reinforce_text=True,
+        imported_json="",
+        image=None,
     ):
         elements = []
         for item in _load_elements(elements_json):
@@ -365,7 +384,45 @@ class IdeogramLayoutBuilder:
             },
         }
 
-        return (json.dumps(payload, ensure_ascii=False, indent=2), int(width), int(height))
+        result = (json.dumps(payload, ensure_ascii=False, indent=2), int(width), int(height))
+
+        # Send the bridge inputs back to the frontend so the "⟳ Pull from input"
+        # button can load them onto the canvas / backdrop. This never changes the
+        # node's own output — imported_json is a frontend bridge, not merged here.
+        ui = {}
+        if isinstance(imported_json, str) and imported_json.strip():
+            ui["toobusy_import"] = [imported_json]
+        if image is not None:
+            data_url = _image_to_data_url(image)
+            if data_url:
+                ui["toobusy_image"] = [data_url]
+        if ui:
+            return {"ui": ui, "result": result}
+        return result
+
+
+def _image_to_data_url(image, max_edge=1536):
+    """First frame of an IMAGE tensor -> downscaled JPEG data URL for the canvas
+    backdrop. Returns '' if PIL/numpy/torch aren't available."""
+    try:
+        import base64
+        import io
+
+        import numpy as np
+        from PIL import Image as PILImage
+
+        frame = image[0].detach().cpu().numpy()
+        array = (frame[..., :3].clip(0.0, 1.0) * 255.0).astype("uint8")
+        pil = PILImage.fromarray(array)
+        w, h = pil.size
+        scale = min(1.0, float(max_edge) / float(max(w, h)))
+        if scale < 1.0:
+            pil = pil.resize((max(1, int(w * scale)), max(1, int(h * scale))))
+        buffer = io.BytesIO()
+        pil.save(buffer, format="JPEG", quality=85)
+        return "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
+    except Exception:
+        return ""
 
 
 NODE_CLASS_MAPPINGS = {
