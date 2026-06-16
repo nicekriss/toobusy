@@ -1,0 +1,130 @@
+"""Regression tests for Ideogram Prompt Polish, focused on the image-analysis
+mode added so it doubles as an image -> Ideogram layout draft generator.
+
+  * _build_prompt branches between scene-conversion and image-analysis;
+  * both branches still request the exact Ideogram JSON schema;
+  * the image input is exposed and forwarded to the text generator;
+  * _extract_json still pulls JSON out of fenced/noisy LLM output.
+
+Standalone- and pytest-runnable, no ComfyUI runtime (the module is json/re only).
+"""
+
+import importlib.util
+import os
+import sys
+import types
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _install_stubs():
+    pkg = types.ModuleType("toobusy")
+    pkg.__path__ = [ROOT]
+    sys.modules["toobusy"] = pkg
+
+    pp_pkg = types.ModuleType("toobusy.ideogram_prompt_polish_node")
+    pp_pkg.__path__ = [os.path.join(ROOT, "ideogram_prompt_polish_node")]
+    sys.modules["toobusy.ideogram_prompt_polish_node"] = pp_pkg
+
+    # polish() lazily imports _generate_text from keyframe_maker; stub it so the
+    # relative import resolves without ComfyUI (tests override it as needed).
+    km_pkg = types.ModuleType("toobusy.keyframe_maker_node")
+    km_pkg.__path__ = [os.path.join(ROOT, "keyframe_maker_node")]
+    sys.modules["toobusy.keyframe_maker_node"] = km_pkg
+    km = types.ModuleType("toobusy.keyframe_maker_node.keyframe_maker")
+    km._generate_text = lambda clip, prompt, max_length, seed, image=None: '{"high_level_description": "stub"}'
+    sys.modules["toobusy.keyframe_maker_node.keyframe_maker"] = km
+
+
+def _load():
+    path = os.path.join(ROOT, "ideogram_prompt_polish_node", "prompt_polish.py")
+    spec = importlib.util.spec_from_file_location("toobusy.ideogram_prompt_polish_node.prompt_polish", path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+_install_stubs()
+_mod = _load()
+
+
+def _prompt(image_present):
+    return _mod._build_prompt(
+        scene="눈 오는 날 아이들",
+        style_mode="Literal",
+        language="Auto",
+        preserve_intent=True,
+        fill_missing=True,
+        existing_layout_json="",
+        image_present=image_present,
+    )
+
+
+SCHEMA_MARK = '"bbox" [y_min, x_min, y_max, x_max] in 0-1000'
+
+
+def test_scene_mode_prompt():
+    text = _prompt(image_present=False)
+    assert "Convert the user's scene description" in text
+    assert "Analyze the provided IMAGE" not in text
+    assert SCHEMA_MARK in text
+
+
+def test_image_mode_prompt():
+    text = _prompt(image_present=True)
+    assert "Analyze the provided IMAGE" in text
+    assert "Korean stays Korean" in text
+    assert "never duplicate or near-identical boxes" in text
+    assert SCHEMA_MARK in text  # same schema in both modes
+
+
+def test_image_input_exposed_and_optional():
+    optional = _mod.ToobusyIdeogramPromptPolish.INPUT_TYPES()["optional"]
+    assert optional["image"][0] == "IMAGE"
+    # image is optional, not required.
+    assert "image" not in _mod.ToobusyIdeogramPromptPolish.INPUT_TYPES()["required"]
+
+
+def test_extract_json_handles_fences_and_prose():
+    raw = 'Sure! Here is the layout:\n```json\n{"high_level_description": "x", "a": 1,}\n```\nDone.'
+    data = _mod._extract_json(raw)
+    assert data == {"high_level_description": "x", "a": 1}
+
+
+def test_image_is_forwarded_to_generator():
+    # polish() should pass the image through to _generate_text. Override the
+    # stubbed keyframe generator to capture the call.
+    captured = {}
+
+    def fake_generate_text(clip, prompt, max_length, seed, image=None):
+        captured["image"] = image
+        captured["prompt"] = prompt
+        return '{"high_level_description": "from image"}'
+
+    sys.modules["toobusy.keyframe_maker_node.keyframe_maker"]._generate_text = fake_generate_text
+
+    sentinel = object()  # stands in for an IMAGE tensor
+    out_json, _raw = _mod.ToobusyIdeogramPromptPolish().polish(
+        clip="clip", scene="hint", style_mode="Literal", language="Auto",
+        preserve_intent=True, fill_missing_fields=True, seed=1, image=sentinel,
+    )
+    assert captured["image"] is sentinel
+    assert "Analyze the provided IMAGE" in captured["prompt"]
+    assert "from image" in out_json
+
+
+if __name__ == "__main__":
+    failures = 0
+    for name, fn in sorted(globals().items()):
+        if name.startswith("test_") and callable(fn):
+            try:
+                fn()
+                print(f"PASS {name}")
+            except AssertionError as exc:
+                failures += 1
+                print(f"FAIL {name}: {exc}")
+    if failures:
+        print(f"\n{failures} test(s) failed")
+        sys.exit(1)
+    print("\nall tests passed")

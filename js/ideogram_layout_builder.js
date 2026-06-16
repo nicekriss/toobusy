@@ -2403,14 +2403,19 @@ function installEditor(node) {
     // the selected box, arrows nudge it (Shift = larger step), Esc deselects.
     canvas.addEventListener("keydown", (event) => {
         if (event.key === "Delete" || event.key === "Backspace") {
-            if (selectedIndex < 0) return;
+            // Always stop here so ComfyUI's global Delete (which removes the
+            // whole node) never fires while the user is editing boxes — pressing
+            // Delete on the canvas should only ever delete the selected box.
             event.preventDefault();
+            event.stopPropagation();
+            if (selectedIndex < 0) return;
             deleteElement();
             return;
         }
         if (event.key === "Escape") {
             if (selectedIndex < 0) return;
             event.preventDefault();
+            event.stopPropagation();
             selectedIndex = -1;
             renderElementPanel();
             return;
@@ -2423,6 +2428,7 @@ function installEditor(node) {
         if (nudges[event.key]) {
             if (selectedIndex < 0) return;
             event.preventDefault();
+            event.stopPropagation();
             nudgeSelected(nudges[event.key][0], nudges[event.key][1]);
         }
     });
