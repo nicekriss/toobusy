@@ -81,6 +81,13 @@ def test_mixed_hangul_runs_keep_digits_with_overlay():
     assert "키프레임" in overlay_text
 
 
+def test_wide_title_split_uses_vertical_stack():
+    runs = _mod._split_mixed_hangul_runs("SCAIL-2 캐릭터 교체 모션 트랜스퍼", [40, 60, 340, 720])
+    assert [run["text"] for run in runs] == ["SCAIL-2", "캐릭터 교체 모션 트랜스퍼"]
+    assert runs[0]["bbox"][0] < runs[1]["bbox"][0]
+    assert runs[0]["bbox"][1] == runs[1]["bbox"][1]
+
+
 _MIXED = json.dumps([
     {"bbox": [100, 100, 900, 220], "text": "LTX2.3 두두등장!", "desc": "title"},
     {"bbox": [100, 235, 360, 285], "text": "LTX2.3", "desc": "model label"},
