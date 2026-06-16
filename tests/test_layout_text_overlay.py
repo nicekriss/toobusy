@@ -56,6 +56,7 @@ def test_seed_only_text_elements_and_normalize():
     assert abs(title["w"] - 0.504) < 1e-6 and abs(title["h"] - 0.114) < 1e-6
     # fontSize is a fraction of image height (~0.8 * box height) so the seed fills the box.
     assert abs(title["fontSize"] - round(0.114 * 0.8, 4)) < 1e-6
+    assert title["fontFamily"] == "malgun"
 
 
 def test_seed_handles_garbage_json():
@@ -101,6 +102,33 @@ def test_render_with_explicit_items():
     out = _mod.render_overlay(image, overlay, "", font_scale=1.0)
     assert tuple(out.shape) == (1, 100, 100, 3)
     assert float(out[..., 0].max()) > 0.5  # red channel lit by the red text
+
+
+def test_font_family_is_forwarded_to_font_loader():
+    calls = []
+    original = _mod._font
+    try:
+        def fake_font(size, family="malgun"):
+            calls.append(family)
+            return original(size, family)
+
+        _mod._font = fake_font
+        try:
+            import torch
+            import PIL  # noqa: F401
+        except ImportError:
+            print("SKIP test_font_family_is_forwarded_to_font_loader (no torch/PIL)")
+            return
+        import json as _json
+
+        image = torch.zeros(1, 80, 160, 3)
+        overlay = _json.dumps({"items": [
+            {"text": "폰트", "x": 0.1, "y": 0.1, "w": 0.8, "h": 0.5, "fontSize": 0.2, "fontFamily": "serif"},
+        ]})
+        _mod.render_overlay(image, overlay, "", font_scale=1.0)
+        assert "serif" in calls
+    finally:
+        _mod._font = original
 
 
 if __name__ == "__main__":
