@@ -19,7 +19,6 @@ jobs:
           python -m compileall -q \
             __init__.py \
             hires_upscale_node \
-            image_to_layout_node \
             load_clip_node \
             ideogram4_t2i_node \
             ideogram_layout_builder \

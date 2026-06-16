@@ -5,35 +5,24 @@
 ## [Unreleased]
 
 ### Added
+- **`toobusy Ideogram Prompt Polish`에 이미지 분석 모드** 추가: optional `image` 입력 + 비전
+  모델(예: Gemma 4)을 연결하면, 씬 텍스트 변환 대신 **이미지 1장을 분석해 같은 Ideogram4
+  레이아웃 JSON 초안**으로 만듭니다 — 보이는 텍스트를 **원문 그대로(한글 포함)** 읽고, 의미 있는
+  요소(제목/섹션/아이콘 등)를 중복 없이 bbox와 함께 잡습니다. 이미지를 안 물리면 기존 씬
+  폴리셔 그대로(하위호환). 이미 있던 TextGenerate 이미지 입력 + Ideogram 스키마 프롬프트 +
+  JSON 추출/정형 로직을 그대로 재활용 — 새 의존성 0. 출력 `ideogram_json`을 Layout Builder의
+  `imported_json`에 물리고 `⟳ Pull from input`으로 캔버스에 올립니다.
 - `toobusy Ideogram Layout Builder`에 **`⟳ Pull from input` 버튼 + 입력 소켓 2개**(`imported_json`,
-  `image`) 추가. `Image → Ideogram Layout`의 `ideogram_json`을 `imported_json`에, 원본 이미지를
-  `image`에 연결한 뒤 버튼을 누르면 — **그 빌더에 필요한 앞단 노드만 부분 실행**(전체 큐 안 돌림)
-  하고, 결과 JSON을 **캔버스에 박스로** 올리고 원본 이미지를 **반투명 백드롭으로** 깔아줘요(박스가
-  실제 이미지 위에 정확히 겹침). 빌더를 `OUTPUT_NODE`로 만들고 실행 시 값을 프론트로 돌려주는
-  방식(`onExecuted`). 기존 수동 빌더/Import polished 기능은 0 변경. (Florence는 한 번은 실행됨 —
-  같은 이미지면 ComfyUI가 캐시.)
+  `image`) 추가. 업스트림(예: Prompt Polish 이미지 모드)의 `ideogram_json`을 `imported_json`에,
+  원본 이미지를 `image`에 연결한 뒤 버튼을 누르면 — **그 빌더에 필요한 앞단 노드만 부분 실행**
+  (전체 큐 안 돌림)하고, 결과 JSON을 **캔버스에 박스로** 올리고 원본 이미지를 **반투명 백드롭
+  으로** 깔아줘요(박스가 실제 이미지 위에 정확히 겹침). 빌더를 `OUTPUT_NODE`로 + 실행 시 값을
+  프론트로 돌려주는 방식(`onExecuted`). 기존 수동 빌더/Import polished 0 변경.
 
 ### Fixed
-- `toobusy Image → Ideogram Layout`(Unreleased): 실런타임에서 **오브젝트 박스 0개**로 나오던
-  문제 수정. 원인 = `dense_region_caption`의 `data` 출력이 **라벨 없는 맨 박스 리스트**라
-  파서가 못 읽음. 오브젝트 추출을 **`caption_to_phrase_grounding`**(캡션을 그라운딩 → bbox+라벨)
-  으로 교체하고, 파서를 맨-박스-리스트·task-token 래핑까지 흡수하게 보강. 라벨에서 **특수토큰
-  (`</s>`,`<s>`,`<pad>`) 스트립**(예: `</s>TIMIAMENT` → 정리). `medium` 드롭다운
-  (photograph/graphic_design/illustration, 기본 photograph) 추가 — 사진을 graphic_design으로
-  하드코딩하던 것 수정, photo/medium 상호배타 유지.
-
-### Added
-- **`toobusy Image → Ideogram Layout`** 신규 노드: 일반 이미지 1장을 **Florence-2로 분석**해
-  Ideogram4 structured-JSON **초안**(high_level_description + style + bbox 박힌 text/obj
-  요소)으로 변환합니다. 출력 `ideogram_json`을 기존 `Ideogram Layout Builder`의
-  `elements_json`에 물리면 **캔버스에 박스가 그려지고 그대로 수정 가능** — "자동 완성"이
-  아니라 "수정 가능한 초안 이식"이 목적입니다. Florence-2 추론은 설치된
-  `kijai/ComfyUI-Florence2`(`Florence2Run` + `FL2MODEL`)에 **위임**(모델 번들/다운로드
-  없음 → 의존성·Registry 영향 0), 미설치 시 명확한 설치 안내 에러. bbox는 픽셀/정규화
-  자동 판별 후 0~1000 `[y_min,x_min,y_max,x_max]`로 변환(공식 좌표계). 옵션:
-  `max_elements`/`include_ocr_text`/`include_color_palette`/`simplify_small_text`/
-  `caption_detail`. v1은 **Full Setup 모드**만(Composition/Style은 TODO 스캐폴드).
-  수동 빌더는 0 변경. (운영자 발주)
+- `toobusy Ideogram Layout Builder` 캔버스에서 박스 선택 후 **Delete/Backspace를 누르면 노드 전체가
+  삭제되던** 문제 수정 — 키 이벤트 전파(`stopPropagation`)를 막아, 캔버스 편집 중 Delete는
+  **선택한 박스만** 지웁니다(화살표 nudge·Esc도 동일 처리).
 
 ## [0.2.11] - 2026-06-15
 

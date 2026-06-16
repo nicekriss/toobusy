@@ -55,8 +55,7 @@ ComfyUI를 재시작하세요. 프런트엔드(JS) 변경을 받은 뒤에는 �
 | 기획 | `toobusy Storyboard Board` | ComfyUI 안에서 이미지 보드와 키프레임 마킹을 처리합니다. |
 | 기획 | `toobusy Paint Canvas` | 그래프 앞단에서 러프 페인팅과 마스크를 만들고 바로 생성 노드로 보냅니다. |
 | 텍스트 인코더 | `toobusy Load CLIP` | safetensors/`.gguf` 텍스트 인코더를 한 노드로 로드합니다. |
-| Ideogram | `toobusy Ideogram Prompt Polish` / `Layout Builder` / `Ideogram4 T2I` | 한국어 장면 → 구조화 프롬프트 → 레이아웃 → 로컬 Ideogram4 생성 흐름입니다. |
-| Ideogram | `toobusy Image → Ideogram Layout` | 이미지 1장을 Florence-2로 분석해 Ideogram4 JSON 초안을 만들고 Layout Builder 캔버스로 이식합니다. 모델은 `Florence-2-large-ft`(정밀) / `base-ft`(가벼움) 권장. |
+| Ideogram | `toobusy Ideogram Prompt Polish` / `Layout Builder` / `Ideogram4 T2I` | 한국어 장면 → 구조화 프롬프트 → 레이아웃 → 로컬 Ideogram4 생성 흐름입니다. Prompt Polish는 `image`+비전 모델(Gemma 4) 연결 시 **이미지 1장을 분석해 레이아웃 JSON 초안**도 만들고, Layout Builder의 `⟳ Pull from input`으로 캔버스에 올립니다. |
 | LTX | `toobusy LTX2.3` 3종 | LTX2.3 AV 프롬프트, 빈 latent, 샘플러 블록을 컴팩트하게 만듭니다. |
 
 노드는 두 갈래로 접혀 있습니다.
