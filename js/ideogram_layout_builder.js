@@ -905,6 +905,7 @@ function installEditor(node) {
     resolutionReadout.className = "resolution-readout";
 
     let updateCount = () => {};
+    let fitNodeToContent = () => {};
 
     function syncElements() {
         jsonWidget.value = JSON.stringify(elements, null, 2);
@@ -1026,6 +1027,7 @@ function installEditor(node) {
         resolutionReadout.textContent = `${resolution.width} x ${resolution.height}`;
         persistResolution();
         draw();
+        requestAnimationFrame(() => fitNodeToContent());
     }
 
     function point(event) {
@@ -2467,15 +2469,15 @@ function installEditor(node) {
     const originalComputeSize = node.computeSize;
     node.computeSize = function computeSize(out) {
         const size = originalComputeSize?.call(this, out) || [MIN_WIDTH, measuredHeight()];
-        return [Math.max(size[0], MIN_WIDTH), size[1]];
+        return [Math.max(size[0], MIN_WIDTH), measuredHeight()];
     };
 
     // Keep the canvas pixel buffer matched to its (fixed-height) frame.
     new ResizeObserver(applyResolution).observe(canvas.parentElement);
 
-    const ensurePreferredSize = () => {
+    fitNodeToContent = () => {
         const w = Math.max(node.size?.[0] || 0, PREFERRED_WIDTH);
-        node.setSize([w, node.computeSize()[1]]);
+        node.setSize([w, measuredHeight()]);
         node.setDirtyCanvas(true, true);
     };
 
@@ -2484,19 +2486,19 @@ function installEditor(node) {
     // content height drifts from the node height — otherwise the bottom row
     // ends up clipped by the node border.
     new ResizeObserver(() => {
-        const target = node.computeSize()[1];
-        if (Math.abs((node.size?.[1] || 0) - target) > 2) ensurePreferredSize();
+        const target = measuredHeight();
+        if (Math.abs((node.size?.[1] || 0) - target) > 2) fitNodeToContent();
     }).observe(root);
 
-    requestAnimationFrame(() => { applyResolution(); ensurePreferredSize(); });
-    setTimeout(ensurePreferredSize, 50);
+    requestAnimationFrame(() => { applyResolution(); fitNodeToContent(); });
+    setTimeout(fitNodeToContent, 50);
 
     const originalOnConfigure = node.onConfigure;
     node.onConfigure = function onConfigure() {
         const result = originalOnConfigure?.apply(this, arguments);
         requestAnimationFrame(() => {
             reloadFromWidgets();
-            ensurePreferredSize();
+            fitNodeToContent();
         });
         return result;
     };
