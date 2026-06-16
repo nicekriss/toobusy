@@ -88,42 +88,79 @@ def _grow_box(bbox):
     return [x_min, y_min, x_max, y_max]
 
 
-def _iter_regions(data):
-    """Yield (box, label) from Florence2Run's `data` output, defensively across
-    shapes: {'bboxes':[...], 'labels':[...]}, a single-item list wrapping that,
-    or a list of {'box'|'bbox':[...], 'label'|'text':str} entries."""
-    # dense_region_caption is sometimes wrapped in a one-item list per image;
-    # only unwrap when the inner dict is a {bboxes/labels} container, not a lone
-    # {box,label} entry (which the list-of-entries branch below handles).
-    if (
-        isinstance(data, list)
-        and len(data) == 1
-        and isinstance(data[0], dict)
-        and any(key in data[0] for key in ("bboxes", "labels", "quad_boxes"))
-    ):
-        data = data[0]
+_SPECIAL_TOKENS = ("</s>", "<s>", "<pad>", "<unk>")
 
-    if isinstance(data, dict) and ("bboxes" in data or "labels" in data):
+
+def _clean_text(value):
+    """Strip Florence's special tokens (</s>, <s>, <pad>, ...) that leak into
+    region labels — kijai only cleans the final caption string, not the labels."""
+    text = str(value)
+    for token in _SPECIAL_TOKENS:
+        text = text.replace(token, "")
+    return text.strip()
+
+
+def _box_extent(box):
+    """Reduce an 8-number quad polygon to an [x1,y1,x2,y2] extent; pass other
+    boxes through."""
+    if isinstance(box, (list, tuple)) and len(box) == 8:
+        xs = box[0::2]
+        ys = box[1::2]
+        return [min(xs), min(ys), max(xs), max(ys)]
+    return box
+
+
+def _is_number_box(value):
+    return (
+        isinstance(value, (list, tuple))
+        and len(value) >= 4
+        and all(isinstance(n, (int, float)) for n in value[:8])
+    )
+
+
+def _iter_regions(data):
+    """Yield (box, clean_label) from Florence2Run's `data` output, defensively
+    across the shapes different tasks produce:
+      * {'bboxes':[...], 'labels':[...]}           (caption_to_phrase_grounding)
+      * a bare list of [x1,y1,x2,y2] boxes         (dense_region_caption)
+      * [{'box'|'bbox':[...], 'label'|'text':str}] (ocr_with_region)
+      * any of the above wrapped in a one-item per-image list
+      * a dict keyed by the task token: {'<TASK>': {bboxes, labels}}"""
+    # Unwrap a one-item per-image list around a dict container or a box list.
+    if isinstance(data, list) and len(data) == 1 and isinstance(data[0], (dict, list)):
+        inner = data[0]
+        if isinstance(inner, dict) and any(k in inner for k in ("bboxes", "labels", "quad_boxes")):
+            data = inner
+        elif isinstance(inner, list):
+            data = inner  # [[box, box, ...]] -> [box, box, ...]
+
+    # Dig through a task-token-keyed wrapper: {'<DENSE_REGION_CAPTION>': {...}}.
+    if isinstance(data, dict) and not any(
+        k in data for k in ("bboxes", "labels", "quad_boxes", "box", "bbox")
+    ):
+        for value in data.values():
+            if isinstance(value, dict) and any(k in value for k in ("bboxes", "labels", "quad_boxes")):
+                data = value
+                break
+
+    if isinstance(data, dict) and any(k in data for k in ("bboxes", "labels", "quad_boxes")):
         boxes = data.get("bboxes") or data.get("quad_boxes") or []
         labels = data.get("labels") or []
         for index, box in enumerate(boxes):
-            # quad_boxes are 8-number polygons; reduce to an x/y extent.
-            if isinstance(box, (list, tuple)) and len(box) == 8:
-                xs = box[0::2]
-                ys = box[1::2]
-                box = [min(xs), min(ys), max(xs), max(ys)]
             label = labels[index] if index < len(labels) else ""
-            yield box, str(label).strip()
+            yield _box_extent(box), _clean_text(label)
         return
 
     if isinstance(data, list):
         for entry in data:
-            if not isinstance(entry, dict):
-                continue
-            box = entry.get("box") or entry.get("bbox")
-            label = entry.get("label") or entry.get("text") or ""
-            if box is not None:
-                yield box, str(label).strip()
+            if isinstance(entry, dict):
+                box = entry.get("box") or entry.get("bbox") or entry.get("quad_boxes")
+                label = entry.get("label") or entry.get("text") or ""
+                if box is not None:
+                    yield _box_extent(box), _clean_text(label)
+            elif _is_number_box(entry):
+                # Bare box from dense_region_caption (no label in this output).
+                yield _box_extent(entry), ""
 
 
 def _extract_palette(image, limit):
@@ -153,16 +190,17 @@ def _extract_palette(image, limit):
         return []
 
 
-def _florence(image, model, task, max_new_tokens=512):
+def _florence(image, model, task, text_input="", max_new_tokens=512):
     """Call Florence2Run for one task -> (caption_string, data). Re-raises a
     missing-node error with a clear install hint (the shared _call_node only
-    says the node is unavailable)."""
+    says the node is unavailable). `text_input` feeds grounding tasks like
+    caption_to_phrase_grounding (the phrases to locate)."""
     try:
         out = _call_node(
             _FLORENCE_NODE,
             image=image,
             florence2_model=model,
-            text_input="",
+            text_input=str(text_input),
             task=task,
             fill_mask=False,
             keep_model_loaded=True,
@@ -217,6 +255,13 @@ class ToobusyImageToIdeogramLayout:
                     cls.CAPTION_TASKS,
                     {"default": "more_detailed_caption"},
                 ),
+                "medium": (
+                    ["photograph", "graphic_design", "illustration"],
+                    {
+                        "default": "photograph",
+                        "tooltip": "What kind of image this is, written into style_description.medium. Photos -> photograph; thumbnails/posters -> graphic_design.",
+                    },
+                ),
                 "max_elements": ("INT", {"default": 12, "min": 1, "max": 64}),
                 "include_ocr_text": ("BOOLEAN", {"default": True, "label_on": "OCR text boxes", "label_off": "objects only"}),
                 "include_color_palette": ("BOOLEAN", {"default": True, "label_on": "extract palette", "label_off": "no palette"}),
@@ -243,6 +288,7 @@ class ToobusyImageToIdeogramLayout:
         florence2_model,
         analysis_mode="Full Setup",
         caption_detail="more_detailed_caption",
+        medium="photograph",
         max_elements=12,
         include_ocr_text=True,
         include_color_palette=True,
@@ -257,8 +303,12 @@ class ToobusyImageToIdeogramLayout:
         high_level_description = caption or "An image to lay out."
 
         elements = []
-        # Objects: dense region captions become obj elements (desc = label).
-        _, obj_data = _florence(image, florence2_model, "dense_region_caption")
+        # Objects: ground the caption's phrases to boxes. caption_to_phrase_grounding
+        # returns {bboxes, labels} (boxes WITH descriptions) — unlike
+        # dense_region_caption, whose data output is a bare box list with no labels.
+        _, obj_data = _florence(
+            image, florence2_model, "caption_to_phrase_grounding", text_input=caption
+        )
         for box, label in _iter_regions(obj_data):
             norm = _norm_box(box, width, height)
             if norm is None:
@@ -310,13 +360,15 @@ class ToobusyImageToIdeogramLayout:
                 {"type": "obj", "bbox": [250, 250, 750, 750], "desc": high_level_description}
             )
 
+        # photo vs graphic: keep the two mutually exclusive (Ideogram convention).
+        is_photo = medium == "photograph"
         style_description = {
             # v1: light, editable defaults — Florence captions don't give a
             # structured style breakdown, so the user refines these in the builder.
             "aesthetics": "draft from image analysis; refine in the builder",
             "lighting": "",
-            "photo": "",
-            "medium": "graphic_design",
+            "photo": "photograph, refine in the builder" if is_photo else "",
+            "medium": str(medium),
         }
         if palette:
             style_description["color_palette"] = palette[:STYLE_PALETTE_MAX]

@@ -122,10 +122,10 @@ def test_outputs_are_ideogram_json_plus_fields():
 
 # --- region parsing / bbox ---------------------------------------------------
 
-def test_dense_region_caption_becomes_obj_elements_in_ideogram_bbox():
+def test_caption_to_phrase_grounding_becomes_obj_elements_in_ideogram_bbox():
     payload, hld, _bg, _pal, w, h = _run({
         "more_detailed_caption": ("A bold poster with a person and a headline.", None),
-        "dense_region_caption": ("", {"bboxes": [[100, 50, 850, 480]], "labels": ["a surprised person"]}),
+        "caption_to_phrase_grounding": ("", {"bboxes": [[100, 50, 850, 480]], "labels": ["a surprised person"]}),
     })
     assert hld.startswith("A bold poster")
     elements = payload["compositional_deconstruction"]["elements"]
@@ -139,7 +139,7 @@ def test_dense_region_caption_becomes_obj_elements_in_ideogram_bbox():
 
 def test_ocr_with_region_becomes_text_elements():
     payload, *_ = _run({
-        "dense_region_caption": ("", {"bboxes": [], "labels": []}),
+        "caption_to_phrase_grounding": ("", {"bboxes": [], "labels": []}),
         "ocr_with_region": ("", {"bboxes": [[120, 520, 360, 950]], "labels": ["HEADLINE"]}),
     })
     text = [el for el in payload["compositional_deconstruction"]["elements"] if el["type"] == "text"]
@@ -150,7 +150,7 @@ def test_ocr_with_region_becomes_text_elements():
 def test_quad_boxes_are_reduced_to_extent():
     payload, *_ = _run({
         "ocr_with_region": ("", {"quad_boxes": [[120, 520, 360, 520, 360, 950, 120, 950]], "labels": ["X"]}),
-        "dense_region_caption": ("", None),
+        "caption_to_phrase_grounding": ("", None),
     })
     text = [el for el in payload["compositional_deconstruction"]["elements"] if el["type"] == "text"]
     assert text and text[0]["bbox"] == [520, 120, 950, 360]
@@ -158,7 +158,7 @@ def test_quad_boxes_are_reduced_to_extent():
 
 def test_list_of_entries_shape_is_parsed():
     payload, *_ = _run({
-        "dense_region_caption": ("", [{"bbox": [10, 10, 500, 500], "label": "thing"}]),
+        "caption_to_phrase_grounding": ("", [{"bbox": [10, 10, 500, 500], "label": "thing"}]),
     }, include_ocr_text=False)
     objs = [el for el in payload["compositional_deconstruction"]["elements"] if el["type"] == "obj"]
     assert objs and objs[0]["desc"] == "thing"
@@ -168,10 +168,38 @@ def test_normalized_ocr_coords_scale_to_thousand():
     # ocr_with_region often returns 0..1 normalized boxes.
     payload, *_ = _run({
         "ocr_with_region": ("", [{"box": [0.1, 0.2, 0.4, 0.6], "label": "T"}]),
-        "dense_region_caption": ("", None),
+        "caption_to_phrase_grounding": ("", None),
     })
     text = [el for el in payload["compositional_deconstruction"]["elements"] if el["type"] == "text"]
     assert text and text[0]["bbox"] == [200, 100, 600, 400]
+
+
+def test_bare_box_list_is_parsed_as_objects():
+    # dense_region_caption's data output is a bare list of [x1,y1,x2,y2] boxes
+    # (no labels). _iter_regions must still yield boxes.
+    regions = list(_mod._iter_regions([[10, 10, 500, 500], [0, 0, 200, 200]]))
+    assert [box for box, _ in regions] == [[10, 10, 500, 500], [0, 0, 200, 200]]
+    assert all(label == "" for _, label in regions)
+    # also the one-item-per-image wrapping: [[box, box]]
+    wrapped = list(_mod._iter_regions([[[10, 10, 500, 500]]]))
+    assert wrapped and wrapped[0][0] == [10, 10, 500, 500]
+
+
+def test_task_token_keyed_wrapper_is_parsed():
+    data = {"<CAPTION_TO_PHRASE_GROUNDING>": {"bboxes": [[1, 2, 3, 4]], "labels": ["cat"]}}
+    regions = list(_mod._iter_regions(data))
+    assert regions == [([1, 2, 3, 4], "cat")]
+
+
+def test_special_tokens_stripped_from_labels():
+    assert _mod._clean_text("</s>person<pad>") == "person"
+    assert _mod._clean_text("<s>a man</s>") == "a man"
+    payload, *_ = _run({
+        "more_detailed_caption": ("A man.", None),
+        "caption_to_phrase_grounding": ("", {"bboxes": [[0, 0, 500, 500]], "labels": ["</s>a man"]}),
+    }, include_ocr_text=False)
+    objs = payload["compositional_deconstruction"]["elements"]
+    assert objs[0]["desc"] == "a man"
 
 
 # --- options -----------------------------------------------------------------
@@ -179,7 +207,7 @@ def test_normalized_ocr_coords_scale_to_thousand():
 def test_max_elements_caps_and_keeps_largest():
     boxes = [[0, 0, 100, 100], [0, 0, 900, 900], [0, 0, 300, 300]]
     payload, *_ = _run({
-        "dense_region_caption": ("", {"bboxes": boxes, "labels": ["small", "big", "mid"]}),
+        "caption_to_phrase_grounding": ("", {"bboxes": boxes, "labels": ["small", "big", "mid"]}),
     }, max_elements=2, include_ocr_text=False)
     descs = {el["desc"] for el in payload["compositional_deconstruction"]["elements"]}
     assert descs == {"big", "mid"}  # the two largest survive
@@ -187,7 +215,7 @@ def test_max_elements_caps_and_keeps_largest():
 
 def test_simplify_small_text_drops_tiny_ocr():
     payload, *_ = _run({
-        "dense_region_caption": ("", None),
+        "caption_to_phrase_grounding": ("", None),
         "ocr_with_region": ("", {"bboxes": [[0, 0, 10, 10]], "labels": ["©"]}),
     }, simplify_small_text=True)
     assert all(el["type"] != "text" for el in payload["compositional_deconstruction"]["elements"])
@@ -197,6 +225,15 @@ def test_empty_analysis_falls_back_to_one_obj():
     payload, hld, *_ = _run({"more_detailed_caption": ("Just a scene.", None)})
     elements = payload["compositional_deconstruction"]["elements"]
     assert len(elements) == 1 and elements[0]["type"] == "obj"
+
+
+def test_medium_option_sets_style_and_photo_exclusivity():
+    photo, *_ = _run({"more_detailed_caption": ("A snowy scene.", None)}, medium="photograph")
+    assert photo["style_description"]["medium"] == "photograph"
+    assert photo["style_description"]["photo"]  # photo filled for photographs
+    graphic, *_ = _run({"more_detailed_caption": ("A thumbnail.", None)}, medium="graphic_design")
+    assert graphic["style_description"]["medium"] == "graphic_design"
+    assert graphic["style_description"]["photo"] == ""  # no photo for graphics
 
 
 # --- error path --------------------------------------------------------------

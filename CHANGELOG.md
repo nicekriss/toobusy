@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Fixed
+- `toobusy Image → Ideogram Layout`(Unreleased): 실런타임에서 **오브젝트 박스 0개**로 나오던
+  문제 수정. 원인 = `dense_region_caption`의 `data` 출력이 **라벨 없는 맨 박스 리스트**라
+  파서가 못 읽음. 오브젝트 추출을 **`caption_to_phrase_grounding`**(캡션을 그라운딩 → bbox+라벨)
+  으로 교체하고, 파서를 맨-박스-리스트·task-token 래핑까지 흡수하게 보강. 라벨에서 **특수토큰
+  (`</s>`,`<s>`,`<pad>`) 스트립**(예: `</s>TIMIAMENT` → 정리). `medium` 드롭다운
+  (photograph/graphic_design/illustration, 기본 photograph) 추가 — 사진을 graphic_design으로
+  하드코딩하던 것 수정, photo/medium 상호배타 유지.
+
 ### Added
 - **`toobusy Image → Ideogram Layout`** 신규 노드: 일반 이미지 1장을 **Florence-2로 분석**해
   Ideogram4 structured-JSON **초안**(high_level_description + style + bbox 박힌 text/obj
