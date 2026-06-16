@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [0.2.12] - 2026-06-16
+
 ### Added
 - `toobusy Ideogram Layout Builder`에 **`text_overlay_mode` 토글 + `text_json` 출력** 추가 —
   한글 반자동 파이프라인의 완결. 토글 ON이면 `ideogram_json`에서 **텍스트 요소를 빼서**(Ideogram이
