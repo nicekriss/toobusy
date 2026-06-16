@@ -132,18 +132,12 @@ def _build_desc(text, desc, role="", strict_text=False, reinforce_text=True):
 def _text_placeholder_desc(element):
     """Keep a text box's layout footprint without asking Ideogram to draw the
     actual lettering. The real glyphs are rendered later by Layout Text Overlay."""
-    role = str(element.get("role", "")).strip().lower()
-    desc = str(element.get("desc", "")).strip()
-    palette_hint = "empty graphic text area"
-    if role in {"headline", "subtitle", "body", "footer"}:
-        palette_hint = f"empty {role} area"
-    elif role in {"product label", "sign", "ui label", "logo"}:
-        palette_hint = f"blank {role} panel"
-    elif desc and desc.lower() not in PLACEHOLDER_DESCS:
-        palette_hint = f"blank area reserved for {desc}"
+    del element
     return (
-        f"{palette_hint}, preserve the layout space and background design, "
-        "clean surface, no letters, no words, no readable text"
+        "plain blank background panel, preserve this exact layout space and "
+        "composition balance, continue the surrounding design and colors, "
+        "no typography, no lettering, no symbols, no logo, no words, "
+        "no readable text, no Korean characters"
     )
 
 
@@ -403,12 +397,25 @@ class IdeogramLayoutBuilder:
                 global_palette, ["#111111", "#FFFFFF", "#D8C7A3"], limit=STYLE_PALETTE_MAX
             )
 
-        def _payload(elems):
+        def _payload(elems, suppress_text=False):
+            high_level = high_level_description.strip()
+            style = dict(style_description)
+            comp_background = background.strip()
+            if suppress_text:
+                text_policy = (
+                    "Generate artwork only. Leave all reserved panels blank. "
+                    "Do not render visible text, typography, letters, words, "
+                    "logos, symbols, subtitles, captions, or Korean characters; "
+                    "real text will be added later by a separate overlay."
+                )
+                high_level = f"{high_level} {text_policy}".strip()
+                style["aesthetics"] = f"{style.get('aesthetics', '').strip()} {text_policy}".strip()
+                comp_background = f"{comp_background} {text_policy}".strip()
             return {
-                "high_level_description": high_level_description.strip(),
-                "style_description": style_description,
+                "high_level_description": high_level,
+                "style_description": style,
                 "compositional_deconstruction": {
-                    "background": background.strip(),
+                    "background": comp_background,
                     "elements": elems,
                 },
             }
@@ -441,7 +448,7 @@ class IdeogramLayoutBuilder:
         else:
             gen_elements = elements
 
-        ideogram_json = json.dumps(_payload(gen_elements), ensure_ascii=False, indent=2)
+        ideogram_json = json.dumps(_payload(gen_elements, suppress_text=text_overlay_mode), ensure_ascii=False, indent=2)
         text_json = json.dumps(_payload(text_elements), ensure_ascii=False, indent=2)
         result = (ideogram_json, int(width), int(height), text_json)
 
