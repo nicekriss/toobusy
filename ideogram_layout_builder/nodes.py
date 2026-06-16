@@ -129,6 +129,22 @@ def _build_desc(text, desc, role="", strict_text=False, reinforce_text=True):
     return ". ".join(clauses)
 
 
+def _has_hangul(value):
+    for char in str(value or ""):
+        code = ord(char)
+        if 0xAC00 <= code <= 0xD7A3 or 0x1100 <= code <= 0x11FF or 0x3130 <= code <= 0x318F:
+            return True
+    return False
+
+
+def _is_split_overlay_text(element):
+    return bool(element.get("_split_for_overlay"))
+
+
+def _public_element(element):
+    return {key: value for key, value in element.items() if not key.startswith("_")}
+
+
 def _text_placeholder_desc(element):
     """Keep a text box's layout footprint without asking Ideogram to draw the
     actual lettering. The real glyphs are rendered later by Layout Text Overlay."""
@@ -362,6 +378,7 @@ class IdeogramLayoutBuilder:
             element = {"type": element_type, "bbox": ideogram_bbox}
             if element_type == "text":
                 element["text"] = text
+                element["_split_for_overlay"] = _has_hangul(text)
             element["desc"] = _build_desc(
                 text, desc, role=role, strict_text=strict_text, reinforce_text=reinforce_text
             )
@@ -416,19 +433,21 @@ class IdeogramLayoutBuilder:
                 "style_description": style,
                 "compositional_deconstruction": {
                     "background": comp_background,
-                    "elements": elems,
+                    "elements": [_public_element(el) for el in elems],
                 },
             }
 
-        # Korean overlay mode: split text out so Ideogram generates the art
-        # WITHOUT trying to render the (garbled) text, and the text-only payload
-        # feeds Layout Text Overlay for crisp glyphs. Off = text stays in the
-        # generation payload (fine for English).
-        text_elements = [el for el in elements if el.get("type") == "text"]
+        # Korean overlay mode: split Hangul text out so Ideogram generates the
+        # art WITHOUT trying to render the (garbled) Korean glyphs. Non-Hangul
+        # text stays in the generation payload so labels like "LTX2.3" remain.
+        text_elements = [
+            el for el in elements
+            if _is_split_overlay_text(el)
+        ]
         if text_overlay_mode:
             gen_elements = []
             for el in elements:
-                if el.get("type") != "text":
+                if not _is_split_overlay_text(el):
                     gen_elements.append(el)
                     continue
                 placeholder = {

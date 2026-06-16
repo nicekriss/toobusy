@@ -69,8 +69,14 @@ def test_text_json_output_exposed():
     assert required["text_overlay_mode"][0] == "BOOLEAN"
 
 
+def test_hangul_detection_marks_overlay_split_only():
+    assert _mod._has_hangul("제목") is True
+    assert _mod._has_hangul("LTX2.3") is False
+
+
 _MIXED = json.dumps([
     {"bbox": [100, 100, 900, 220], "text": "제목", "desc": "title"},
+    {"bbox": [100, 235, 360, 285], "text": "LTX2.3", "desc": "model label"},
     {"bbox": [100, 300, 900, 700], "desc": "a photo"},
 ])
 
@@ -79,18 +85,22 @@ def test_text_overlay_mode_splits_text_out():
     out = _build(elements_json=_MIXED, text_overlay_mode=True)
     gen = json.loads(out[0])["compositional_deconstruction"]["elements"]
     text = json.loads(out[3])["compositional_deconstruction"]["elements"]
-    assert "text" not in [e["type"] for e in gen]  # generation art has no literal text
-    assert len(gen) == 2  # text bbox stays as a placeholder, so structure remains
+    assert len(gen) == 3  # Hangul bbox stays as a placeholder, non-Hangul text remains
     placeholder = gen[0]
     assert placeholder["type"] == "obj"
     assert placeholder["bbox"] == [100, 100, 220, 900]
+    assert gen[1]["type"] == "text"
+    assert gen[1]["text"] == "LTX2.3"
     assert "no readable text" in placeholder["desc"]
     assert "no Korean characters" in placeholder["desc"]
     generation_payload = out[0]
     assert "제목" not in generation_payload
+    assert "LTX2.3" in generation_payload
+    assert "_split_for_overlay" not in generation_payload
+    assert "_split_for_overlay" not in out[3]
     assert "title" not in placeholder["desc"].lower()
     assert "Generate artwork only" in generation_payload
-    assert text and all(e["type"] == "text" for e in text)  # text_json is text-only
+    assert [e["text"] for e in text] == ["제목"]  # text_json is Hangul-overlay only
 
 
 def test_text_overlay_off_keeps_text_in_generation():
