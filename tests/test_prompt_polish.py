@@ -76,6 +76,8 @@ def test_image_mode_prompt():
     assert "Analyze the provided IMAGE" in text
     assert "Korean stays Korean" in text
     assert "LTX2.3 두두등장!" in text
+    assert "full-body vs upper-body" in text
+    assert "visible feet" in text
     assert "never duplicate or near-identical boxes" in text
     assert SCHEMA_MARK in text  # same schema in both modes
 
@@ -187,6 +189,30 @@ def test_wide_title_split_uses_vertical_stack():
     assert [element["text"] for element in elements] == ["SCAIL-2", "캐릭터 교체 모션 트랜스퍼"]
     assert elements[0]["bbox"][0] < elements[1]["bbox"][0]
     assert elements[0]["bbox"][1] == elements[1]["bbox"][1]
+
+
+def test_full_body_figure_desc_is_enriched():
+    payload = {
+        "compositional_deconstruction": {
+            "elements": [
+                {
+                    "type": "obj",
+                    "bbox": [100, 760, 940, 980],
+                    "desc": "Male anime character in a black leather jacket",
+                },
+                {
+                    "type": "obj",
+                    "bbox": [440, 20, 890, 260],
+                    "desc": "Source panel showing video frames",
+                },
+            ]
+        }
+    }
+    out = _mod._enrich_element_descriptions(payload)
+    elements = out["compositional_deconstruction"]["elements"]
+    assert "Full-body head-to-toe" in elements[0]["desc"]
+    assert "visible legs and feet" in elements[0]["desc"]
+    assert "small UI cards" in elements[1]["desc"]
 
 
 if __name__ == "__main__":
