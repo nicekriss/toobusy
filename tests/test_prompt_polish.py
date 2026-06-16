@@ -75,6 +75,7 @@ def test_image_mode_prompt():
     text = _prompt(image_present=True)
     assert "Analyze the provided IMAGE" in text
     assert "Korean stays Korean" in text
+    assert "LTX2.3 두두등장!" in text
     assert "never duplicate or near-identical boxes" in text
     assert SCHEMA_MARK in text  # same schema in both modes
 
@@ -138,6 +139,34 @@ def test_enrich_palette_fills_empty_from_image():
     elements = out["compositional_deconstruction"]["elements"]
     assert elements[0]["color_palette"][0] == "#F01010"  # red region (255->0xF0)
     assert elements[1]["color_palette"] == ["#ABCDEF"]   # existing palette untouched
+
+
+def test_mixed_latin_hangul_text_is_split_before_builder():
+    payload = {
+        "compositional_deconstruction": {
+            "elements": [
+                {
+                    "type": "text",
+                    "bbox": [65, 248, 179, 752],
+                    "desc": "Main title announcement",
+                    "text": "LTX2.3 두두등장!",
+                },
+                {
+                    "type": "obj",
+                    "bbox": [385, 37, 665, 337],
+                    "desc": "First Frame panel",
+                    "text": "First Frame (시작 프레임)",
+                },
+            ]
+        }
+    }
+    out = _mod._split_mixed_text_elements(payload)
+    elements = out["compositional_deconstruction"]["elements"]
+    texts = [element.get("text") for element in elements]
+    assert texts == ["LTX2.3", "두두등장!", "First Frame", "시작 프레임"]
+    assert all(element["type"] == "text" for element in elements)
+    assert elements[0]["bbox"][1] < elements[1]["bbox"][1]
+    assert elements[2]["bbox"][1] < elements[3]["bbox"][1]
 
 
 if __name__ == "__main__":
