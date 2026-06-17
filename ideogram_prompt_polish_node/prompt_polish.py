@@ -16,6 +16,13 @@ STYLE_EMPHASIS = {
 
 TOP_KEYS = ("high_level_description", "style_description", "compositional_deconstruction")
 MIN_BOX_SIZE = 40
+EDIT_COMMAND_RE = re.compile(
+    r"\b("
+    r"replac(?:e|es|ed|ing)|chang(?:e|es|ed|ing)|convert(?:s|ed|ing)?|"
+    r"transform(?:s|ed|ing)?|turn(?:s|ed|ing)?|swap(?:s|ped|ping)?"
+    r")\b",
+    re.IGNORECASE,
+)
 
 
 def _extract_json(text):
@@ -98,6 +105,48 @@ def _ensure_shape(data, scene, fill_missing):
         if key not in ordered:
             ordered[key] = value
     return ordered
+
+
+def _strip_edit_command_language(text):
+    """Keep transform outputs as final-scene descriptions, not edit commands."""
+    value = str(text or "").strip()
+    if not value:
+        return value
+    parts = re.split(r"(?<=[.!?])\s+|(?:\s+[-–—]\s+)", value)
+    kept = [part.strip() for part in parts if part.strip() and not EDIT_COMMAND_RE.search(part)]
+    if kept:
+        return " ".join(kept)
+
+    value = re.sub(
+        r"\b(replac(?:e|es|ed|ing)|chang(?:e|es|ed|ing)|convert(?:s|ed|ing)?|transform(?:s|ed|ing)?|turn(?:s|ed|ing)?|swap(?:s|ped|ping)?)\b\s+",
+        "",
+        value,
+        flags=re.IGNORECASE,
+    )
+    value = re.sub(r"\b(with|into|to)\b\s+", "", value, count=1, flags=re.IGNORECASE)
+    return value.strip(" .;:-") or "Final transformed scene element"
+
+
+def _remove_edit_command_language(payload):
+    """Remove wording like 'replacing the SUV' from final Ideogram JSON."""
+    if not isinstance(payload, dict):
+        return payload
+
+    for key in ("high_level_description",):
+        if isinstance(payload.get(key), str):
+            payload[key] = _strip_edit_command_language(payload[key])
+
+    comp = payload.get("compositional_deconstruction")
+    elements = comp.get("elements") if isinstance(comp, dict) else None
+    if isinstance(elements, list):
+        for element in elements:
+            if not isinstance(element, dict):
+                continue
+            if isinstance(element.get("desc"), str):
+                element["desc"] = _strip_edit_command_language(element["desc"])
+            if isinstance(element.get("text"), str) and EDIT_COMMAND_RE.search(element["text"]):
+                element["text"] = _strip_edit_command_language(element["text"])
+    return payload
 
 
 def _clamp_int(value, minimum=0, maximum=1000):
@@ -386,7 +435,10 @@ def _build_prompt(
             lines.insert(1, "Keep the image's visual hierarchy, panel structure, text placement, approximate bboxes, color relationships, and composition.")
             lines.insert(2, "Do NOT preserve the original subject, team, country, names, stats, or visible text when the SCENE asks to change them.")
             lines.insert(3, "Rewrite all subject descriptions and text fields according to the SCENE, while keeping the source image's layout.")
-            lines.insert(4, "Example: if the image is a foreign athlete card and SCENE asks for Korean athlete content, output a Korean athlete card layout with Korean-player names, team labels, stats, and captions.")
+            lines.insert(4, "Output the FINAL transformed scene only. Never describe the edit operation.")
+            lines.insert(5, "Do not write phrases like \"replacing the black SUV\", \"changed to\", \"converted into\", or \"turning the cars into planes\" in any desc or text field.")
+            lines.insert(6, "Bad desc: \"replacing the black SUV with an airplane\". Good desc: \"sleek white airplane parked in the parking-lot space, matching the original vehicle position\".")
+            lines.insert(7, "Example: if the image is a foreign athlete card and SCENE asks for Korean athlete content, output a Korean athlete card layout with Korean-player names, team labels, stats, and captions.")
             lines.append("The SCENE text below is the transformation instruction and content source; the IMAGE provides layout only.")
         else:
             lines.insert(1, "Report what is ACTUALLY in the image — its text, objects, and composition.")
@@ -596,6 +648,8 @@ class ToobusyIdeogramPromptPolish:
         payload = _ensure_shape(data, scene, fill_missing_fields)
         payload = _split_mixed_text_elements(payload)
         payload = _enrich_element_descriptions(payload)
+        if image is not None and image_instruction_mode == "Transform by scene text":
+            payload = _remove_edit_command_language(payload)
         if image is not None:
             # Vision LLMs often leave palettes empty -> murky generations. Backfill
             # from the real image pixels (whole image + per-element regions).
