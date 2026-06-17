@@ -571,16 +571,25 @@ function installEditor(node) {
                 display: flex;
                 gap: 2px;
                 align-items: center;
+                position: relative;
             }
             .toobusy-ideogram .layer-row.dragging {
                 opacity: 0.55;
             }
-            .toobusy-ideogram .layer-row.drop-before {
-                box-shadow: inset 0 2px 0 #7fc8ff;
+            .toobusy-ideogram .layer-row.drop-before::before,
+            .toobusy-ideogram .layer-row.drop-after::after {
+                content: "";
+                position: absolute;
+                left: 0;
+                right: 0;
+                height: 2px;
+                border-radius: 999px;
+                background: #7fc8ff;
+                box-shadow: 0 0 6px #7fc8ffaa;
+                pointer-events: none;
             }
-            .toobusy-ideogram .layer-row.drop-after {
-                box-shadow: inset 0 -2px 0 #7fc8ff;
-            }
+            .toobusy-ideogram .layer-row.drop-before::before { top: -3px; }
+            .toobusy-ideogram .layer-row.drop-after::after { bottom: -3px; }
             .toobusy-ideogram .layer-row.active .layer-name {
                 border-color: #6f93c8;
                 background: #1d2733;
@@ -608,6 +617,12 @@ function installEditor(node) {
                 line-height: 1;
             }
             .toobusy-ideogram .layer-btn:disabled { opacity: 0.35; cursor: default; }
+            .toobusy-ideogram .layer-help {
+                margin-top: 4px;
+                color: #7f8c9a;
+                font-size: 10px;
+                line-height: 1.35;
+            }
             .toobusy-ideogram .canvas-frame {
                 width: 100%;
                 height: 620px;
@@ -1536,7 +1551,10 @@ function installEditor(node) {
     layerTitle.textContent = "Layers";
     const layerList = document.createElement("div");
     layerList.className = "layer-list";
-    sideInfo.append(sideTitle, countReadout, bboxReadout, layerTitle, layerList);
+    const layerHelp = document.createElement("div");
+    layerHelp.className = "layer-help";
+    layerHelp.textContent = "Drag names to reorder. Ctrl+Shift+↑/↓ sends selected front/back.";
+    sideInfo.append(sideTitle, countReadout, bboxReadout, layerTitle, layerList, layerHelp);
     updateCount = () => {
         countReadout.textContent = `${elements.length} box(es)`;
     };
