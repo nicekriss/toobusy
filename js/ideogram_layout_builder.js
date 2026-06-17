@@ -572,6 +572,15 @@ function installEditor(node) {
                 gap: 2px;
                 align-items: center;
             }
+            .toobusy-ideogram .layer-row.dragging {
+                opacity: 0.55;
+            }
+            .toobusy-ideogram .layer-row.drop-before {
+                box-shadow: inset 0 2px 0 #7fc8ff;
+            }
+            .toobusy-ideogram .layer-row.drop-after {
+                box-shadow: inset 0 -2px 0 #7fc8ff;
+            }
             .toobusy-ideogram .layer-row.active .layer-name {
                 border-color: #6f93c8;
                 background: #1d2733;
@@ -586,7 +595,10 @@ function installEditor(node) {
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
+                cursor: grab;
+                user-select: none;
             }
+            .toobusy-ideogram .layer-name:active { cursor: grabbing; }
             .toobusy-ideogram .layer-btn {
                 flex: 0 0 auto;
                 width: 22px;
@@ -1546,14 +1558,63 @@ function installEditor(node) {
             const el = elements[i];
             const row = document.createElement("div");
             row.className = "layer-row" + (i === selectedIndex ? " active" : "");
+            row.dataset.index = String(i);
 
             const isText = !!(el.text && el.text.trim());
             const label = `${isText ? "T" : "□"} ${el.text || el.desc || `Element ${i + 1}`}`;
-            const name = makeButton(label, "Select this box", () => {
+            const name = document.createElement("div");
+            name.className = "layer-name";
+            name.textContent = label;
+            name.title = "Select this box. Drag up/down to reorder layers.";
+            name.tabIndex = 0;
+            name.draggable = true;
+            name.addEventListener("pointerdown", (event) => {
+                event.stopPropagation();
+            });
+            name.addEventListener("click", (event) => {
+                event.preventDefault();
+                event.stopPropagation();
                 selectedIndex = i;
                 renderElementPanel();
             });
-            name.classList.add("layer-name");
+            name.addEventListener("keydown", (event) => {
+                if (event.key !== "Enter" && event.key !== " ") return;
+                event.preventDefault();
+                event.stopPropagation();
+                selectedIndex = i;
+                renderElementPanel();
+            });
+            name.addEventListener("dragstart", (event) => {
+                selectedIndex = i;
+                event.dataTransfer.effectAllowed = "move";
+                event.dataTransfer.setData("text/plain", String(i));
+                row.classList.add("dragging");
+            });
+            name.addEventListener("dragend", () => {
+                clearLayerDropMarkers();
+            });
+            row.addEventListener("dragover", (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const rect = row.getBoundingClientRect();
+                const insertAfter = event.clientY > rect.top + rect.height / 2;
+                clearLayerDropMarkers(row);
+                row.classList.toggle("drop-before", !insertAfter);
+                row.classList.toggle("drop-after", insertAfter);
+                event.dataTransfer.dropEffect = "move";
+            });
+            row.addEventListener("dragleave", () => {
+                row.classList.remove("drop-before", "drop-after");
+            });
+            row.addEventListener("drop", (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const from = Number(event.dataTransfer.getData("text/plain"));
+                const rect = row.getBoundingClientRect();
+                const insertAfter = event.clientY > rect.top + rect.height / 2;
+                reorderLayerByVisualDrop(from, i, insertAfter);
+                clearLayerDropMarkers();
+            });
 
             const raise = makeButton("▲", "Bring forward", () => raiseElement(i));
             const lower = makeButton("▼", "Send backward", () => lowerElement(i));
@@ -1571,6 +1632,13 @@ function installEditor(node) {
     }
 
     // z-order helpers: swapping array position changes draw/hit-test stacking.
+    function clearLayerDropMarkers(except = null) {
+        layerList?.querySelectorAll(".layer-row").forEach((row) => {
+            if (row === except) return;
+            row.classList.remove("dragging", "drop-before", "drop-after");
+        });
+    }
+
     function swapElements(a, b) {
         if (a < 0 || b < 0 || a >= elements.length || b >= elements.length) return;
         [elements[a], elements[b]] = [elements[b], elements[a]];
@@ -1582,6 +1650,41 @@ function installEditor(node) {
     }
     function raiseElement(i) { swapElements(i, i + 1); }
     function lowerElement(i) { swapElements(i, i - 1); }
+    function moveElement(from, to) {
+        if (from < 0 || from >= elements.length || to < 0 || to >= elements.length || from === to) return;
+        const item = elements[from];
+        elements.splice(from, 1);
+        elements.splice(to, 0, item);
+        selectedIndex = elements.indexOf(item);
+        syncElements();
+        renderElementPanel();
+        draw();
+    }
+    function bringElementToFront(i) { moveElement(i, elements.length - 1); }
+    function sendElementToBack(i) { moveElement(i, 0); }
+    function reorderLayerByVisualDrop(fromIndex, targetIndex, insertAfter) {
+        if (fromIndex < 0 || targetIndex < 0 || fromIndex >= elements.length || targetIndex >= elements.length) return;
+        if (fromIndex === targetIndex) return;
+
+        const original = [...elements];
+        const selectedItem = original[fromIndex];
+        const visual = original.map((_, index) => index).reverse();
+        const fromPos = visual.indexOf(fromIndex);
+        const targetPos = visual.indexOf(targetIndex);
+        if (fromPos < 0 || targetPos < 0) return;
+
+        visual.splice(fromPos, 1);
+        let insertPos = targetPos + (insertAfter ? 1 : 0);
+        if (fromPos < targetPos) insertPos -= 1;
+        insertPos = Math.max(0, Math.min(visual.length, insertPos));
+        visual.splice(insertPos, 0, fromIndex);
+
+        elements = visual.map((index) => original[index]).reverse();
+        selectedIndex = elements.indexOf(selectedItem);
+        syncElements();
+        renderElementPanel();
+        draw();
+    }
 
     // Nudge the selected box by (dx, dy), keeping its size and staying in bounds.
     function nudgeSelected(dx, dy) {
@@ -2407,7 +2510,8 @@ function installEditor(node) {
     });
 
     // Keyboard shortcuts while the canvas is focused: Delete/Backspace removes
-    // the selected box, arrows nudge it (Shift = larger step), Esc deselects.
+    // the selected box, Ctrl+Shift+Up/Down sends it to front/back, arrows nudge
+    // it (Shift = larger step), Esc deselects.
     canvas.addEventListener("keydown", (event) => {
         if (event.key === "Delete" || event.key === "Backspace") {
             // Always stop here so ComfyUI's global Delete (which removes the
@@ -2425,6 +2529,14 @@ function installEditor(node) {
             event.stopPropagation();
             selectedIndex = -1;
             renderElementPanel();
+            return;
+        }
+        if (event.ctrlKey && event.shiftKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+            if (selectedIndex < 0) return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (event.key === "ArrowUp") bringElementToFront(selectedIndex);
+            else sendElementToBack(selectedIndex);
             return;
         }
         const step = event.shiftKey ? 20 : 5;
