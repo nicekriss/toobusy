@@ -89,8 +89,38 @@ def test_image_transform_mode_prompt():
     assert "Rewrite all subject descriptions and text fields according to the SCENE" in text
     assert "IMAGE provides layout only" in text
     assert "Report what is ACTUALLY in the image" not in text
+    assert "Output the FINAL transformed scene only" in text
+    assert "replacing the black SUV" in text
     assert "Korean athlete content" in text
     assert SCHEMA_MARK in text
+
+
+def test_transform_mode_strips_edit_command_language():
+    payload = {
+        "high_level_description": "Parking lot scene, changing cars into aircraft.",
+        "compositional_deconstruction": {
+            "elements": [
+                {
+                    "type": "obj",
+                    "bbox": [100, 100, 400, 500],
+                    "desc": "Replacing the black SUV with a sleek white airplane. Metallic wings fill the original parking space.",
+                },
+                {
+                    "type": "text",
+                    "bbox": [40, 40, 100, 500],
+                    "desc": "Changed label for the new scene",
+                    "text": "Replace cars with planes",
+                },
+            ],
+        },
+    }
+    out = _mod._remove_edit_command_language(payload)
+    assert "changing" not in out["high_level_description"].lower()
+    elements = out["compositional_deconstruction"]["elements"]
+    assert "replacing" not in elements[0]["desc"].lower()
+    assert "metallic wings" in elements[0]["desc"].lower()
+    assert "changed" not in elements[1]["desc"].lower()
+    assert "replace" not in elements[1]["text"].lower()
 
 
 def test_image_input_exposed_and_optional():
