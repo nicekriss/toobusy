@@ -49,7 +49,7 @@ _install_stubs()
 _mod = _load()
 
 
-def _prompt(image_present):
+def _prompt(image_present, image_instruction_mode="Analyze image literally"):
     return _mod._build_prompt(
         scene="눈 오는 날 아이들",
         style_mode="Literal",
@@ -58,6 +58,7 @@ def _prompt(image_present):
         fill_missing=True,
         existing_layout_json="",
         image_present=image_present,
+        image_instruction_mode=image_instruction_mode,
     )
 
 
@@ -82,9 +83,21 @@ def test_image_mode_prompt():
     assert SCHEMA_MARK in text  # same schema in both modes
 
 
+def test_image_transform_mode_prompt():
+    text = _prompt(image_present=True, image_instruction_mode="Transform by scene text")
+    assert "layout/composition reference" in text
+    assert "Rewrite all subject descriptions and text fields according to the SCENE" in text
+    assert "IMAGE provides layout only" in text
+    assert "Report what is ACTUALLY in the image" not in text
+    assert "Korean athlete content" in text
+    assert SCHEMA_MARK in text
+
+
 def test_image_input_exposed_and_optional():
     optional = _mod.ToobusyIdeogramPromptPolish.INPUT_TYPES()["optional"]
     assert optional["image"][0] == "IMAGE"
+    assert optional["image_instruction_mode"][0] == _mod.IMAGE_INSTRUCTION_MODES
+    assert optional["image_instruction_mode"][1]["default"] == "Analyze image literally"
     # image is optional, not required.
     assert "image" not in _mod.ToobusyIdeogramPromptPolish.INPUT_TYPES()["required"]
 
@@ -111,9 +124,10 @@ def test_image_is_forwarded_to_generator():
     out_json, _raw = _mod.ToobusyIdeogramPromptPolish().polish(
         clip="clip", scene="hint", style_mode="Literal", language="Auto",
         preserve_intent=True, fill_missing_fields=True, seed=1, image=sentinel,
+        image_instruction_mode="Transform by scene text",
     )
     assert captured["image"] is sentinel
-    assert "Analyze the provided IMAGE" in captured["prompt"]
+    assert "layout/composition reference" in captured["prompt"]
     assert "from image" in out_json
 
 
