@@ -4,6 +4,32 @@
 
 ## [Unreleased]
 
+## [0.2.13] - 2026-06-17
+
+### Added
+- `toobusy Ideogram Prompt Polish`에 **이미지 지시 모드** 드롭다운 추가:
+  기본 `Analyze image literally`는 기존처럼 연결된 이미지를 있는 그대로 분석하고,
+  새 `Transform by scene text`는 **이미지를 레이아웃/구도 참고로만 사용**하면서
+  `Scene` 입력의 지시에 따라 주제·텍스트·선수/팀/국가 같은 내용을 다시 씁니다.
+  예: 외국 선수 카드 이미지를 참고해 같은 카드 레이아웃을 유지하되 한국 선수 카드
+  내용으로 변환하는 JSON 초안을 만들 수 있습니다.
+
+### Changed
+- `toobusy Ideogram Layout Builder` 레이어 UX 개선:
+  선택한 박스를 `Ctrl+Shift+↑`로 최상단, `Ctrl+Shift+↓`로 최하단으로 보낼 수 있습니다.
+  오른쪽 `Layers` 목록에서는 레이어 이름을 드래그해 원하는 위치로 직접 재정렬할 수 있고,
+  드래그 중에는 레이어 사이에 삽입선이 표시됩니다. 목록 하단에는 이 조작을 알려주는
+  작고 얌전한 도움말을 추가했습니다.
+- Ideogram4 대표 예제 워크플로우 `docs/workflows/korean_scene_to_ideogram4.json`을
+  최신 운영자 export로 교체했습니다. README 링크 경로는 그대로 유지됩니다.
+
+### Fixed
+- Prompt Polish 이미지 분석 출력 안정화:
+  텍스트 생성 길이를 제한하고, 레이아웃 출력이 과하게 길어지지 않도록 압축했으며,
+  LLM 호출 동작을 복원했습니다.
+- Layout Builder의 한글 오버레이 split 경로에서 bbox 구조가 더 안정적으로 유지되도록
+  후속 hotfix를 반영했습니다.
+
 ## [0.2.12] - 2026-06-16
 
 ### Added
