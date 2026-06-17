@@ -4,6 +4,7 @@ import re
 
 STYLE_MODES = ["Literal", "Cinematic", "Product", "Character", "Poster"]
 LANGUAGES = ["Auto", "Korean", "English"]
+IMAGE_INSTRUCTION_MODES = ["Analyze image literally", "Transform by scene text"]
 
 STYLE_EMPHASIS = {
     "Literal": "translate faithfully with minimal embellishment",
@@ -351,15 +352,24 @@ _SCHEMA_LINES = [
 ]
 
 
-def _build_prompt(scene, style_mode, language, preserve_intent, fill_missing, existing_layout_json, image_present=False):
+def _build_prompt(
+    scene,
+    style_mode,
+    language,
+    preserve_intent,
+    fill_missing,
+    existing_layout_json,
+    image_present=False,
+    image_instruction_mode="Analyze image literally",
+):
     emphasis = STYLE_EMPHASIS.get(style_mode, STYLE_EMPHASIS["Literal"])
+    transform_image = image_present and image_instruction_mode == "Transform by scene text"
 
     if image_present:
-        # Vision mode: describe what is actually in the connected image.
+        # Vision mode: either describe the source image literally or keep its
+        # layout while rewriting content according to the user's scene text.
         lines = [
             "Analyze the provided IMAGE and describe its layout as an Ideogram 4 structured prompt.",
-            "Report what is ACTUALLY in the image — its text, objects, and composition.",
-            "Read all visible text EXACTLY, keeping its original language (Korean stays Korean) in the \"text\" field; write \"desc\" fields in English.",
             "Use type \"text\" for readable text (include the exact string), type \"obj\" for everything else (people, icons, panels, products, shapes).",
             "For every text element, describe visible styling in desc: color, weight, outline/glow, roughness, and orientation such as tilted, slanted, skewed, perspective, arched, stacked, or straight.",
             "If a text block is visually tilted or distorted, mention that in desc; bbox stays axis-aligned, so desc must carry the tilt/perspective cue.",
@@ -371,8 +381,18 @@ def _build_prompt(scene, style_mode, language, preserve_intent, fill_missing, ex
             "Estimate each bbox from the image. Output ONE element per distinct thing — never duplicate or near-identical boxes for the same item.",
             "Capture the meaningful layout pieces (title, sections, key icons/blocks), about 5-15 elements; skip tiny incidental details.",
         ]
-        if scene and scene.strip():
-            lines.append("The SCENE text below is an optional hint about the user's intent/focus; the IMAGE is the source of truth.")
+        if transform_image:
+            lines[0] = "Use the provided IMAGE as a layout/composition reference and rewrite the content as an Ideogram 4 structured prompt."
+            lines.insert(1, "Keep the image's visual hierarchy, panel structure, text placement, approximate bboxes, color relationships, and composition.")
+            lines.insert(2, "Do NOT preserve the original subject, team, country, names, stats, or visible text when the SCENE asks to change them.")
+            lines.insert(3, "Rewrite all subject descriptions and text fields according to the SCENE, while keeping the source image's layout.")
+            lines.insert(4, "Example: if the image is a foreign athlete card and SCENE asks for Korean athlete content, output a Korean athlete card layout with Korean-player names, team labels, stats, and captions.")
+            lines.append("The SCENE text below is the transformation instruction and content source; the IMAGE provides layout only.")
+        else:
+            lines.insert(1, "Report what is ACTUALLY in the image — its text, objects, and composition.")
+            lines.insert(2, "Read all visible text EXACTLY, keeping its original language (Korean stays Korean) in the \"text\" field; write \"desc\" fields in English.")
+            if scene and scene.strip():
+                lines.append("The SCENE text below is an optional hint about the user's intent/focus; the IMAGE is the source of truth.")
     else:
         lines = [
             "Convert the user's scene description into an Ideogram 4 friendly English structured prompt.",
@@ -391,7 +411,10 @@ def _build_prompt(scene, style_mode, language, preserve_intent, fill_missing, ex
             )
 
     if fill_missing:
-        hint = "consistent with the image" if image_present else "consistent with the scene"
+        if transform_image:
+            hint = "consistent with the scene transformation while preserving the image layout"
+        else:
+            hint = "consistent with the image" if image_present else "consistent with the scene"
         lines.append(f"Fill any missing fields with sensible defaults {hint}.")
 
     lines += ["", *_SCHEMA_LINES, "", "SCENE:", scene.strip()]
@@ -512,6 +535,13 @@ class ToobusyIdeogramPromptPolish:
                         "tooltip": "Optional. Connect an image and a vision-capable text model (e.g. Gemma 4) to analyze the image INTO an Ideogram layout draft (reads text incl. Korean, finds elements + bboxes). Without an image this stays a scene-text polisher. Wire ideogram_json into the Layout Builder's imported_json, then press Pull.",
                     },
                 ),
+                "image_instruction_mode": (
+                    IMAGE_INSTRUCTION_MODES,
+                    {
+                        "default": "Analyze image literally",
+                        "tooltip": "With an image connected: literal mode transcribes the source image; transform mode keeps the layout/bboxes but rewrites subject and text according to the Scene field.",
+                    },
+                ),
             },
         }
 
@@ -531,6 +561,7 @@ class ToobusyIdeogramPromptPolish:
         seed,
         existing_layout_json="",
         image=None,
+        image_instruction_mode="Analyze image literally",
     ):
         # Imported lazily so this module stays import-light (json/re only) and
         # unit-testable outside ComfyUI; reuses the same TextGenerate call the
@@ -541,6 +572,7 @@ class ToobusyIdeogramPromptPolish:
         prompt = _build_prompt(
             scene, style_mode, language, preserve_intent, fill_missing_fields,
             existing_layout_json, image_present=image is not None,
+            image_instruction_mode=image_instruction_mode,
         )
 
         try:
