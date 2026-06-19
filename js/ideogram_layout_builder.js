@@ -220,6 +220,48 @@ function normalizeElement(element = {}, index = 0) {
     };
 }
 
+// ----- UI box colors — a system SEPARATE from element.color_palette (which is
+// a generation hint for Ideogram). These are computed on the fly from
+// type/role/desc and NEVER stored on the element, so they can't leak into the
+// exported JSON. Priority: role color -> inferred-kind color -> index color. -----
+const ELEMENT_UI_COLORS = [
+    "#38BDF8", "#A78BFA", "#FBBF24", "#34D399", "#F472B6",
+    "#FB7185", "#818CF8", "#2DD4BF", "#F97316", "#84CC16",
+];
+const ROLE_UI_COLORS = {
+    headline: "#60A5FA", subtitle: "#38BDF8", body: "#A78BFA", footer: "#94A3B8",
+    "product label": "#34D399", sign: "#FBBF24", "ui label": "#22D3EE", logo: "#F472B6",
+};
+const KIND_UI_COLORS = {
+    text: "#38BDF8", product: "#34D399", character: "#F472B6",
+    background: "#64748B", logo: "#FBBF24", object: "#A78BFA",
+};
+
+function inferElementKind(element) {
+    const value = `${element.role || ""} ${element.text || ""} ${element.desc || ""}`.toLowerCase();
+    if (element.text && element.text.trim()) return "text";
+    if (/product|bottle|package|perfume|serum|label|cosmetic/.test(value)) return "product";
+    if (/person|woman|man|girl|boy|child|character|face|body|model|portrait/.test(value)) return "character";
+    if (/background|wall|sky|room|interior|landscape|backdrop|gradient/.test(value)) return "background";
+    if (/logo|wordmark|brand/.test(value)) return "logo";
+    return "object";
+}
+
+function elementUiColor(element, index) {
+    const role = String(element.role || "").trim().toLowerCase();
+    if (role && ROLE_UI_COLORS[role]) return ROLE_UI_COLORS[role];
+    const kind = inferElementKind(element);
+    if (KIND_UI_COLORS[kind]) return KIND_UI_COLORS[kind];
+    return ELEMENT_UI_COLORS[index % ELEMENT_UI_COLORS.length];
+}
+
+function elementUiBadge(element) {
+    const role = String(element.role || "").trim();
+    if (element.text && element.text.trim()) return role ? `TEXT · ${role}` : "TEXT";
+    const kind = inferElementKind(element);
+    return kind === "object" ? "OBJ" : `OBJ · ${kind}`;
+}
+
 function makeButton(text, title, onClick) {
     const button = document.createElement("button");
     button.type = "button";
@@ -485,11 +527,58 @@ function installEditor(node) {
                 box-sizing: border-box;
                 width: 100%;
                 min-width: 900px;
-                color: #e9edf1;
+                color: var(--tb-text);
                 font: 12px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
                 user-select: none;
+                /* design tokens — one system for color / radius / spacing */
+                --tb-bg: #0b0f14;
+                --tb-panel: #111821;
+                --tb-panel-2: #151e29;
+                --tb-border: #263241;
+                --tb-border-strong: #3a4a5f;
+                --tb-text: #edf2f7;
+                --tb-muted: #8fa1b5;
+                --tb-accent: #7cc7ff;
+                --tb-accent-2: #a78bfa;
+                --tb-good: #5ee2a0;
+                --tb-warn: #f6c76f;
+                --tb-danger: #ff6b81;
+                --tb-radius: 12px;
+                --tb-radius-sm: 8px;
+                --tb-gap: 10px;
             }
             .toobusy-ideogram * { box-sizing: border-box; }
+            /* ---- facelift: cards, buttons, canvas frame, pills, layer rows ---- */
+            .toobusy-ideogram .tb-card {
+                background: linear-gradient(180deg, var(--tb-panel), #0f151d);
+                border: 1px solid var(--tb-border);
+                border-radius: var(--tb-radius);
+                padding: 12px;
+                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+            }
+            .toobusy-ideogram .tb-btn-primary {
+                background: linear-gradient(180deg, #2f8cff, #1f6fd1);
+                border-color: #58a6ff; color: #fff;
+            }
+            .toobusy-ideogram .tb-btn-secondary {
+                background: var(--tb-panel-2); border-color: var(--tb-border-strong); color: var(--tb-text);
+            }
+            .toobusy-ideogram .tb-btn-ghost {
+                background: transparent; border-color: var(--tb-border); color: var(--tb-muted);
+            }
+            .toobusy-ideogram .tb-btn-danger {
+                background: #29151b; border-color: #7d3442; color: #ff9aaa;
+            }
+            .toobusy-ideogram .layer-dot {
+                width: 9px; height: 9px; border-radius: 999px; flex: 0 0 auto;
+                box-shadow: 0 0 6px currentColor;
+            }
+            .toobusy-ideogram .layer-badge {
+                font-size: 8px; text-transform: uppercase; letter-spacing: 0.04em;
+                padding: 1px 6px; border-radius: 999px; flex: 0 0 auto;
+                background: rgba(255,255,255,0.06); color: var(--tb-muted);
+                border: 1px solid var(--tb-border);
+            }
             .toobusy-ideogram .preset-bar {
                 display: flex;
                 gap: 6px;
@@ -627,9 +716,12 @@ function installEditor(node) {
                 width: 100%;
                 height: 620px;
                 min-height: 620px;
-                border: 1px solid #58616d;
-                border-radius: 6px;
-                background: #0e1319;
+                border: 1px solid var(--tb-border-strong);
+                border-radius: 16px;
+                background:
+                    radial-gradient(circle at top, rgba(124,199,255,0.08), transparent 45%),
+                    #0b1017;
+                box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), 0 18px 50px rgba(0,0,0,0.35);
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -1089,15 +1181,34 @@ function installEditor(node) {
         return { index: -1, mode: "none" };
     }
 
-    function drawLabel(ctx, label, x, y, width) {
-        const fontSize = 13;
-        ctx.font = `${fontSize}px system-ui, sans-serif`;
-        let text = label || "";
-        while (text.length > 1 && ctx.measureText(text).width > width - 12) {
-            text = text.slice(0, -2);
-        }
-        if (text !== label && text.length > 1) text = `${text}...`;
-        ctx.fillText(text, x + 6, y + fontSize + 6);
+    function _darkText(hex) {
+        // pick black/white text for legibility on a colored pill
+        const h = String(hex).replace("#", "");
+        if (h.length !== 6) return "#0b1017";
+        const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+        return (r * 0.299 + g * 0.587 + b * 0.114) > 150 ? "#0b1017" : "#ffffff";
+    }
+
+    function drawPillLabel(ctx, badge, name, x, y, width, color) {
+        const fs = 12;
+        ctx.font = `600 ${fs}px system-ui, sans-serif`;
+        let text = badge && name ? `${badge} · ${name}` : (badge || name || "");
+        const maxW = Math.max(24, width - 16);
+        while (text.length > 1 && ctx.measureText(text).width > maxW) text = text.slice(0, -2);
+        if ((badge ? `${badge} · ${name}` : name) !== text && text.length > 1) text = `${text}…`;
+        const tw = ctx.measureText(text).width;
+        const padX = 7, h = fs + 7, r = h / 2;
+        const bx = x + 4, by = y + 4, bw = tw + padX * 2;
+        ctx.save();
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(bx, by, bw, h, r);
+        else ctx.rect(bx, by, bw, h);
+        ctx.fill();
+        ctx.fillStyle = _darkText(color);
+        ctx.textBaseline = "middle";
+        ctx.fillText(text, bx + padX, by + h / 2 + 0.5);
+        ctx.restore();
     }
 
     function draw() {
@@ -1119,7 +1230,7 @@ function installEditor(node) {
             ctx.globalAlpha = 1;
         }
 
-        ctx.strokeStyle = "#2d3642";
+        ctx.strokeStyle = "rgba(255,255,255,0.045)";
         ctx.lineWidth = 1;
         for (let line = 100; line < CANVAS_SIZE; line += 100) {
             ctx.beginPath();
@@ -1137,16 +1248,21 @@ function installEditor(node) {
             const pw = (x2 - x1) * fx;
             const ph = (y2 - y1) * fy;
             const active = index === selectedIndex;
-            const color = element.color_palette?.[0] || "#8AB4F8";
-            ctx.fillStyle = `${color}33`;
-            ctx.strokeStyle = active ? "#FFFFFF" : color;
+            // UI color is computed from type/role/desc — NOT element.color_palette
+            // (that's a generation hint) — and is never written back to the element.
+            const color = elementUiColor(element, index);
+            ctx.save();
+            ctx.fillStyle = `${color}26`;
+            ctx.strokeStyle = active ? "#FFE082" : color;
             ctx.lineWidth = active ? 3 : 2;
+            if (active) { ctx.shadowColor = color; ctx.shadowBlur = 16; }
             ctx.fillRect(px, py, pw, ph);
             ctx.strokeRect(px, py, pw, ph);
-            ctx.fillStyle = "#FFFFFF";
-            drawLabel(ctx, element.text || element.desc || `Element ${index + 1}`, px, py, pw);
+            ctx.restore();
+            drawPillLabel(ctx, elementUiBadge(element), element.text || element.desc || `Element ${index + 1}`, px, py, pw, color);
             if (active) {
                 const hs = 9;
+                ctx.fillStyle = "#FFE082";
                 for (const [cx, cy] of [[px, py], [px + pw, py], [px, py + ph], [px + pw, py + ph]]) {
                     ctx.fillRect(cx - hs / 2, cy - hs / 2, hs, hs);
                 }
@@ -1578,11 +1694,17 @@ function installEditor(node) {
             row.className = "layer-row" + (i === selectedIndex ? " active" : "");
             row.dataset.index = String(i);
 
-            const isText = !!(el.text && el.text.trim());
-            const label = `${isText ? "T" : "□"} ${el.text || el.desc || `Element ${i + 1}`}`;
+            const uiColor = elementUiColor(el, i);
+            const dot = document.createElement("span");
+            dot.className = "layer-dot";
+            dot.style.background = uiColor;
+            dot.style.color = uiColor;
+            const badge = document.createElement("span");
+            badge.className = "layer-badge";
+            badge.textContent = el.text && el.text.trim() ? "TEXT" : inferElementKind(el).toUpperCase();
             const name = document.createElement("div");
             name.className = "layer-name";
-            name.textContent = label;
+            name.textContent = el.text || el.desc || `Element ${i + 1}`;
             name.title = "Select this box. Drag up/down to reorder layers.";
             name.tabIndex = 0;
             name.draggable = true;
@@ -1641,10 +1763,11 @@ function installEditor(node) {
                 deleteElement();
             });
             for (const b of [raise, lower, del]) b.classList.add("layer-btn");
+            del.classList.add("tb-btn-danger");
             if (i === elements.length - 1) raise.disabled = true;
             if (i === 0) lower.disabled = true;
 
-            row.append(name, raise, lower, del);
+            row.append(dot, badge, name, raise, lower, del);
             layerList.appendChild(row);
         }
     }
