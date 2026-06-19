@@ -556,6 +556,25 @@ function installEditor(node) {
                 padding: 12px;
                 box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
             }
+            .toobusy-ideogram .tb-header {
+                display: flex; align-items: center; justify-content: space-between;
+                gap: 10px; padding: 8px 12px; margin-bottom: 10px;
+                border: 1px solid var(--tb-border);
+                border-radius: var(--tb-radius);
+                background: linear-gradient(180deg, var(--tb-panel-2), var(--tb-panel));
+            }
+            .toobusy-ideogram .tb-header-brand { display: flex; align-items: center; gap: 8px; }
+            .toobusy-ideogram .tb-header-dot {
+                width: 9px; height: 9px; border-radius: 999px;
+                background: var(--tb-accent); box-shadow: 0 0 8px var(--tb-accent);
+            }
+            .toobusy-ideogram .tb-header-title {
+                font-weight: 650; font-size: 12px; letter-spacing: 0.02em; color: var(--tb-text);
+            }
+            .toobusy-ideogram .tb-header-meta {
+                font-size: 11px; color: var(--tb-muted);
+                font-variant-numeric: tabular-nums;
+            }
             .toobusy-ideogram .tb-btn-primary {
                 background: linear-gradient(180deg, #2f8cff, #1f6fd1);
                 border-color: #58a6ff; color: #fff;
@@ -568,6 +587,16 @@ function installEditor(node) {
             }
             .toobusy-ideogram .tb-btn-danger {
                 background: #29151b; border-color: #7d3442; color: #ff9aaa;
+            }
+            .toobusy-ideogram .tb-el-chip {
+                display: flex; align-items: center; gap: 8px; margin: 2px 0 6px;
+            }
+            .toobusy-ideogram .tb-chip-badge {
+                font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+                padding: 2px 8px; border-radius: 999px;
+            }
+            .toobusy-ideogram .tb-chip-bbox {
+                font-size: 10px; color: var(--tb-muted); font-variant-numeric: tabular-nums;
             }
             .toobusy-ideogram .layer-dot {
                 width: 9px; height: 9px; border-radius: 999px; flex: 0 0 auto;
@@ -991,9 +1020,16 @@ function installEditor(node) {
                 grid-column: 1 / -1;
             }
         </style>
+        <div class="tb-header">
+            <div class="tb-header-brand">
+                <span class="tb-header-dot"></span>
+                <span class="tb-header-title">toobusy Layout Builder</span>
+            </div>
+            <div class="tb-header-meta">—</div>
+        </div>
         <div class="editor">
             <div class="col-left">
-                <div class="scene"></div>
+                <div class="scene tb-card"></div>
             </div>
             <div class="col-center">
                 <div class="canvas-frame">
@@ -1001,14 +1037,15 @@ function installEditor(node) {
                 </div>
                 <div class="ref-bar"></div>
                 <div class="resolution"></div>
-                <div class="element"></div>
+                <div class="element tb-card"></div>
             </div>
-            <div class="col-right">
+            <div class="col-right tb-card">
                 <div class="toolbar"></div>
                 <div class="side-info"></div>
             </div>
         </div>
     `;
+    const headerMeta = root.querySelector(".tb-header-meta");
 
     const scene = root.querySelector(".scene");
     const referenceBar = root.querySelector(".ref-bar");
@@ -1143,6 +1180,7 @@ function installEditor(node) {
         canvas.style.height = `${pixelHeight}px`;
         resolutionReadout.textContent = `${resolution.width} x ${resolution.height}`;
         persistResolution();
+        updateCount();
         draw();
     }
 
@@ -1315,7 +1353,30 @@ function installEditor(node) {
         if (!hasColors) clearColors.disabled = true;
         elementPalette.root.appendChild(clearColors);
 
+        // Type chip (UI color) + bbox, inspector-style.
+        const uiColor = elementUiColor(element, selectedIndex);
+        const chip = document.createElement("div");
+        chip.className = "tb-el-chip";
+        const chipBadge = document.createElement("span");
+        chipBadge.className = "tb-chip-badge";
+        chipBadge.style.background = uiColor;
+        chipBadge.style.color = _darkText(uiColor);
+        chipBadge.textContent = elementUiBadge(element);
+        const chipBbox = document.createElement("span");
+        chipBbox.className = "tb-chip-bbox";
+        chipBbox.textContent = `bbox [${element.bbox.join(", ")}]`;
+        chip.append(chipBadge, chipBbox);
+
+        const subTitle = (text) => {
+            const div = document.createElement("div");
+            div.className = "section-title";
+            div.textContent = text;
+            return div;
+        };
+
         elementPanel.append(
+            chip,
+            subTitle("Content"),
             makeField(
                 "Text",
                 element.text,
@@ -1334,9 +1395,11 @@ function installEditor(node) {
                 (value) => {
                     element.role = value;
                     syncElements();
+                    renderElementPanel();
                     draw();
                 },
             ),
+            subTitle("Prompt Description"),
             makeField(
                 "Description",
                 element.desc,
@@ -1348,6 +1411,7 @@ function installEditor(node) {
                 },
                 "What this region shows (e.g. 'a woman in a red top').",
             ),
+            subTitle("Appearance"),
             elementPalette.root,
         );
         bboxReadout.textContent = `bbox: [${element.bbox.join(", ")}]`;
@@ -1654,6 +1718,8 @@ function installEditor(node) {
     const iconDup = makeButton("⧉", "Duplicate selected element", duplicateElement);
     const iconDel = makeButton("🗑", "Delete selected element", deleteElement);
     for (const b of [iconAdd, iconDup, iconDel]) b.classList.add("icon-btn");
+    iconAdd.classList.add("tb-btn-primary");
+    iconDel.classList.add("tb-btn-danger");
     toolbar.append(iconAdd, iconDup, iconDel);
 
     // Small info block (count + bbox) lives in the right column.
@@ -1672,7 +1738,13 @@ function installEditor(node) {
     layerHelp.textContent = "Drag names to reorder. Ctrl+Shift+↑/↓ sends selected front/back.";
     sideInfo.append(sideTitle, countReadout, bboxReadout, layerTitle, layerList, layerHelp);
     updateCount = () => {
-        countReadout.textContent = `${elements.length} box(es)`;
+        const n = elements.length;
+        countReadout.textContent = `${n} box(es)`;
+        if (headerMeta) {
+            const w = resolution?.width ?? 2048;
+            const h = resolution?.height ?? 2048;
+            headerMeta.textContent = `${w}×${h} · ${n} element${n === 1 ? "" : "s"}`;
+        }
     };
     updateCount();
 
@@ -2506,11 +2578,12 @@ function installEditor(node) {
         }
     }
 
+    const tagBtn = (btn, variant) => { btn.classList.add(variant); return btn; };
     presetBar.append(
         presetBarTitle,
         presetSelectEl,
-        makeButton("⟳ Pull from input", "Run only the nodes feeding this builder and load the resulting Ideogram JSON onto the canvas (with the connected image as backdrop)", pullFromInput),
-        makeButton("Import polished", "Paste a Prompt Polish / Ideogram JSON to load it (preview before it replaces the layout)", openImportPolishedDialog),
+        tagBtn(makeButton("⟳ Pull from input", "Run only the nodes feeding this builder and load the resulting Ideogram JSON onto the canvas (with the connected image as backdrop)", pullFromInput), "tb-btn-primary"),
+        tagBtn(makeButton("Import polished", "Paste a Prompt Polish / Ideogram JSON to load it (preview before it replaces the layout)", openImportPolishedDialog), "tb-btn-secondary"),
         makeButton("Reset", "Reset this builder to a fresh empty layout", resetLayout),
         makeButton("Save", "Save current layout as a named preset", () => {
             const name = (window.prompt("Preset name:") || "").trim();
