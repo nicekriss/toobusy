@@ -49,7 +49,7 @@ _install_stubs()
 _mod = _load()
 
 
-def _prompt(image_present, image_instruction_mode="Analyze image literally"):
+def _prompt(image_present, image_instruction_mode="Analyze image literally", analysis_mode="balanced"):
     return _mod._build_prompt(
         scene="눈 오는 날 아이들",
         style_mode="Literal",
@@ -59,6 +59,7 @@ def _prompt(image_present, image_instruction_mode="Analyze image literally"):
         existing_layout_json="",
         image_present=image_present,
         image_instruction_mode=image_instruction_mode,
+        analysis_mode=analysis_mode,
     )
 
 
@@ -69,6 +70,9 @@ def test_scene_mode_prompt():
     text = _prompt(image_present=False)
     assert "Convert the user's scene description" in text
     assert "Analyze the provided IMAGE" not in text
+    assert "For text-only scene mode, always create layout elements" in text
+    assert "Simple natural scene: create 3-5 elements" in text
+    assert "bbox order is [top, left, bottom, right]" in text
     assert SCHEMA_MARK in text
 
 
@@ -76,11 +80,23 @@ def test_image_mode_prompt():
     text = _prompt(image_present=True)
     assert "Analyze the provided IMAGE" in text
     assert "Korean stays Korean" in text
-    assert "LTX2.3 두두등장!" in text
-    assert "full-body vs upper-body" in text
-    assert "visible feet" in text
+    assert "analysis_mode: balanced" in text
+    assert "Capture about 5-10 important elements" in text
+    assert "Each desc must be compact" in text
+    assert "Keep mixed Korean/Latin labels as one text element" in text
+    assert "split it into separate text elements" not in text
+    assert "full-body vs upper-body" not in text
+    assert "visible feet" not in text
     assert "never duplicate or near-identical boxes" in text
     assert SCHEMA_MARK in text  # same schema in both modes
+
+
+def test_image_detailed_mode_allows_panel_detail():
+    text = _prompt(image_present=True, analysis_mode="detailed")
+    assert "analysis_mode: detailed" in text
+    assert "internal cards, icons, arrows, thumbnails, and labels" in text
+    assert "clothing, expression, pose, crop, and key colors" in text
+    assert "outline, glow, weight, tilt" in text
 
 
 def test_image_transform_mode_prompt():
@@ -128,6 +144,10 @@ def test_image_input_exposed_and_optional():
     assert optional["image"][0] == "IMAGE"
     assert optional["image_instruction_mode"][0] == _mod.IMAGE_INSTRUCTION_MODES
     assert optional["image_instruction_mode"][1]["default"] == "Analyze image literally"
+    assert optional["analysis_mode"][0] == _mod.ANALYSIS_MODES
+    assert optional["analysis_mode"][1]["default"] == "balanced"
+    assert optional["debug_raw"][0] == "BOOLEAN"
+    assert optional["debug_raw"][1]["default"] is False
     # image is optional, not required.
     assert "image" not in _mod.ToobusyIdeogramPromptPolish.INPUT_TYPES()["required"]
 
@@ -138,7 +158,7 @@ def test_extract_json_handles_fences_and_prose():
     assert data == {"high_level_description": "x", "a": 1}
 
 
-def test_image_is_forwarded_to_generator():
+def test_image_is_forwarded_to_generator_with_mode_length_and_truncated_raw():
     # polish() should pass the image through to _generate_text. Override the
     # stubbed keyframe generator to capture the call.
     captured = {}
@@ -146,6 +166,7 @@ def test_image_is_forwarded_to_generator():
     def fake_generate_text(clip, prompt, max_length, seed, image=None):
         captured["image"] = image
         captured["prompt"] = prompt
+        captured["max_length"] = max_length
         return '{"high_level_description": "from image"}'
 
     sys.modules["toobusy.keyframe_maker_node.keyframe_maker"]._generate_text = fake_generate_text
@@ -154,11 +175,54 @@ def test_image_is_forwarded_to_generator():
     out_json, _raw = _mod.ToobusyIdeogramPromptPolish().polish(
         clip="clip", scene="hint", style_mode="Literal", language="Auto",
         preserve_intent=True, fill_missing_fields=True, seed=1, image=sentinel,
-        image_instruction_mode="Transform by scene text",
+        image_instruction_mode="Transform by scene text", analysis_mode="fast", debug_raw=False,
     )
     assert captured["image"] is sentinel
     assert "layout/composition reference" in captured["prompt"]
+    assert captured["max_length"] == 896
     assert "from image" in out_json
+
+
+def test_debug_raw_controls_llm_raw_output():
+    def fake_generate_text(clip, prompt, max_length, seed, image=None):
+        del clip, prompt, max_length, seed, image
+        return '{"high_level_description": "x"}' + ("x" * 800)
+
+    sys.modules["toobusy.keyframe_maker_node.keyframe_maker"]._generate_text = fake_generate_text
+    _, raw = _mod.ToobusyIdeogramPromptPolish().polish(
+        clip="clip", scene="hint", style_mode="Literal", language="Auto",
+        preserve_intent=True, fill_missing_fields=True, seed=1,
+        analysis_mode="balanced", debug_raw=False,
+    )
+    assert "llm_raw truncated" in raw
+
+    _, raw_full = _mod.ToobusyIdeogramPromptPolish().polish(
+        clip="clip", scene="hint", style_mode="Literal", language="Auto",
+        preserve_intent=True, fill_missing_fields=True, seed=1,
+        analysis_mode="balanced", debug_raw=True,
+    )
+    assert "llm_raw truncated" not in raw_full
+    assert len(raw_full) > len(raw)
+
+
+def test_polish_keeps_mixed_latin_hangul_label_unsplit():
+    def fake_generate_text(clip, prompt, max_length, seed, image=None):
+        del clip, prompt, max_length, seed, image
+        return (
+            '{"high_level_description":"poster","style_description":{},'
+            '"compositional_deconstruction":{"background":"","elements":['
+            '{"type":"text","bbox":[40,60,160,700],"text":"LTX2.3 두두등장!","desc":"large mixed title"}]}}'
+        )
+
+    sys.modules["toobusy.keyframe_maker_node.keyframe_maker"]._generate_text = fake_generate_text
+    out_json, _ = _mod.ToobusyIdeogramPromptPolish().polish(
+        clip="clip", scene="hint", style_mode="Literal", language="Auto",
+        preserve_intent=True, fill_missing_fields=True, seed=1,
+        analysis_mode="balanced", debug_raw=False,
+    )
+    elements = __import__("json").loads(out_json)["compositional_deconstruction"]["elements"]
+    assert len(elements) == 1
+    assert elements[0]["text"] == "LTX2.3 두두등장!"
 
 
 def test_enrich_palette_fills_empty_from_image():

@@ -4,6 +4,43 @@
 
 ## [Unreleased]
 
+## [0.2.14] - 2026-06-19
+
+### Added
+- `toobusy Keyframe Maker` 공개 보강:
+  기존 6개 출력은 유지하면서 `transition_prompts`, `prompt_relay_block`,
+  `shot_table_json`, `validation_report`를 뒤에 추가했습니다. `fast / standard / full`
+  `output_mode`를 추가해 로컬 LLM 사용 시 불필요한 전환 프롬프트/한국어 해석 생성을
+  건너뛸 수 있습니다.
+- `toobusy Keyframe Maker`에 `product_image_mode` 추가:
+  `design reference only`(기본), `packaging/form reference`, `exact product identity` 중
+  선택할 수 있습니다. 기본값에서는 `idea`가 제품 카테고리·사용법·광고 문법을 결정하고,
+  `product_image`는 외형·재질·색감·실루엣·패키지 톤 참고로만 사용합니다.
+- `toobusy Ideogram Prompt Polish`에 `analysis_mode` 추가:
+  `fast / balanced / detailed`로 이미지 분석 상세도를 조절합니다. 기본 `balanced`는
+  Layout Builder 초안용으로 요소 수와 desc 길이를 줄여 속도를 우선합니다.
+- `toobusy Ideogram Prompt Polish`에 `debug_raw` 추가:
+  기본값에서는 `llm_raw`를 비우거나 짧게 잘라 workflow 저장 데이터가 과도하게 커지는 것을
+  줄이고, 필요할 때만 전체 raw 응답을 확인할 수 있습니다.
+
+### Changed
+- `toobusy Ideogram Layout Builder` 프론트엔드 phase 2 facelift:
+  헤더, 카드, 인스펙터 섹션, chip, 버튼 variant 스타일을 정리했습니다.
+- Prompt Polish 이미지 분석 기본 프롬프트를 "느린 정밀 분석기"보다 "빠른 Layout Builder
+  초안 생성기"에 맞게 조정했습니다. mixed Korean/Latin 텍스트는 기본적으로 분리하지 않고
+  하나의 텍스트 요소로 유지합니다.
+- Prompt Polish 텍스트-only scene 프롬프트가 Layout Builder용 elements/bbox를 더 적극적으로
+  생성하도록 보강했습니다.
+- Keyframe Maker의 product image 분석을 story-side 제품 정의와 reference-side 시각 정의로
+  분리했습니다. 향수 광고처럼 `idea`가 제품 동작을 명시한 경우 reference 이미지가 세럼/스킨케어
+  포장처럼 보여도 사용 문법을 덮어쓰지 않도록 안내합니다.
+
+### Fixed
+- Prompt Polish JSON fallback에서 elements가 완전히 비어 보이지 않도록 중앙 main subject
+  placeholder를 채웁니다.
+- Keyframe Maker `validation_report`에 product image와 idea 사이의 perfume/skincare 계열
+  충돌 경고를 추가했습니다.
+
 ## [0.2.13] - 2026-06-17
 
 ### Added

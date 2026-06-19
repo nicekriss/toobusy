@@ -5,6 +5,7 @@ import re
 STYLE_MODES = ["Literal", "Cinematic", "Product", "Character", "Poster"]
 LANGUAGES = ["Auto", "Korean", "English"]
 IMAGE_INSTRUCTION_MODES = ["Analyze image literally", "Transform by scene text"]
+ANALYSIS_MODES = ["fast", "balanced", "detailed"]
 
 STYLE_EMPHASIS = {
     "Literal": "translate faithfully with minimal embellishment",
@@ -97,6 +98,14 @@ def _ensure_shape(data, scene, fill_missing):
         comp.setdefault("background", "")
         if not isinstance(comp.get("elements"), list):
             comp["elements"] = []
+        if not comp["elements"]:
+            comp["elements"] = [
+                {
+                    "type": "obj",
+                    "bbox": [220, 220, 820, 820],
+                    "desc": "main subject from the scene, centered composition",
+                }
+            ]
         out["compositional_deconstruction"] = comp
 
     # Keep the documented top-level key order, then any extras.
@@ -364,7 +373,10 @@ def _split_mixed_text_elements(payload):
     return payload
 
 
-def _enrich_element_descriptions(payload):
+def _enrich_element_descriptions(payload, analysis_mode="detailed"):
+    if analysis_mode != "detailed":
+        return payload
+
     comp = payload.get("compositional_deconstruction")
     elements = comp.get("elements") if isinstance(comp, dict) else None
     if not isinstance(elements, list):
@@ -397,8 +409,33 @@ _SCHEMA_LINES = [
     '- "high_level_description": string',
     '- "style_description": object with "aesthetics", "lighting", "photo", "medium" (strings) and "color_palette" (list of #RRGGBB hex)',
     '- "compositional_deconstruction": object with "background" (string) and "elements" (list).',
-    '  Each element: "type" ("obj" or "text"), "bbox" [y_min, x_min, y_max, x_max] in 0-1000, "desc" (string), and for "text" also a "text" field.',
+    '  Each element: "type" ("obj" or "text"), "bbox" [y_min, x_min, y_max, x_max] in 0-1000, "desc" (string), optional "role" (string), and for "text" also a "text" field.',
+    '  bbox order is [top, left, bottom, right], NOT [left, top, right, bottom]. Examples: top-left headline [60, 80, 180, 920], center subject [220, 300, 820, 700], bottom caption [820, 120, 940, 880].',
+    '  Use optional role only when useful for text/logo/sign/UI labels, such as "headline", "subtitle", "body", "footer", "product label", "sign", "ui label", or "logo".',
 ]
+
+
+def _analysis_mode(value):
+    return value if value in ANALYSIS_MODES else "balanced"
+
+
+def _analysis_max_length(analysis_mode, image_present=False):
+    if not image_present:
+        return 1408
+    if analysis_mode == "fast":
+        return 896
+    if analysis_mode == "detailed":
+        return 2048
+    return 1408
+
+
+def _visible_raw(raw, debug_raw):
+    if debug_raw:
+        return raw or ""
+    value = str(raw or "")
+    if not value:
+        return ""
+    return value[:512] + "\n...[llm_raw truncated; enable debug_raw for full output]" if len(value) > 512 else value
 
 
 def _build_prompt(
@@ -410,9 +447,11 @@ def _build_prompt(
     existing_layout_json,
     image_present=False,
     image_instruction_mode="Analyze image literally",
+    analysis_mode="balanced",
 ):
     emphasis = STYLE_EMPHASIS.get(style_mode, STYLE_EMPHASIS["Literal"])
     transform_image = image_present and image_instruction_mode == "Transform by scene text"
+    analysis_mode = _analysis_mode(analysis_mode)
 
     if image_present:
         # Vision mode: either describe the source image literally or keep its
@@ -420,16 +459,37 @@ def _build_prompt(
         lines = [
             "Analyze the provided IMAGE and describe its layout as an Ideogram 4 structured prompt.",
             "Use type \"text\" for readable text (include the exact string), type \"obj\" for everything else (people, icons, panels, products, shapes).",
-            "For every text element, describe visible styling in desc: color, weight, outline/glow, roughness, and orientation such as tilted, slanted, skewed, perspective, arched, stacked, or straight.",
-            "If a text block is visually tilted or distorted, mention that in desc; bbox stays axis-aligned, so desc must carry the tilt/perspective cue.",
-            "For every object element, make desc specific: subject type, full-body vs upper-body/cropped view, pose/action, clothing, expression, important colors, panel/frame shape, icons, arrows, UI controls, and whether it is foreground/background.",
-            "For human/character figures, explicitly state full body, head-to-toe, visible feet/hands, standing pose, or cropped/upper-body if that is what the image shows.",
-            "For large panels and diagrams, describe their internal contents and labels, not just 'panel'.",
-            "If one visible label mixes Latin/product text and Korean text, split it into separate text elements with separate bboxes (example: \"LTX2.3 두두등장!\" becomes one bbox for \"LTX2.3\" and another bbox for \"두두등장!\").",
-            "If a panel has an English label plus Korean text in parentheses, split them too (example: \"First Frame (시작 프레임)\" becomes separate text elements).",
+            "Keep mixed Korean/Latin labels as one text element unless they are clearly separated into different visual blocks.",
             "Estimate each bbox from the image. Output ONE element per distinct thing — never duplicate or near-identical boxes for the same item.",
-            "Capture the meaningful layout pieces (title, sections, key icons/blocks), about 5-15 elements; skip tiny incidental details.",
         ]
+        if analysis_mode == "fast":
+            lines += [
+                "analysis_mode: fast. Make a quick Layout Builder draft, not a perfect inspection.",
+                "Capture about 3-7 major elements only.",
+                "Each desc must be compact, about 6-14 words.",
+                "Describe only layout-critical traits: subject, role, crop, main color, foreground/background, and broad pose/action.",
+                "Do not write long full-sentence descriptions.",
+                "Do not describe tiny incidental details, small UI cards, tiny icons, small arrows, thumbnails, or minor labels.",
+                "Do not over-fragment the image.",
+            ]
+        elif analysis_mode == "balanced":
+            lines += [
+                "analysis_mode: balanced. Make a practical Layout Builder draft for editing.",
+                "Capture about 5-10 important elements.",
+                "Each desc must be compact, about 10-22 words.",
+                "Focus on important people, products, headlines, readable text, large panels, and major layout blocks.",
+                "Describe panel internals only when they are central to the composition, and keep it short.",
+                "Do not describe tiny incidental details or over-fragment the image.",
+            ]
+        else:
+            lines += [
+                "analysis_mode: detailed. More detailed inspection is allowed.",
+                "Capture about 5-15 meaningful layout elements.",
+                "For panels and diagrams, describe internal cards, icons, arrows, thumbnails, and labels.",
+                "For character figures, describe clothing, expression, pose, crop, and key colors.",
+                "For text, describe visible style such as outline, glow, weight, tilt, perspective, or stacked layout.",
+                "If a text block is visually tilted or distorted, mention that in desc; bbox stays axis-aligned, so desc must carry the tilt/perspective cue.",
+            ]
         if transform_image:
             lines[0] = "Use the provided IMAGE as a layout/composition reference and rewrite the content as an Ideogram 4 structured prompt."
             lines.insert(1, "Keep the image's visual hierarchy, panel structure, text placement, approximate bboxes, color relationships, and composition.")
@@ -450,6 +510,12 @@ def _build_prompt(
             "Convert the user's scene description into an Ideogram 4 friendly English structured prompt.",
             "Improve clarity, composition, lighting, style, and visual specificity.",
             f"Style emphasis: {emphasis}.",
+            "For text-only scene mode, always create layout elements.",
+            "Simple natural scene: create 3-5 elements.",
+            "Poster/product/UI/commercial scene: create 5-12 elements.",
+            "Each element needs an approximate bbox in [top, left, bottom, right] order.",
+            "Do not leave elements empty unless the scene is truly abstract.",
+            "Do not over-fragment natural scenes.",
         ]
         if language == "Auto":
             lines.append("The scene may be Korean or English; detect it and output English.")
@@ -594,6 +660,20 @@ class ToobusyIdeogramPromptPolish:
                         "tooltip": "With an image connected: literal mode transcribes the source image; transform mode keeps the layout/bboxes but rewrites subject and text according to the Scene field.",
                     },
                 ),
+                "analysis_mode": (
+                    ANALYSIS_MODES,
+                    {
+                        "default": "balanced",
+                        "tooltip": "Image analysis detail. fast: quick draft with few compact elements. balanced: default practical Layout Builder draft. detailed: slower, richer panel/UI/text/style analysis.",
+                    },
+                ),
+                "debug_raw": (
+                    "BOOLEAN",
+                    {
+                        "default": False,
+                        "tooltip": "Off: return blank/truncated llm_raw to keep workflows lighter. On: return the full raw LLM response for debugging JSON failures.",
+                    },
+                ),
             },
         }
 
@@ -614,6 +694,8 @@ class ToobusyIdeogramPromptPolish:
         existing_layout_json="",
         image=None,
         image_instruction_mode="Analyze image literally",
+        analysis_mode="balanced",
+        debug_raw=False,
     ):
         # Imported lazily so this module stays import-light (json/re only) and
         # unit-testable outside ComfyUI; reuses the same TextGenerate call the
@@ -625,10 +707,17 @@ class ToobusyIdeogramPromptPolish:
             scene, style_mode, language, preserve_intent, fill_missing_fields,
             existing_layout_json, image_present=image is not None,
             image_instruction_mode=image_instruction_mode,
+            analysis_mode=analysis_mode,
         )
 
         try:
-            raw = _generate_text(clip, prompt, max_length=2048, seed=int(seed), image=image)
+            raw = _generate_text(
+                clip,
+                prompt,
+                max_length=_analysis_max_length(_analysis_mode(analysis_mode), image_present=image is not None),
+                seed=int(seed),
+                image=image,
+            )
         except Exception as exc:  # noqa: BLE001 - surface a friendly, actionable message
             message = (
                 "[toobusy] Ideogram Prompt Polish needs a text-generation model on `clip` "
@@ -642,19 +731,21 @@ class ToobusyIdeogramPromptPolish:
         data = _extract_json(raw)
         if data is None:
             print("[toobusy] Ideogram Prompt Polish: model did not return valid JSON; falling back to the raw scene.")
-            payload = _ensure_shape({}, scene, fill_missing_fields)
-            return (json.dumps(payload, ensure_ascii=False, indent=2), raw or "")
+            payload = _ensure_shape({}, scene, True)
+            return (json.dumps(payload, ensure_ascii=False, indent=2), _visible_raw(raw, debug_raw))
 
         payload = _ensure_shape(data, scene, fill_missing_fields)
-        payload = _split_mixed_text_elements(payload)
-        payload = _enrich_element_descriptions(payload)
+        # Keep mixed Korean/Latin labels intact by default. The experimental
+        # split/overlay route remains isolated in Layout Builder's explicit
+        # text_overlay_mode and is not run here.
+        payload = _enrich_element_descriptions(payload, _analysis_mode(analysis_mode))
         if image is not None and image_instruction_mode == "Transform by scene text":
             payload = _remove_edit_command_language(payload)
         if image is not None:
             # Vision LLMs often leave palettes empty -> murky generations. Backfill
             # from the real image pixels (whole image + per-element regions).
             payload = _enrich_palette(payload, image)
-        return (json.dumps(payload, ensure_ascii=False, indent=2), raw or "")
+        return (json.dumps(payload, ensure_ascii=False, indent=2), _visible_raw(raw, debug_raw))
 
 
 NODE_CLASS_MAPPINGS = {
