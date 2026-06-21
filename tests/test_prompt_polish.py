@@ -10,6 +10,7 @@ Standalone- and pytest-runnable, no ComfyUI runtime (the module is json/re only)
 """
 
 import importlib.util
+import json
 import os
 import sys
 import types
@@ -220,7 +221,7 @@ def test_polish_keeps_mixed_latin_hangul_label_unsplit():
         preserve_intent=True, fill_missing_fields=True, seed=1,
         analysis_mode="balanced", debug_raw=False,
     )
-    elements = __import__("json").loads(out_json)["compositional_deconstruction"]["elements"]
+    elements = json.loads(out_json)["compositional_deconstruction"]["elements"]
     assert len(elements) == 1
     assert elements[0]["text"] == "LTX2.3 두두등장!"
 

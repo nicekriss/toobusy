@@ -3,6 +3,8 @@
 .github/
 .gitignore
 .comfyignore
+.vscode/
+tests/
 __pycache__/
 *.pyc
 *.pyo
