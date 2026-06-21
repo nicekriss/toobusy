@@ -32,6 +32,8 @@ def _install_stubs():
 
     def fake_call_node(node_type, **kwargs):
         _CALLS.append((node_type, kwargs))
+        if node_type == "LoraLoader":
+            return ["<LoraLoader-model-out>", "<LoraLoader-clip-out>"]
         return [f"<{node_type}-out>"]
 
     pkg = types.ModuleType("toobusy")
@@ -82,6 +84,7 @@ def _generate(**overrides):
         size_mode="from reference",
         ratio_preset="1:1", megapixels=1.0, divisible_by=32, batch_size=1,
         seed=1, steps=4, sampler_name="euler", lora_slots=0, reference_slots=3,
+        bundle_reference_order="standard",
     )
     kwargs.update(overrides)
     return _mod.ToobusyFlux2Klein().generate(**kwargs)
@@ -125,8 +128,174 @@ def test_supports_up_to_five_references():
     assert len(_called("ReferenceLatent")) == 5
     # All five image sockets are exposed as optional inputs.
     optional = _mod.ToobusyFlux2Klein.INPUT_TYPES()["optional"]
+    assert optional["toobusy_bundle"][0] == "TOOBUSY_BUNDLE"
+    assert "reference_bundle" not in optional
+    assert optional["use_bundle_prompt"][0] == "BOOLEAN"
+    assert optional["use_bundle_loras"][0] == "BOOLEAN"
+    order_spec = _mod.ToobusyFlux2Klein.INPUT_TYPES()["required"]["bundle_reference_order"]
+    assert order_spec[0] == [
+        "auto",
+        "standard",
+        "body_first_face_second",
+        "face_first_body_second",
+        "product_swap",
+        "character_swap",
+    ]
+    assert order_spec[1]["default"] == "auto"
     for i in range(1, 6):
         assert optional[f"reference_{i}_image"][0] == "IMAGE"
+
+
+def test_toobusy_bundle_fills_empty_reference_slots():
+    bundle = {
+        "main_character": {"image": _FakeImage(512, 512)},
+        "pose": {"image": _FakeImage(384, 640)},
+        "outfit": {"image": _FakeImage(256, 256)},
+    }
+    _generate(reference_slots=3, toobusy_bundle=bundle)
+    assert len(_called("ReferenceLatent")) == 3
+    scales = _called("ImageScaleToTotalPixels")
+    assert [kw["image"] for kw in scales] == [
+        bundle["main_character"]["image"],
+        bundle["pose"]["image"],
+        bundle["outfit"]["image"],
+    ]
+
+
+def test_individual_reference_overrides_bundle_slot():
+    individual = _FakeImage(320, 640)
+    bundle = {
+        "main_character": {"image": _FakeImage(512, 512)},
+        "pose": {"image": _FakeImage(384, 384)},
+    }
+    _generate(reference_slots=2, reference_1_image=individual, toobusy_bundle=bundle)
+    scales = _called("ImageScaleToTotalPixels")
+    assert len(scales) == 2
+    assert scales[0]["image"] is individual
+    assert scales[1]["image"] is bundle["pose"]["image"]
+
+
+def test_universal_bundle_fills_reference_slots():
+    char = _FakeImage(512, 512)
+    pose = _FakeImage(384, 640)
+    bundle = {
+        "version": 1,
+        "cards": [
+            {"id": "char-a", "role": "character_a", "type": "character", "image": char},
+            {"id": "pose-a", "role": "pose_a", "type": "pose", "image": pose},
+        ],
+    }
+    _generate(reference_slots=2, toobusy_bundle=bundle)
+    scales = _called("ImageScaleToTotalPixels")
+    assert [kw["image"] for kw in scales] == [char, pose]
+
+
+def test_bundle_reference_order_can_route_face_swap_inputs():
+    body = _FakeImage(512, 512)
+    face = _FakeImage(256, 256)
+    outfit = _FakeImage(384, 384)
+    bundle = {
+        "cards": [
+            {"role": "character_a", "type": "character", "image": body},
+            {"role": "face_a", "type": "face", "image": face},
+            {"role": "outfit_a", "type": "outfit", "image": outfit},
+        ],
+    }
+    _generate(reference_slots=3, bundle_reference_order="body_first_face_second", toobusy_bundle=bundle)
+    scales = _called("ImageScaleToTotalPixels")
+    assert [kw["image"] for kw in scales] == [body, face, outfit]
+
+
+def test_auto_order_follows_bundle_faceswap_flag():
+    body = _FakeImage(512, 512)
+    face = _FakeImage(256, 256)
+    bundle = {
+        "flags": {"face_swap": True, "reference_order": "body_first_face_second"},
+        "cards": [
+            {"role": "character_a", "type": "character", "image": body},
+            {"role": "face_a", "type": "face", "image": face},
+        ],
+    }
+    # auto (default) must follow flags.reference_order -> body then face.
+    _generate(reference_slots=2, bundle_reference_order="auto", toobusy_bundle=bundle)
+    scales = _called("ImageScaleToTotalPixels")
+    assert [kw["image"] for kw in scales] == [body, face]
+
+
+def test_resolve_reference_order_helper():
+    assert _mod._resolve_reference_order("standard", {"flags": {"reference_order": "body_first_face_second"}}) == "standard"
+    assert _mod._resolve_reference_order("auto", {"flags": {"reference_order": "body_first_face_second"}}) == "body_first_face_second"
+    assert _mod._resolve_reference_order("auto", {}) == "standard"
+    assert _mod._resolve_reference_order("auto", {"flags": {"reference_order": "bogus"}}) == "standard"
+    assert _mod._resolve_reference_order("auto", {"flags": {"reference_order": "product_swap"}}) == "product_swap"
+
+
+def test_product_swap_order_feeds_product_image():
+    scene = _FakeImage(512, 512)
+    product = _FakeImage(384, 384)
+    bundle = {
+        "flags": {"product_swap": True, "reference_order": "product_swap"},
+        "cards": [
+            {"role": "character_a", "type": "character", "image": scene},
+            {"role": "prop_a", "type": "prop", "image": product},
+        ],
+    }
+    # auto follows the flag -> main_character (scene) then product.
+    _generate(reference_slots=2, bundle_reference_order="auto", toobusy_bundle=bundle)
+    scales = _called("ImageScaleToTotalPixels")
+    assert [kw["image"] for kw in scales] == [scene, product]
+
+
+def test_character_swap_order_feeds_both_characters():
+    a = _FakeImage(512, 512)
+    b = _FakeImage(384, 384)
+    bundle = {
+        "flags": {"character_swap": True, "reference_order": "character_swap"},
+        "cards": [
+            {"role": "character_a", "type": "character", "image": a},
+            {"role": "character_b", "type": "character", "image": b},
+        ],
+    }
+    _generate(reference_slots=2, bundle_reference_order="auto", toobusy_bundle=bundle)
+    scales = _called("ImageScaleToTotalPixels")
+    assert [kw["image"] for kw in scales] == [a, b]
+
+
+def test_bundle_prompt_overrides_positive_when_enabled():
+    bundle = {"resolved_prompt": "bundle prompt text"}
+    _generate(toobusy_bundle=bundle)
+    encodes = _called("CLIPTextEncode")
+    assert encodes and encodes[0]["text"] == "bundle prompt text"
+
+
+def test_manual_positive_can_ignore_bundle_prompt():
+    bundle = {"resolved_prompt": "bundle prompt text"}
+    _generate(toobusy_bundle=bundle, use_bundle_prompt=False)
+    encodes = _called("CLIPTextEncode")
+    assert encodes and encodes[0]["text"] == "p"
+
+
+def test_bundle_lora_applies_when_manual_loras_are_inactive():
+    bundle = {"cards": [{"type": "lora", "role": "flux2_klein_faceswap_lora", "lora_name": "headswap.safetensors", "strength": 0.65}]}
+    _generate(toobusy_bundle=bundle, use_bundle_loras=True, lora_slots=0)
+    loras = _called("LoraLoader")
+    assert len(loras) == 1
+    assert loras[0]["lora_name"] == "headswap.safetensors"
+    assert loras[0]["strength_model"] == 0.65
+
+
+def test_manual_lora_overrides_bundle_loras():
+    bundle = {"cards": [{"type": "lora", "lora_name": "bundle.safetensors", "strength": 0.65}]}
+    _generate(
+        toobusy_bundle=bundle,
+        lora_slots=1,
+        lora_1_enable=True,
+        lora_1_name="manual.safetensors",
+        lora_1_strength=0.9,
+    )
+    loras = _called("LoraLoader")
+    assert len(loras) == 1
+    assert loras[0]["lora_name"] == "manual.safetensors"
 
 
 def test_internal_clip_loader_uses_flux2_type():

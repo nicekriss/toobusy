@@ -4,6 +4,41 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-21
+
+레퍼런스 기반 제작 생태계(Reference Board → Prompt Director → Flux2 Klein)를 처음으로 공개합니다.
+
+### Added
+- `toobusy Reference Board`: 이미지/오디오/텍스트/LoRA 카드를 한 보드에서 구성해 하나의
+  `TOOBUSY_BUNDLE`로 묶는 노드. 오버레이 에디터에서 카드 추가/역할 지정/노트 작성, 프리셋
+  저장·로드(이름 기반 고유 ID), 노드 프리뷰에서 등록 카드만 표시.
+  - 카드 호버 시 큰 미리보기 팝업, 카드 드래그아웃(다른 앱/브라우저로 이미지 끌어다 놓기),
+    카드 이미지 클릭/드롭 교체(설정 유지).
+  - 카드 부착 모듈: `Erase Face`(몸의 얼굴 제거) / `Keep Face Only`(얼굴만 남기기) /
+    `Remove Background`(배경 제거) — 카드 이미지에 서버측에서 적용.
+  - 텍스트 카드(Goal/Style/Negative/Custom)와 레퍼런스 이름 삽입 칩.
+  - 독립 LoRA 카드 및 Face 카드 FaceSwap LoRA 선택(로컬 lora 드롭다운).
+- `toobusy Flux2 Klein Prompt Director`: Bundle을 받아 버튼 패널로 최종 프롬프트를 구성하는
+  노드. 연결된 Reference Board의 등록 카드만 버튼으로 동적 표시, 선택 순서 유지,
+  `FaceSwap`/`Product Swap`/`Character Swap` 플래그, Camera/Lighting/Style 프리셋 칩.
+- `toobusy Bundle Unpack` / `toobusy Bundle Get`: Bundle에서 역할별 이미지·오디오·프롬프트·
+  LoRA를 꺼내는 노드(Get은 연결 보드 기준 역할 드롭다운).
+- `toobusy Background Remove`(optional, rembg) / `toobusy Face Mask`(optional, YOLO→mediapipe→
+  opencv 단계 검출): 배경 제거 및 얼굴 erase/keep 마스킹 노드.
+- `toobusy DreamID-Omni Loader/Talker`(optional): 설치된 DreamID-Omni 노드에 위임하는 토킹헤드
+  골격(별도 모델·의존성 필요).
+
+### Changed
+- `toobusy Flux2 Klein`: `TOOBUSY_BUNDLE`을 직접 받아 빈 레퍼런스 슬롯을 채우고, 번들 LoRA를
+  적용. `bundle_reference_order`에 `auto`(기본, Director 스왑 플래그를 따름) 및 `product_swap`/
+  `character_swap` 추가. positive 프롬프트 입력 박스를 기본적으로 작게 표시.
+
+### Fixed
+- Reference Board 프리셋이 한글 등 비ASCII 이름에서 같은 ID로 충돌해 덮어쓰여 사라지던 문제를
+  이름 해시 기반 고유 ID + 원자적 저장으로 수정.
+- Bundle Unpack이 실제 이미지(다중 원소 텐서)에서 `payload or blank`의 불리언 평가로 오류나던
+  문제를 수정.
+
 ## [0.2.14] - 2026-06-19
 
 ### Added

@@ -1,0 +1,16 @@
+# Optional dependencies for toobusy DreamID-Omni.
+# Mirrors benjiyaya/ComfyUI_Dreamid-Omni, minus `dashscope`: that package is
+# only used by the upstream's leftover dreamid_omni/utils/prompt_extend.py
+# (an Alibaba Wan cloud prompt-rewriter), which the ComfyUI nodes/engine never
+# import. DreamID-Omni runs fully local on GPU without it — no cloud API/key.
+omegaconf
+librosa
+opencv-python
+diffusers
+optimum[quanto]
+open-clip-torch
+moviepy<2
+ftfy
+regex
+pydub
+pandas

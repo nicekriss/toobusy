@@ -355,6 +355,16 @@ app.registerExtension({
         nodeType.prototype.onNodeCreated = function () {
             onNodeCreated?.apply(this, arguments);
 
+            // The positive prompt is usually replaced by the Bundle (use_bundle_prompt),
+            // so default the multiline box to a compact height instead of a huge one.
+            const positiveWidget = findWidget(this, "positive");
+            if (positiveWidget && !positiveWidget._toobusyShrunk) {
+                positiveWidget._toobusyShrunk = true;
+                positiveWidget.computeSize = function (width) {
+                    return [width, 84];
+                };
+            }
+
             const sizeReadout = makeReadoutWidget("klein_size_readout");
             if (this.addCustomWidget) this.addCustomWidget(sizeReadout);
             else (this.widgets = this.widgets || []).push(sizeReadout);
@@ -425,6 +435,14 @@ app.registerExtension({
 
             applyAdvanced(this);
             updateSizeReadout(this);
+            // Relayout once so the compact prompt height takes effect on creation
+            // (without locking the width).
+            try {
+                const computed = this.computeSize?.();
+                if (computed) this.setSize([Math.max(this.size[0], computed[0]), computed[1]]);
+            } catch (err) {
+                // size relayout is best-effort
+            }
         };
 
         const onConfigure = nodeType.prototype.onConfigure;

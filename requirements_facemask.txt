@@ -1,0 +1,14 @@
+# Optional dependencies for toobusy Face Mask (face erase / keep for swaps).
+#
+# Detector chain (best first), all auto-detected:
+#   1. A YOLO face model — if you already have ultralytics + a face model
+#      (e.g. from Face Detailer / ComfyUI-Impact-Pack, in
+#      models/ultralytics/{segm,bbox}/*face*.pt), it is used automatically.
+#      Most accurate; a segm model gives a real mask. No install needed here.
+#   2. mediapipe — precise face oval when it imports cleanly (brittle across
+#      Python versions; auto-skipped if broken).
+#   3. opencv Haar — always-available fallback (ships its model).
+#
+# Only opencv-python is required. mediapipe is optional/recommended.
+opencv-python
+mediapipe
