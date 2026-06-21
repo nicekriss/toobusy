@@ -5,7 +5,7 @@
 
 > **Fold the graph.** — toobusy folds tedious multi-step ComfyUI workflows into single production nodes.
 
-현재 문서는 **v0.2.11** 기준입니다.
+현재 문서는 **v0.3.1** 기준입니다.
 
 ## Quick Start
 
@@ -47,7 +47,12 @@ ComfyUI를 재시작하세요. 프런트엔드(JS) 변경을 받은 뒤에는 �
 | 구분 | 노드 | 한 줄 설명 |
 |---|---|---|
 | 영상 | `toobusy Wan SCAIL Extend Sampler` | Wan 2.1 SCAIL-2 생성 + 익스텐드 체인을 1노드로 접습니다. |
-| 이미지 | `toobusy Flux2 Klein` | Flux2 Klein 9B 레퍼런스 생성 그래프를 1노드로 접습니다. |
+| 레퍼런스 | `toobusy Reference Board` | 이미지/오디오/텍스트/LoRA 카드를 한 보드에 모아 하나의 `TOOBUSY_BUNDLE`로 묶습니다. 카드에 **얼굴 지우기 / 얼굴만 남기기 / 배경 제거** 모듈을 붙이고, 프리셋·호버 확대·드래그아웃·이미지 교체를 지원합니다. |
+| 레퍼런스 | `toobusy Flux2 Klein Prompt Director` | Bundle을 받아 **버튼만으로 최종 프롬프트를 조립**합니다. 연결된 보드의 등록 카드만 버튼으로 뜨고, **FaceSwap / Product Swap / Character Swap**을 켤 수 있습니다. |
+| 레퍼런스 | `toobusy Bundle Unpack` / `Bundle Get` | Bundle에서 역할별 이미지·오디오·프롬프트·LoRA를 꺼냅니다. (`Bundle Get`은 연결 보드 기준 역할 드롭다운) |
+| 이미지 | `toobusy Flux2 Klein` | Flux2 Klein 9B 레퍼런스 생성 그래프를 1노드로 접습니다. `TOOBUSY_BUNDLE`을 직접 받아 빈 레퍼런스 슬롯·LoRA를 채우고, 스왑 순서를 `auto`로 따라갑니다. |
+| 이미지 | `toobusy Background Remove` / `Face Mask` | rembg 배경 제거 / 얼굴 erase·keep 마스킹 노드(선택 의존성). 마스킹은 YOLO→mediapipe→opencv 순으로 검출합니다. |
+| 토킹헤드 | `toobusy DreamID-Omni Loader/Talker` | 설치된 DreamID-Omni 노드에 위임하는 토킹헤드 골격(선택 의존성). |
 | 이미지 | `toobusy Z-Image Turbo` | Z-Image Turbo t2i/img2img/latent-in 그래프를 1노드로 접습니다. |
 | 보정 루프 | `toobusy Hires Upscale` | 업스케일 + 리샘플 + VAE Encode를 하이레즈 픽스용 1노드로 접습니다. |
 | 컨트롤 | `toobusy ZIT ControlNet` | Z-Image Turbo 앞에 depth/canny/pose 컨트롤을 모듈처럼 붙입니다. |
@@ -59,10 +64,35 @@ ComfyUI를 재시작하세요. 프런트엔드(JS) 변경을 받은 뒤에는 �
 | Ideogram | `toobusy Layout Text Overlay` | 생성된 이미지 위에 실제 한글 텍스트를 인터랙티브하게(드래그·편집·폰트크기) 얹어, Ideogram이 못 그리는 한글을 크리스피하게 렌더합니다(layout_json 자동 시드). |
 | LTX | `toobusy LTX2.3` 3종 | LTX2.3 AV 프롬프트, 빈 latent, 샘플러 블록을 컴팩트하게 만듭니다. |
 
-노드는 두 갈래로 접혀 있습니다.
+노드는 카테고리로 접혀 있습니다.
 
-- **`toobusy/Plan`** — 기획·연출·프롬프트·스토리보드 작업을 접습니다.
+- **`toobusy/Plan`** — 기획·연출·프롬프트·스토리보드·Reference Board·Director·Bundle 작업을 접습니다.
 - **`toobusy/Make`** — 이미지/영상 생성 파이프라인을 접습니다.
+- **`toobusy/Image`** — 배경 제거·얼굴 마스킹 같은 이미지 전처리 노드.
+- **`toobusy/DreamID`** — DreamID-Omni 토킹헤드 노드.
+
+## v0.3.0 / v0.3.1에서 특히 달라진 점
+
+**레퍼런스 기반 제작 생태계(Reference Board → Prompt Director → Flux2 Klein)를 처음으로 공개했습니다.**
+
+- **`toobusy Reference Board` 추가**: 이미지/오디오/텍스트/LoRA 카드를 한 보드에서 구성해 하나의 `TOOBUSY_BUNDLE`로 묶습니다.
+  - 카드 부착 **모듈**: `Erase Face`(몸의 얼굴 제거) / `Keep Face Only`(얼굴만 남기기) / `Remove Background`(배경 제거) — 카드 이미지에 서버측에서 적용됩니다.
+  - **텍스트 카드**(Goal/Style/Negative/Custom)와 레퍼런스 이름 삽입 칩, **독립 LoRA 카드** 및 Face 카드 FaceSwap LoRA 드롭다운.
+  - 카드 **호버 확대 미리보기**, **드래그아웃**(다른 앱/브라우저로 이미지·오디오 끌어다 놓기), 카드 **이미지 클릭/드롭 교체**(설정 유지), 이름 충돌 없는 **프리셋 저장/로드**.
+- **`toobusy Flux2 Klein Prompt Director` 추가**: Bundle을 받아 버튼 패널로 최종 프롬프트를 조립합니다. 연결된 Reference Board의 등록 카드만 버튼으로 동적 표시되고, **FaceSwap / Product Swap / Character Swap** 플래그와 Camera/Lighting/Style 프리셋 칩을 제공합니다.
+- **`toobusy Bundle Unpack` / `Bundle Get` 추가**: Bundle에서 역할별 이미지·오디오·프롬프트·LoRA를 꺼냅니다.
+- **`toobusy Background Remove`(rembg) / `Face Mask`(YOLO→mediapipe→opencv) 추가**(선택 의존성): 배경 제거 및 얼굴 erase/keep 마스킹.
+- **`toobusy DreamID-Omni Loader/Talker` 추가**(선택 의존성): 설치된 DreamID-Omni 노드에 위임하는 토킹헤드 골격.
+- **`toobusy Flux2 Klein` 강화**: `TOOBUSY_BUNDLE`을 직접 받아 빈 레퍼런스 슬롯을 채우고 번들 LoRA를 적용합니다. `bundle_reference_order`에 `auto`(기본, Director 스왑 플래그를 따름)·`product_swap`·`character_swap`이 추가됐습니다.
+
+핵심 흐름:
+
+```text
+Reference Board (이미지/오디오/텍스트/LoRA 카드 + 모듈)
+-> TOOBUSY_BUNDLE
+-> Prompt Director (버튼으로 프롬프트 조립 + 스왑 플래그)
+-> Flux2 Klein (레퍼런스 생성)
+```
 
 ## v0.2.11에서 특히 달라진 점
 
@@ -169,6 +199,10 @@ vae_name   : flux2-vae.safetensors
 | **LTX2.3** | ComfyUI에 LTX 2.3 노드셋(`LTXV*`) + LTX 모델/VAE/텍스트 인코더 | LTX 지원이 없는 환경에서는 실행 시점에 실패합니다. |
 | **Storyboard Board / Paint Canvas** | Pillow·numpy·torch | 이미지와 레이어 데이터는 워크플로우에 임베드되므로, 너무 많이 넣으면 JSON이 커질 수 있습니다. |
 | **Load CLIP** | safetensors 또는 `.gguf` 텍스트 인코더 | `.gguf`는 ComfyUI-GGUF가 설치돼 있어야 로드됩니다. Text Generate용 프롬프트 인핸서에는 Gemma 계열이 안전합니다. |
+| **Reference Board / Director / Bundle** | (코어 의존성 없음) | Director는 `clip`에 텍스트 생성 가능한 모델이 필요합니다. 카드 모듈을 쓰면 아래 선택 의존성이 필요합니다. |
+| **Background Remove** | `rembg` + `onnxruntime` (선택) | `pip install -r custom_nodes/toobusy/requirements_rembg.txt`. 모델은 최초 실행 시 다운로드됩니다(GPU는 `onnxruntime-gpu`). |
+| **Face Mask / 카드 얼굴 모듈** | `opencv-python` 필수 + `mediapipe`·ultralytics YOLO face 모델(선택) | `pip install -r custom_nodes/toobusy/requirements_facemask.txt`. YOLO face 모델(Face Detailer 모델)이 있으면 자동 사용, 없으면 opencv로 폴백합니다. |
+| **DreamID-Omni** | 설치된 `benjiyaya/ComfyUI_Dreamid-Omni` 노드 + 해당 모델 | `pip install -r custom_nodes/toobusy/requirements_dreamid_omni.txt`. toobusy 노드는 upstream에 위임하므로 그쪽 모델/의존성이 있어야 합니다. |
 
 > 모델 파일은 저장소에 포함하지 않습니다. 각 모델은 ComfyUI의 해당 폴더(`diffusion_models`/`text_encoders`/`vae`/`loras`/`model_patches`)에 직접 두세요.
 
@@ -192,6 +226,18 @@ reference_image + pose_video
 ```
 
 SCAIL-2 예제는 여러 전처리와 익스텐드 단계를 하나로 접는 흐름을 보여줍니다. 세그먼트/마스크/비디오 저장 쪽 커스텀 노드는 예제 워크플로우 안의 Note를 확인하세요.
+
+### Reference Board → Director → Flux2 Klein (레퍼런스 제작 흐름)
+
+```text
+Reference Board (캐릭터/얼굴/의상/제품/배경 카드 + 모듈)
+-> toobusy_bundle
+-> Prompt Director (버튼으로 프롬프트 조립 + FaceSwap/ProductSwap/CharacterSwap)
+-> Flux2 Klein (bundle_reference_order = auto)
+-> image
+```
+
+캐릭터 스왑 예: Reference Board에 **Character A**(유지할 장면/포즈)와 **Character B**(넣을 인물)를 등록하고, Director에서 **Character Swap** 버튼 + 두 카드를 선택한 뒤 Goal 텍스트 카드에 의도를 적습니다. Flux2 Klein은 `auto`로 스왑 순서를 따라갑니다. 페이스 스왑은 몸 카드에 `Erase Face`, 얼굴 소스 카드에 `Keep Face Only` 모듈을 붙이면 더 깔끔합니다.
 
 ### Flux2 Klein 레퍼런스 생성
 
@@ -265,9 +311,9 @@ Storyboard Board와 Paint Canvas는 이미지를 `board_data` / `canvas_data`에
 
 단기 계획:
 
-1. 0.2.11 기준 예제 워크플로우와 문서 정리.
-2. 메인 README는 가볍게 유지하고, 노드별 상세 설명은 `docs/`로 분리.
-3. ComfyUI-Manager / Registry 배포 기준 점검.
+1. Reference Board 카드용 **마스크 에디터**(수동) + **의상 교체** 마스킹(캐릭터=의상 제거, 의상 이미지=의상만 남기기).
+2. 고품질 페이스 스왑을 위한 insightface 옵션 검토.
+3. 레퍼런스 제작 흐름 예제 워크플로우 추가, 노드별 상세는 `docs/`로 분리.
 
 ## 라이선스
 
