@@ -1,0 +1,6 @@
+# Optional dependencies for toobusy Background Remove.
+# Kept separate from the core node deps: install only if you want background
+# removal. rembg pulls onnxruntime; the selected model is downloaded on first
+# use (to ~/.u2net). For GPU, install onnxruntime-gpu instead of onnxruntime.
+rembg
+onnxruntime

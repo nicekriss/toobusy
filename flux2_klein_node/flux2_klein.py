@@ -82,6 +82,117 @@ def _image_dims(image):
     return (width // 8) * 8, (height // 8) * 8
 
 
+def _connected_image(image):
+    if image is None:
+        return False
+    shape = getattr(image, "shape", None)
+    if shape and len(shape) >= 3:
+        try:
+            return int(shape[1]) > 1 and int(shape[2]) > 1
+        except Exception:
+            return True
+    return True
+
+
+def _bundle_image(reference_bundle, role):
+    if not isinstance(reference_bundle, dict):
+        return None
+    aliases = {
+        "main_character": ("main_character", "character_a"),
+        "secondary_character": ("secondary_character", "character_b"),
+        "face": ("face", "face_a"),
+        "pose": ("pose", "pose_a"),
+        "outfit": ("outfit", "outfit_a"),
+        "background": ("background", "background_a"),
+        "product": ("product", "prop_a"),
+    }.get(role, (role,))
+    for key in aliases:
+        data = reference_bundle.get(key)
+        if isinstance(data, dict) and data.get("image") is not None:
+            return data.get("image")
+    for card in reference_bundle.get("cards", []) if isinstance(reference_bundle.get("cards"), list) else []:
+        if isinstance(card, dict) and card.get("role") in aliases and card.get("image") is not None:
+            return card.get("image")
+    return None
+
+
+def _bundle_references(reference_bundle, reference_order="standard"):
+    # Klein reference slots are an ordered conditioning chain, so map the board
+    # roles to a practical default order. Users can still override any slot by
+    # wiring the individual reference_N_image inputs.
+    order_map = {
+        "standard": ("main_character", "secondary_character", "pose", "outfit", "background"),
+        "body_first_face_second": ("main_character", "face", "outfit", "pose", "background"),
+        "face_first_body_second": ("face", "main_character", "outfit", "pose", "background"),
+        "product_swap": ("main_character", "product", "pose", "background"),
+        "character_swap": ("main_character", "secondary_character", "pose", "background"),
+    }
+    ordered_roles = order_map.get(str(reference_order or "standard"), order_map["standard"])
+    images = []
+    for role in ordered_roles:
+        image = _bundle_image(reference_bundle, role)
+        if _connected_image(image):
+            images.append((role, image))
+    return images
+
+
+# Valid reference orders (besides "auto").
+REFERENCE_ORDERS = ("standard", "body_first_face_second", "face_first_body_second", "product_swap", "character_swap")
+
+
+def _resolve_reference_order(bundle_reference_order, reference_bundle):
+    """Resolve the effective reference order.
+
+    "auto" (default) follows the Bundle's ``flags.reference_order`` set by the
+    Director FaceSwap button, so clicking FaceSwap upstream drives the order
+    without touching this node. Any explicit choice overrides the bundle.
+    """
+    order = str(bundle_reference_order or "auto")
+    if order != "auto":
+        return order if order in REFERENCE_ORDERS else "standard"
+    flags = reference_bundle.get("flags") if isinstance(reference_bundle, dict) else None
+    if isinstance(flags, dict):
+        flagged = str(flags.get("reference_order") or "").strip()
+        if flagged in REFERENCE_ORDERS:
+            return flagged
+    return "standard"
+
+
+def _bundle_prompt(reference_bundle):
+    if not isinstance(reference_bundle, dict):
+        return ""
+    return str(reference_bundle.get("resolved_prompt") or "").strip()
+
+
+def _bundle_loras(reference_bundle):
+    if not isinstance(reference_bundle, dict):
+        return []
+    loras = []
+    for card in reference_bundle.get("cards", []) if isinstance(reference_bundle.get("cards"), list) else []:
+        if not isinstance(card, dict):
+            continue
+        card_type = str(card.get("type") or "").lower()
+        role = str(card.get("role") or "").lower()
+        if card_type != "lora" and "lora" not in role:
+            continue
+        name = str(card.get("lora_name") or card.get("name") or card.get("label") or "").strip()
+        if not name or name == "None":
+            continue
+        try:
+            strength = float(card.get("strength", card.get("lora_strength", 1.0)))
+        except Exception:
+            strength = 1.0
+        loras.append((name, strength))
+    selected = reference_bundle.get("selected_lora_name")
+    if selected:
+        try:
+            strength = float(reference_bundle.get("selected_lora_strength", 1.0))
+        except Exception:
+            strength = 1.0
+        loras.append((str(selected), strength))
+    return loras[:MAX_LORA_SLOTS]
+
+
 def _load_clip(clip_name):
     # Flux2 Klein uses a Qwen3-based text encoder with the "flux2" CLIP type
     # (the source workflow loads it via CLIPLoaderGGUF with type=flux2; the
@@ -165,8 +276,27 @@ class ToobusyFlux2Klein:
                 "sampler_name": (sampler_names, {"default": "euler" if "euler" in sampler_names else _default_sampler_name(sampler_names)}),
                 "lora_slots": ("INT", {"default": 0, "min": 0, "max": MAX_LORA_SLOTS}),
                 "reference_slots": ("INT", {"default": 3, "min": 0, "max": MAX_REFERENCE_SLOTS}),
+                "bundle_reference_order": (
+                    ["auto", "standard", "body_first_face_second", "face_first_body_second", "product_swap", "character_swap"],
+                    {
+                        "default": "auto",
+                        "tooltip": "How TOOBUSY_BUNDLE cards fill empty reference slots. 'auto' follows the Director swap buttons (flags.reference_order); pick a value to force it.",
+                    },
+                ),
             },
             "optional": {
+                "toobusy_bundle": (
+                    "TOOBUSY_BUNDLE",
+                    {"tooltip": "Universal toobusy Bundle from Reference Board / Prompt Director. Empty reference slots are filled from bundle roles."},
+                ),
+                "use_bundle_prompt": (
+                    "BOOLEAN",
+                    {"default": True, "tooltip": "When enabled, Bundle resolved_prompt replaces the positive text if present."},
+                ),
+                "use_bundle_loras": (
+                    "BOOLEAN",
+                    {"default": True, "tooltip": "When enabled and no manual LoRA slot is active, LoRA cards in the Bundle are applied."},
+                ),
                 "width": (
                     "INT",
                     {"default": 0, "min": 0, "max": 8192, "step": 8,
@@ -231,8 +361,12 @@ class ToobusyFlux2Klein:
         sampler_name,
         lora_slots,
         reference_slots,
+        bundle_reference_order,
         width=0,
         height=0,
+        toobusy_bundle=None,
+        use_bundle_prompt=True,
+        use_bundle_loras=True,
         model_override=None,
         clip_override=None,
         vae_override=None,
@@ -259,7 +393,30 @@ class ToobusyFlux2Klein:
             print("[toobusy Flux2 Klein] Using internal VAE loader.")
             vae = _call_node("VAELoader", vae_name=vae_name)[0]
 
+        bundle_prompt = _bundle_prompt(toobusy_bundle)
+        if use_bundle_prompt and bundle_prompt:
+            positive = bundle_prompt
+            print("[toobusy Flux2 Klein] Using resolved_prompt from TOOBUSY_BUNDLE.")
+
         lora_slots = max(0, min(MAX_LORA_SLOTS, int(lora_slots)))
+        manual_lora_active = False
+        if use_bundle_loras:
+            for slot in range(1, lora_slots + 1):
+                if slot_kwargs.get(f"lora_{slot}_enable", False) and slot_kwargs.get(f"lora_{slot}_name", "None") != "None":
+                    manual_lora_active = True
+                    break
+            if not manual_lora_active:
+                for index, (lora_name, lora_strength) in enumerate(_bundle_loras(toobusy_bundle), start=1):
+                    model, clip = _call_node(
+                        "LoraLoader",
+                        model=model,
+                        clip=clip,
+                        lora_name=lora_name,
+                        strength_model=lora_strength,
+                        strength_clip=lora_strength,
+                    )
+                    print(f"[toobusy Flux2 Klein] Bundle LoRA {index} applied: {lora_name} @ {lora_strength}")
+
         for slot in range(1, lora_slots + 1):
             enabled = slot_kwargs.get(f"lora_{slot}_enable", False)
             lora_name = slot_kwargs.get(f"lora_{slot}_name", "None")
@@ -285,15 +442,30 @@ class ToobusyFlux2Klein:
         # is ImageScaleToTotalPixels (lanczos, 1MP) -> VAEEncode ->
         # ReferenceLatent, chained on the conditioning — all core nodes.
         reference_slots = max(0, min(MAX_REFERENCE_SLOTS, int(reference_slots)))
+        active_bundle = toobusy_bundle
         references = {
             slot: slot_kwargs.get(f"reference_{slot}_image")
             for slot in range(1, MAX_REFERENCE_SLOTS + 1)
         }
+        effective_reference_order = _resolve_reference_order(bundle_reference_order, active_bundle)
+        bundle_refs = _bundle_references(active_bundle, effective_reference_order)
+        bundle_index = 0
+        for slot in range(1, MAX_REFERENCE_SLOTS + 1):
+            if _connected_image(references.get(slot)):
+                if bundle_index < len(bundle_refs):
+                    bundle_index += 1
+                continue
+            if bundle_index >= len(bundle_refs):
+                break
+            role, image = bundle_refs[bundle_index]
+            references[slot] = image
+            bundle_index += 1
+            print(f"[toobusy Flux2 Klein] Reference #{slot} filled from bundle role: {role}.")
         first_active_image = None
 
         for slot in range(1, reference_slots + 1):
             image = references.get(slot)
-            if image is None:
+            if not _connected_image(image):
                 print(f"[toobusy Flux2 Klein] Reference #{slot} has no IMAGE connected; skipped.")
                 continue
             if first_active_image is None:
