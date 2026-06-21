@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-06-21
+
+### Fixed
+- Comfy Registry 보안 스캐너(YARA)가 `tests/test_prompt_polish.py`의 `__import__("json")`을
+  obfuscation/code-execution으로 오탐해 0.2.14~0.3.1이 flagged 처리되던 문제를 해결했습니다.
+  해당 코드를 일반 `import json`으로 바꾸고, `.comfyignore`에 `tests/`·`.vscode/`를 추가해
+  발행 패키지에서 테스트/개발 파일을 제외합니다. (노드 동작 변경 없음)
+
 ## [0.3.1] - 2026-06-21
 
 ### Fixed
