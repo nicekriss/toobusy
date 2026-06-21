@@ -4,6 +4,17 @@
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-06-21
+
+### Fixed
+- `toobusy Reference Board` 노드 프리뷰 카드 드래그아웃이 이미지뿐 아니라 오디오/텍스트/LoRA
+  에서도 동작하도록 보강했습니다. 오디오·이미지는 파일/URL로, 텍스트·LoRA는 텍스트로
+  드래그됩니다.
+
+### Changed
+- `toobusy Reference Board` 오버레이 에디터에서 오디오 카드를 더 넓게(가로형) 표시하고 재생
+  막대를 키워, 세로 카드에서 재생바가 너무 작던 문제를 개선했습니다.
+
 ## [0.3.0] - 2026-06-21
 
 레퍼런스 기반 제작 생태계(Reference Board → Prompt Director → Flux2 Klein)를 처음으로 공개합니다.

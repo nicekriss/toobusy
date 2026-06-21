@@ -566,6 +566,11 @@ function injectOverlayStyle() {
             outline: 2px dashed #6aa9ff;
             outline-offset: -2px;
         }
+        .toobusy-ref-card.toobusy-ref-card-audio {
+            width: 360px;
+            min-height: 0;
+        }
+        .toobusy-ref-card-audio .toobusy-ref-audio-player { height: 40px; }
         .toobusy-ref-audio-thumb {
             width: 100%;
             height: 120px;
@@ -1167,6 +1172,7 @@ function createCardElement(item, board, area, hint, sync) {
         return buildTextCard(card, item, board, area, hint, sync);
     }
     const isAudio = isAudioItem(item);
+    if (isAudio) card.classList.add("toobusy-ref-card-audio");
     card.innerHTML = `
         <div class="toobusy-ref-thumb-root"></div>
         <div class="toobusy-ref-card-body">
@@ -1590,40 +1596,63 @@ function refreshLauncher(launcher, node, stateText = "Applied") {
 // Make a node-preview card draggable so it can be dropped into other apps
 // (desktop, Photoshop, browser, etc.) — a real mood-board feel. Images drag as
 // a file/URL; text cards drag their text.
+function dragFileName(item, isAudio) {
+    const fromFile = String(item.filename || "").split(/[\\/]/).pop();
+    if (fromFile && /\.\w+$/.test(fromFile)) return fromFile.replace(/[^\w.-]+/g, "_");
+    const base = `${item.name || item.role || (isAudio ? "audio" : "reference")}`.replace(/[^\w.-]+/g, "_");
+    return base + (isAudio ? ".wav" : ".png");
+}
+
+function dragMime(item, isAudio) {
+    if (item.mime && /\//.test(item.mime)) return item.mime;
+    return isAudio ? "audio/wav" : "image/png";
+}
+
+// Drag a node-preview card out to other apps: images and audio drag as a
+// file/URL; text and lora drag their text.
 function makeSlotDraggable(slot, item, isText, isLora) {
     const audio = isAudioItem(item);
-    const img = slot.querySelector("img");
-    if (img && !isText && !isLora && !audio) {
-        img.draggable = true;
-        img.addEventListener("dragstart", (event) => {
-            const url = referenceViewUrl(item);
-            if (!url) return;
-            hideHoverPreview();
-            let abs = url;
-            try {
-                abs = new URL(url, window.location.href).href;
-            } catch {}
-            const fname = `${item.name || item.role || "reference"}`.replace(/[^\w.-]+/g, "_") + ".png";
-            try {
-                event.dataTransfer.setData("text/uri-list", abs);
-                event.dataTransfer.setData("text/plain", abs);
-                // Chromium: enables drag-out to the OS as an image file.
-                event.dataTransfer.setData("DownloadURL", `image/png:${fname}:${abs}`);
-                event.dataTransfer.effectAllowed = "copy";
-            } catch {}
-        });
-        return;
-    }
-    if (isText) {
+    const dragText = (getText) => {
         slot.draggable = true;
         slot.addEventListener("dragstart", (event) => {
             hideHoverPreview();
             try {
-                event.dataTransfer.setData("text/plain", item.text || "");
+                event.dataTransfer.setData("text/plain", getText() || "");
                 event.dataTransfer.effectAllowed = "copy";
             } catch {}
         });
+    };
+    if (isText) {
+        dragText(() => item.text);
+        return;
     }
+    if (isLora) {
+        dragText(() => item.lora_name);
+        return;
+    }
+    // image or audio media → drag the file/URL
+    const url = referenceViewUrl(item);
+    if (!url) return;
+    const img = slot.querySelector("img");
+    const dragEl = img || slot;
+    if (img) img.draggable = true;
+    else slot.draggable = true;
+    dragEl.addEventListener("dragstart", (event) => {
+        hideHoverPreview();
+        let abs = url;
+        try {
+            abs = new URL(url, window.location.href).href;
+        } catch {}
+        const fname = dragFileName(item, audio);
+        const mime = dragMime(item, audio);
+        try {
+            event.dataTransfer.setData("text/uri-list", abs);
+            event.dataTransfer.setData("text/plain", abs);
+            // Chromium: enables drag-out to the OS as a file.
+            event.dataTransfer.setData("DownloadURL", `${mime}:${fname}:${abs}`);
+            event.dataTransfer.effectAllowed = "copy";
+        } catch {}
+    });
 }
 
 // --- Card thumbnail hover preview (large popup) -----------------------------
