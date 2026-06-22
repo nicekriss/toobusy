@@ -29,10 +29,12 @@ LOADER_NODES = ("UNETLoader", "CLIPLoader", "VAELoader")
 
 # Shared call log populated by the stubbed _call_node.
 _CALLS = []
+_samp = None
 
 
 def _install_stubs():
     """Stub the ComfyUI runtime so the node modules import standalone."""
+    global _samp
     folder_paths = types.ModuleType("folder_paths")
     folder_paths.get_filename_list = lambda kind: []
     sys.modules["folder_paths"] = folder_paths
@@ -61,6 +63,7 @@ def _install_stubs():
     samp._call_node = fake_call_node
     samp._sampler_names = lambda: ["res_multistep", "euler"]
     samp._default_sampler_name = lambda names: names[0]
+    _samp = samp
 
 
 def _load(modname, relpath):
@@ -108,6 +111,7 @@ def test_ideogram4_exposes_override_inputs():
 
 def _run_zimage(**overrides):
     _CALLS.clear()
+    _samp._clear_loader_cache()
     _zit.ToobusyZImageTurbo().generate(
         model_name="m", clip_name="c", vae_name="v", positive="p", negative="n",
         ratio_preset="1:1", megapixels=1.0, divisible_by=32, batch_size=1, seed=1,
@@ -118,6 +122,7 @@ def _run_zimage(**overrides):
 
 def _run_ideogram4(**overrides):
     _CALLS.clear()
+    _samp._clear_loader_cache()
     _ideo.ToobusyIdeogram4T2I().generate(
         model_name="m", unconditional_model_name="um", clip_name="c", vae_name="v",
         prompt="{}", quality="Turbo", steps=0, ratio_preset="1:1", megapixels=1.0,

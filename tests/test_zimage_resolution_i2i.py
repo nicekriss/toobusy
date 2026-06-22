@@ -20,9 +20,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # (node_type, kwargs) of every _call_node invocation in the last generate().
 _CALLS = []
+_samp = None
 
 
 def _install_stubs():
+    global _samp
     folder_paths = types.ModuleType("folder_paths")
     folder_paths.get_filename_list = lambda kind: []
     sys.modules["folder_paths"] = folder_paths
@@ -53,6 +55,7 @@ def _install_stubs():
     samp._call_node = fake_call_node
     samp._sampler_names = lambda: ["res_multistep", "euler"]
     samp._default_sampler_name = lambda names: names[0]
+    _samp = samp
 
 
 def _load(modname, relpath):
@@ -80,6 +83,7 @@ class _FakeImage:
 
 def _generate(**overrides):
     _CALLS.clear()
+    _samp._clear_loader_cache()
     kwargs = dict(
         model_name="m", clip_name="c", vae_name="v", positive="p", negative="n",
         ratio_preset="1:1", megapixels=1.0, divisible_by=32, batch_size=1, seed=1,

@@ -3,6 +3,7 @@ import math
 from ..ltx23_compact_sampler_node.ltx23_compact_sampler import (
     _call_node,
     _default_sampler_name,
+    _load_cached,
     _sampler_names,
     _scan_for,
 )
@@ -197,7 +198,7 @@ def _load_clip(clip_name):
     # Flux2 Klein uses a Qwen3-based text encoder with the "flux2" CLIP type
     # (the source workflow loads it via CLIPLoaderGGUF with type=flux2; the
     # GGUF file itself can flow in through clip_override).
-    return _call_node("CLIPLoader", clip_name=clip_name, type="flux2", device="default")[0]
+    return _load_cached("CLIPLoader", clip_name=clip_name, type="flux2", device="default")
 
 
 class ToobusyFlux2Klein:
@@ -377,7 +378,7 @@ class ToobusyFlux2Klein:
             model = model_override
         else:
             print("[toobusy Flux2 Klein] Using internal MODEL loader.")
-            model = _call_node("UNETLoader", unet_name=model_name, weight_dtype="default")[0]
+            model = _load_cached("UNETLoader", unet_name=model_name, weight_dtype="default")
 
         if clip_override is not None:
             print("[toobusy Flux2 Klein] Using external CLIP override. Internal CLIP loader ignored.")
@@ -391,7 +392,7 @@ class ToobusyFlux2Klein:
             vae = vae_override
         else:
             print("[toobusy Flux2 Klein] Using internal VAE loader.")
-            vae = _call_node("VAELoader", vae_name=vae_name)[0]
+            vae = _load_cached("VAELoader", vae_name=vae_name)
 
         bundle_prompt = _bundle_prompt(toobusy_bundle)
         if use_bundle_prompt and bundle_prompt:

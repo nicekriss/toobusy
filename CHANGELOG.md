@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-06-22
+
+### Fixed
+- Z-Image Turbo, Flux2 Klein, Ideogram4 T2I가 내부에서 UNET/CLIP/VAE 로더를 호출할 때
+  같은 모델을 반복 실행마다 다시 읽어 VRAM 피크와 대기 시간이 커지던 문제를 줄였습니다.
+  공유 helper에 작은 LRU 캐시를 추가해 같은 loader/class/argument 조합은 재사용합니다.
+- 캐시 추가 후 standalone 테스트의 fake loader 호출 기록이 테스트 사이에 남지 않도록
+  관련 테스트 격리를 보강했습니다.
+
 ## [0.3.2] - 2026-06-21
 
 ### Fixed

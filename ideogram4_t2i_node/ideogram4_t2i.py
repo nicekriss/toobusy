@@ -2,6 +2,7 @@ import math
 
 from ..ltx23_compact_sampler_node.ltx23_compact_sampler import (
     _call_node,
+    _load_cached,
     _normalized,
     _sampler_names,
     _scan_for,
@@ -257,28 +258,28 @@ class ToobusyIdeogram4T2I:
             model = model_override
         else:
             print("[toobusy Ideogram4 T2I] Using internal MODEL loader.")
-            model = _call_node("UNETLoader", unet_name=model_name, weight_dtype="default")[0]
+            model = _load_cached("UNETLoader", unet_name=model_name, weight_dtype="default")
 
         if uncond_model_override is not None:
             print("[toobusy Ideogram4 T2I] Using external unconditional MODEL override. Internal unconditional model loader ignored.")
             model_uncond = uncond_model_override
         else:
             print("[toobusy Ideogram4 T2I] Using internal unconditional MODEL loader.")
-            model_uncond = _call_node("UNETLoader", unet_name=unconditional_model_name, weight_dtype="default")[0]
+            model_uncond = _load_cached("UNETLoader", unet_name=unconditional_model_name, weight_dtype="default")
 
         if clip_override is not None:
             print("[toobusy Ideogram4 T2I] Using external CLIP override. Internal CLIP loader ignored.")
             clip = clip_override
         else:
             print("[toobusy Ideogram4 T2I] Using internal CLIP loader.")
-            clip = _call_node("CLIPLoader", clip_name=clip_name, type="ideogram4", device="default")[0]
+            clip = _load_cached("CLIPLoader", clip_name=clip_name, type="ideogram4", device="default")
 
         if vae_override is not None:
             print("[toobusy Ideogram4 T2I] Using external VAE override. Internal VAE loader ignored.")
             vae = vae_override
         else:
             print("[toobusy Ideogram4 T2I] Using internal VAE loader.")
-            vae = _call_node("VAELoader", vae_name=vae_name)[0]
+            vae = _load_cached("VAELoader", vae_name=vae_name)
 
         lora_slots = max(0, min(MAX_LORA_SLOTS, int(lora_slots)))
         for slot in range(1, lora_slots + 1):

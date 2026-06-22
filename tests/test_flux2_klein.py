@@ -79,6 +79,9 @@ class _FakeImage:
 
 def _generate(**overrides):
     _CALLS.clear()
+    _ltx = sys.modules.get("toobusy.ltx23_compact_sampler_node.ltx23_compact_sampler")
+    if _ltx is not None:
+        _ltx._clear_loader_cache()  # test isolation: re-invoke loaders each run
     kwargs = dict(
         model_name="m", clip_name="c", vae_name="v", positive="p",
         size_mode="from reference",

@@ -3,6 +3,7 @@ import math
 from ..ltx23_compact_sampler_node.ltx23_compact_sampler import (
     _call_node,
     _default_sampler_name,
+    _load_cached,
     _sampler_names,
     _scan_for,
 )
@@ -339,7 +340,7 @@ class ToobusyZImageTurbo:
             model = model_override
         else:
             print("[toobusy Z-Image Turbo] Using internal MODEL loader.")
-            model = _call_node("UNETLoader", unet_name=model_name, weight_dtype="default")[0]
+            model = _load_cached("UNETLoader", unet_name=model_name, weight_dtype="default")
 
         # Active LoRA list up front: it decides whether CLIP is needed at all.
         lora_slots = max(0, min(MAX_LORA_SLOTS, int(lora_slots)))
@@ -359,7 +360,7 @@ class ToobusyZImageTurbo:
             clip = clip_override
         elif need_clip:
             print("[toobusy Z-Image Turbo] Using internal CLIP loader.")
-            clip = _call_node("CLIPLoader", clip_name=clip_name, type="lumina2", device="default")[0]
+            clip = _load_cached("CLIPLoader", clip_name=clip_name, type="lumina2", device="default")
         else:
             print("[toobusy Z-Image Turbo] Both conditioning overrides connected and no LoRA active — skipping the CLIP loader.")
             clip = None
@@ -369,7 +370,7 @@ class ToobusyZImageTurbo:
             vae = vae_override
         else:
             print("[toobusy Z-Image Turbo] Using internal VAE loader.")
-            vae = _call_node("VAELoader", vae_name=vae_name)[0]
+            vae = _load_cached("VAELoader", vae_name=vae_name)
 
         # Clean passthrough: the model exactly as loaded, before LoRA / shift /
         # controlnet — for swapping LoRAs in a second pass.
