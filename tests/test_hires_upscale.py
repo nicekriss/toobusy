@@ -42,6 +42,9 @@ def _install_stubs():
 
     samp = types.ModuleType("toobusy.ltx23_compact_sampler_node.ltx23_compact_sampler")
     samp._call_node = fake_call_node
+    # Non-caching passthrough so loader-call assertions stay deterministic.
+    samp._load_cached = lambda class_name, **kwargs: fake_call_node(class_name, **kwargs)[0]
+    samp._clear_loader_cache = lambda: None
     sys.modules["toobusy.ltx23_compact_sampler_node.ltx23_compact_sampler"] = samp
 
 

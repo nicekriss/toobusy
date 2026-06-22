@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-06-22
+
+### Fixed
+- `toobusy Hires Upscale`도 내부 `UpscaleModelLoader`를 v0.3.3의 공유 캐시(`_load_cached`)로
+  돌려, 반복 실행마다 업스케일 모델을 다시 읽어 VRAM이 피크를 치던 부분을 줄였습니다.
+  (업스케일 연산 자체의 메모리 사용은 4x 업스케일 특성상 별개이며 `scale_by`로 조절합니다.)
+
 ## [0.3.3] - 2026-06-22
 
 ### Fixed

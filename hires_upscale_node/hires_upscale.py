@@ -10,7 +10,7 @@ to the working resolution (4x * 0.5 = a clean 2x with model detail), and the
 result is VAE-encoded so it can feed a second sampler pass directly.
 """
 
-from ..ltx23_compact_sampler_node.ltx23_compact_sampler import _call_node
+from ..ltx23_compact_sampler_node.ltx23_compact_sampler import _call_node, _load_cached
 
 PREFERRED_DEFAULT_MODELS = (
     "ESRGAN/4x_foolhardy_Remacri.pth",
@@ -98,7 +98,7 @@ class ToobusyHiresUpscale:
 
     def upscale(self, image, vae, upscale_model_name, downscale_method, scale_by, upscale_model=None):
         if upscale_model is None:
-            upscale_model = _call_node("UpscaleModelLoader", model_name=upscale_model_name)[0]
+            upscale_model = _load_cached("UpscaleModelLoader", model_name=upscale_model_name)
         else:
             print("[toobusy Hires Upscale] Using connected upscale_model override.")
 
