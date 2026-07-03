@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+### Fixed
+- Removed the folded-node loader output cache so internal UNET/CLIP/VAE loader
+  calls behave like normal ComfyUI graphs and do not hold extra VRAM across
+  consecutive queue runs.
+- Removed the Face Mask YOLO model cache for the same reason; optional detector
+  models are no longer retained in module globals after a run.
+
 ## [0.3.4] - 2026-06-22
 
 ### Fixed

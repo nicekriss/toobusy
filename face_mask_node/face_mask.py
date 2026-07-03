@@ -88,9 +88,6 @@ def _finalize_mask(mask_uint8, expand, feather, np, cv2):
     return np.clip(soft, 0.0, 1.0).astype("float32")
 
 
-_YOLO_CACHE = {}
-
-
 def _find_face_yolo_model():
     """Locate a face YOLO model the user already has (e.g. from Face Detailer /
     ComfyUI-Impact-Pack). Prefers a segmentation model (gives a mask). Returns
@@ -121,13 +118,9 @@ def _find_face_yolo_model():
 
 
 def _load_yolo(path):
-    model = _YOLO_CACHE.get(path)
-    if model is None:
-        from ultralytics import YOLO
+    from ultralytics import YOLO
 
-        model = YOLO(path)
-        _YOLO_CACHE[path] = model
-    return model
+    return YOLO(path)
 
 
 def _detect_face_yolo(frame_rgb_uint8, np, cv2):

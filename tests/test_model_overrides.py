@@ -168,6 +168,25 @@ def test_ideogram4_partial_override_skips_only_connected():
     assert called.count("VAELoader") == 1
 
 
+def test_loader_wrapper_does_not_retain_outputs():
+    calls = []
+
+    def fake_loader(node_type, **kwargs):
+        calls.append((node_type, kwargs))
+        return [object()]
+
+    old_call_node = _samp._call_node
+    try:
+        _samp._call_node = fake_loader
+        first = _samp._load_cached("UNETLoader", unet_name="m", weight_dtype="default")
+        second = _samp._load_cached("UNETLoader", unet_name="m", weight_dtype="default")
+    finally:
+        _samp._call_node = old_call_node
+
+    assert len(calls) == 2
+    assert first is not second
+
+
 if __name__ == "__main__":
     failures = 0
     for name, fn in sorted(globals().items()):

@@ -122,48 +122,17 @@ def _unwrap_result(result):
     return result
 
 
-# Loader output cache. Folded nodes call the diffusion/CLIP/VAE loaders
-# internally, so when the node re-executes (e.g. a seed change) it would
-# re-read the model from disk and re-create the ModelPatcher — spiking VRAM and
-# stalling. Caching the loader's first output by its args reuses the same
-# loaded object, so ComfyUI sees it as already loaded (no disk re-read, no
-# peak). Safe because downstream model-patch / LoRA nodes clone before mutating.
-_LOADER_CACHE = {}
-_LOADER_CACHE_ORDER = []
-_LOADER_CACHE_MAX = 4
-
-
-def _hashable(value):
-    try:
-        hash(value)
-        return value
-    except TypeError:
-        return repr(value)
-
-
+# Loader helpers intentionally avoid retaining loader outputs.
+# ComfyUI's execution cache and model manager should own these lifetimes.
+# Module-level references here can keep VRAM alive between queues.
 def _clear_loader_cache():
-    """Drop all cached loader outputs (used by tests for isolation)."""
-    _LOADER_CACHE.clear()
-    _LOADER_CACHE_ORDER.clear()
+    """Compatibility no-op for the removed loader cache."""
+    return None
 
 
 def _load_cached(class_name, **kwargs):
-    """Like `_call_node(class_name, **kwargs)[0]`, but caches by (class, args)."""
-    key = (class_name, tuple(sorted((k, _hashable(v)) for k, v in kwargs.items())))
-    if key in _LOADER_CACHE:
-        try:
-            _LOADER_CACHE_ORDER.remove(key)
-        except ValueError:
-            pass
-        _LOADER_CACHE_ORDER.append(key)
-        return _LOADER_CACHE[key]
-    result = _call_node(class_name, **kwargs)[0]
-    _LOADER_CACHE[key] = result
-    _LOADER_CACHE_ORDER.append(key)
-    while len(_LOADER_CACHE_ORDER) > _LOADER_CACHE_MAX:
-        evicted = _LOADER_CACHE_ORDER.pop(0)
-        _LOADER_CACHE.pop(evicted, None)
-    return result
+    """Compatibility wrapper: call a loader and return its first output."""
+    return _call_node(class_name, **kwargs)[0]
 
 
 def _sampler_names():

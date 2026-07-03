@@ -7,6 +7,7 @@ only when the node runs.
 import importlib.util
 import os
 import sys
+import types
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -83,6 +84,30 @@ def test_apply_face_mask_modes():
     kept = _mod._apply_face_mask(rgb, mask, (0.0, 0.0, 0.0), "keep_face", np)
     assert float(kept[0, 0, 0]) == 1.0  # face kept
     assert float(kept[0, 1, 0]) == 0.0  # rest removed
+
+
+def test_yolo_loader_does_not_retain_model_instances():
+    calls = []
+
+    class FakeYOLO:
+        def __init__(self, path):
+            calls.append(path)
+
+    ultralytics = types.ModuleType("ultralytics")
+    ultralytics.YOLO = FakeYOLO
+    old = sys.modules.get("ultralytics")
+    sys.modules["ultralytics"] = ultralytics
+    try:
+        first = _mod._load_yolo("face.pt")
+        second = _mod._load_yolo("face.pt")
+    finally:
+        if old is None:
+            sys.modules.pop("ultralytics", None)
+        else:
+            sys.modules["ultralytics"] = old
+
+    assert calls == ["face.pt", "face.pt"]
+    assert first is not second
 
 
 if __name__ == "__main__":
