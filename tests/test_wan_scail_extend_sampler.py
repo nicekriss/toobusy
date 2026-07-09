@@ -241,6 +241,8 @@ def test_masks_and_clip_vision_are_optional_inputs():
     assert optional["pose_video_mask"][0] == "IMAGE"
     assert optional["reference_image_mask"][0] == "IMAGE"
     assert optional["clip_vision"][0] == "CLIP_VISION"
+    assert optional["target_total_frames_input"][0] == "INT"
+    assert optional["target_total_frames_input"][1]["forceInput"] is True
 
 
 # --- generate() wiring -------------------------------------------------------
@@ -279,6 +281,17 @@ def test_target_total_mode_ignores_manual_segment_widgets():
     _, frame_count = _generate(
         frame_mode="target total", target_total_frames=157, base_frames=81,
         extend_segments=5, extend_1_frames=300,
+    )
+    assert len(_called("WanSCAILToVideo")) == 2
+    assert frame_count == 157
+
+
+def test_target_total_link_input_overrides_widget_value():
+    _, frame_count = _generate(
+        frame_mode="target total",
+        target_total_frames=81,
+        target_total_frames_input=157,
+        base_frames=81,
     )
     assert len(_called("WanSCAILToVideo")) == 2
     assert frame_count == 157

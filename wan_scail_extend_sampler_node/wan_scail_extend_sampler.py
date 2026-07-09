@@ -420,6 +420,17 @@ class ToobusyWanSCAILExtendSampler:
                 "clip_vision": ("CLIP_VISION",),
                 "pose_video_mask": ("IMAGE",),
                 "reference_image_mask": ("IMAGE",),
+                "target_total_frames_input": (
+                    "INT",
+                    {
+                        "forceInput": True,
+                        "tooltip": (
+                            "Optional linked override for target_total_frames. Use this when driving "
+                            "the target with a frame counter or other INT output; when connected it "
+                            "wins over the widget value."
+                        ),
+                    },
+                ),
             },
         }
 
@@ -530,6 +541,7 @@ class ToobusyWanSCAILExtendSampler:
         clip_vision=None,
         pose_video_mask=None,
         reference_image_mask=None,
+        target_total_frames_input=None,
         **segment_kwargs,
     ):
         missing = _scail_missing_params()
@@ -543,6 +555,8 @@ class ToobusyWanSCAILExtendSampler:
         auto_mode = str(frame_mode) == "target total"
 
         if auto_mode:
+            if target_total_frames_input is not None:
+                target_total_frames = target_total_frames_input
             plan = _auto_plan(target_total_frames, base_frames, overlap, seed)
         else:
             extend_segments = max(0, min(MAX_EXTEND_SEGMENTS, int(extend_segments)))
