@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-07-09
+
 ### Fixed
 - Removed the folded-node loader output cache so internal UNET/CLIP/VAE loader
   calls behave like normal ComfyUI graphs and do not hold extra VRAM across
