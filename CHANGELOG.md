@@ -4,7 +4,11 @@
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-07-09
+
 ### Fixed
+- Fixed SCAIL target total frame links so the generated frame count wiring stays
+  consistent in the folded SCAIL workflow.
 - Removed the folded-node loader output cache so internal UNET/CLIP/VAE loader
   calls behave like normal ComfyUI graphs and do not hold extra VRAM across
   consecutive queue runs.
