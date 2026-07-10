@@ -4,6 +4,21 @@
 
 ## [Unreleased]
 
+## [0.3.7] - 2026-07-10
+
+### Added
+- `toobusy Wan SCAIL Extend Sampler`에 `continue_video` 입력을 추가했습니다. 이전에
+  생성한 영상의 잘된 부분을 잘라 연결하면 base 청크를 건너뛰고, 그 영상의 꼬리
+  프레임을 SCAIL-2 `previous_frames` 앵커로 사용해 이어서 생성합니다. 포즈 비디오는
+  이어지는 지점부터 자동으로 걸어가며(`video_frame_offset`), `target total` 모드에서는
+  불러온 프레임 수가 목표에 포함됩니다. 목표를 이미 채웠다면 불러온 영상을 그대로
+  통과시킵니다.
+
+### Fixed
+- 캔버스 프레임 리드아웃이 `continue_video`나 `target_total_frames_input`이 연결된
+  경우 위젯값 기준의 잘못된 분할 계획 대신 "실행 시 결정"을 표시하고, 링크
+  연결/해제 시 즉시 갱신되도록 했습니다.
+
 ## [0.3.6] - 2026-07-09
 
 ### Fixed

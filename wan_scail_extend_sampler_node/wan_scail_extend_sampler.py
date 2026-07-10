@@ -175,13 +175,16 @@ def _chunk_plan(base_frames, extend_segments, segment_frames, seed):
     return plan
 
 
-def _kept_frame_counts(plan, previous_frame_count):
+def _kept_frame_counts(plan, previous_frame_count, has_base=True):
     """Output frames each chunk contributes: the base chunk keeps everything,
-    extend chunks drop the overlap frames re-rendered from the previous tail."""
+    extend chunks drop the overlap frames re-rendered from the previous tail.
+    With `has_base=False` (continuing an existing video) every chunk is an
+    extend, so all of them drop the overlap."""
     overlap = int(previous_frame_count)
     counts = []
     for index, (length, _seed) in enumerate(plan):
-        counts.append(int(length) if index == 0 else max(0, int(length) - overlap))
+        keeps_all = has_base and index == 0
+        counts.append(int(length) if keeps_all else max(0, int(length) - overlap))
     return counts
 
 
@@ -204,7 +207,7 @@ def _round_to_grid(value, minimum):
     return grid
 
 
-def _auto_plan(target_total, chunk_frames, overlap, seed, max_segments=MAX_AUTO_SEGMENTS):
+def _auto_plan(target_total, chunk_frames, overlap, seed, max_segments=MAX_AUTO_SEGMENTS, initial_frames=0):
     """Build [(length, noise_seed), ...] that lands as close to `target_total`
     output frames as the 4k+1 grid allows.
 
@@ -214,19 +217,29 @@ def _auto_plan(target_total, chunk_frames, overlap, seed, max_segments=MAX_AUTO_
     is resized to close the gap, and is only added when doing so lands closer to
     the target than stopping — so a 1-2 frame remainder doesn't spawn a whole
     extra chunk. Mirrors the JS readout's planning so the on-canvas breakdown
-    matches what actually runs."""
+    matches what actually runs.
+
+    `initial_frames` > 0 means an existing video (continue_video) already covers
+    the start of the timeline: no base chunk is planned — those frames count
+    toward the target and every planned chunk is an extend. The plan may come
+    back empty when the loaded video already meets the target."""
     overlap = int(overlap)
     chunk = _round_to_grid(chunk_frames, 9)
     target = max(1, int(target_total))
+    initial = max(0, int(initial_frames))
 
-    base = _round_to_grid(min(chunk, target), 5)
-    plan = [(base, int(seed))]
+    if initial > 0:
+        plan = []
+        remaining = target - initial
+    else:
+        base = _round_to_grid(min(chunk, target), 5)
+        plan = [(base, int(seed))]
+        remaining = target - base
 
     per_extend = chunk - overlap
     if per_extend <= 0:
         return plan
 
-    remaining = target - base
     min_last = max(9, overlap + 4)
     index = 1
     while remaining > 0 and index <= max_segments:
@@ -420,6 +433,20 @@ class ToobusyWanSCAILExtendSampler:
                 "clip_vision": ("CLIP_VISION",),
                 "pose_video_mask": ("IMAGE",),
                 "reference_image_mask": ("IMAGE",),
+                "continue_video": (
+                    "IMAGE",
+                    {
+                        "tooltip": (
+                            "Frames of an already-generated video to continue from (load the good "
+                            "part of a previous run and trim it to the last frame you want to keep). "
+                            "When connected the base chunk is skipped: these frames open the output, "
+                            "their tail anchors the first new chunk, and the pose video is walked "
+                            "from that point on automatically — so keep the SAME pose_video and "
+                            "settings as the original run. In 'target total' mode these frames "
+                            "count toward the target."
+                        ),
+                    },
+                ),
                 "target_total_frames_input": (
                     "INT",
                     {
@@ -541,6 +568,7 @@ class ToobusyWanSCAILExtendSampler:
         clip_vision=None,
         pose_video_mask=None,
         reference_image_mask=None,
+        continue_video=None,
         target_total_frames_input=None,
         **segment_kwargs,
     ):
@@ -554,10 +582,32 @@ class ToobusyWanSCAILExtendSampler:
         overlap = int(previous_frame_count)
         auto_mode = str(frame_mode) == "target total"
 
+        # Continuation: an already-generated video replaces the base chunk. Its
+        # tail (last `overlap` frames) anchors the first new chunk exactly like
+        # an internal chunk seam, and the pose video is walked from its end.
+        continue_count = 0
+        if continue_video is not None:
+            try:
+                continue_count = int(continue_video.shape[0])
+            except Exception:
+                continue_count = 0
+            if continue_count <= 0:
+                continue_video = None
+            elif continue_count < overlap:
+                raise ValueError(
+                    f"continue_video has {continue_count} frame(s) but previous_frame_count is "
+                    f"{overlap}; supply at least {overlap} frames so the continuation has a full "
+                    "anchor (trim the loaded video less aggressively)."
+                )
+        has_continue = continue_video is not None
+
         if auto_mode:
             if target_total_frames_input is not None:
                 target_total_frames = target_total_frames_input
-            plan = _auto_plan(target_total_frames, base_frames, overlap, seed)
+            plan = _auto_plan(
+                target_total_frames, base_frames, overlap, seed,
+                initial_frames=continue_count if has_continue else 0,
+            )
         else:
             extend_segments = max(0, min(MAX_EXTEND_SEGMENTS, int(extend_segments)))
             segment_frames = [
@@ -571,6 +621,18 @@ class ToobusyWanSCAILExtendSampler:
                         f"previous_frame_count ({overlap}); the chunk would only re-render the overlap."
                     )
             plan = _chunk_plan(base_frames, extend_segments, segment_frames, seed)
+            if has_continue:
+                # The loaded video takes the base chunk's place; only extends run.
+                plan = plan[1:]
+
+        if not plan:
+            # Only reachable with continue_video: the loaded frames already meet
+            # (or exceed) the target, so there is nothing to render.
+            print(
+                "[toobusy Wan SCAIL] Nothing to render: continue_video already covers the "
+                f"requested frames ({continue_count}). Passing it through unchanged."
+            )
+            return (continue_video, continue_count)
 
         # SCAIL-2 is pose-driven: each chunk walks the pose video at its offset,
         # so the output can't outrun the pose. Warn (don't hard-clamp) when the
@@ -580,7 +642,9 @@ class ToobusyWanSCAILExtendSampler:
                 pose_len = int(pose_video.shape[0])
             except Exception:
                 pose_len = None
-            requested = sum(_kept_frame_counts(plan, overlap))
+            requested = continue_count + sum(
+                _kept_frame_counts(plan, overlap, has_base=not has_continue)
+            )
             if pose_len and requested > pose_len:
                 print(
                     f"[toobusy Wan SCAIL] Warning: planned {requested} output frames exceed "
@@ -637,6 +701,13 @@ class ToobusyWanSCAILExtendSampler:
         chunks = []
         previous_frames = None
         frame_offset = 0
+        if has_continue:
+            # The loaded video opens the output and seeds the chunk chain: its
+            # tail becomes the first new chunk's previous_frames anchor, and the
+            # offset makes the core walk the pose video from where it left off.
+            chunks.append(continue_video)
+            previous_frames = continue_video
+            frame_offset = continue_count
         for index, (length, chunk_seed) in enumerate(plan):
             scail = _call_core(
                 _SCAIL_NODE,
@@ -679,7 +750,7 @@ class ToobusyWanSCAILExtendSampler:
             denoised = sampled[1] if len(sampled) > 1 else sampled[0]
             decoded = _call_core("VAEDecode", samples=denoised, vae=vae)[0]
 
-            if index == 0:
+            if index == 0 and not has_continue:
                 kept = decoded
             else:
                 kept = decoded[overlap:]

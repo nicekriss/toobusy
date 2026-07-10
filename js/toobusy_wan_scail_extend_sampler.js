@@ -297,15 +297,31 @@ function updateSegments(node) {
     app.graph?.setDirtyCanvas?.(true, true);
 }
 
+function inputConnected(node, name) {
+    return (node.inputs || []).some((input) => input?.name === name && input.link != null);
+}
+
 function updateFramesReadout(node) {
     const readout = findWidget(node, "frames_readout");
     if (!readout) return;
     const overlap = Math.max(0, Number(findWidget(node, "previous_frame_count")?.value ?? 5));
     const mode = findWidget(node, "replacement_mode")?.value ? "Replacement" : "Animation";
+    const continued = inputConnected(node, "continue_video");
 
     let parts;
     let extendCount;
     if (isAuto(node)) {
+        const linkedTarget = inputConnected(node, "target_total_frames_input");
+        // Linked values only resolve at execution, so the widget-based plan
+        // here would lie — say so instead of showing a wrong breakdown.
+        if (linkedTarget || continued) {
+            const why = [];
+            if (continued) why.push("continuing loaded video");
+            if (linkedTarget) why.push("target from linked input");
+            readout.value = `plan resolved at run time (${why.join(", ")}) · ${mode}`;
+            node.setDirtyCanvas?.(true, true);
+            return;
+        }
         const target = Math.max(0, Number(findWidget(node, "target_total_frames")?.value ?? 0));
         const chunk = Math.max(0, Number(findWidget(node, "base_frames")?.value ?? 81));
         const lengths = autoPlanLengths(target, chunk, overlap, MAX_AUTO_SEGMENTS);
@@ -314,7 +330,9 @@ function updateFramesReadout(node) {
     } else {
         const base = Math.max(0, Number(findWidget(node, "base_frames")?.value ?? 0));
         const count = activeSegmentCount(node);
-        parts = [base];
+        // Continuation replaces the base chunk with the loaded video (length
+        // unknown here), so only the extend contributions are counted.
+        parts = continued ? [] : [base];
         for (let slot = 1; slot <= count; slot += 1) {
             const frames = Math.max(0, Number(findWidget(node, `extend_${slot}_frames`)?.value ?? 0));
             parts.push(Math.max(0, frames - overlap));
@@ -324,6 +342,12 @@ function updateFramesReadout(node) {
 
     const total = parts.reduce((sum, value) => sum + value, 0);
     const seconds = (total / 16).toFixed(1);
+    if (continued) {
+        const sum = parts.length ? parts.join(" + ") : "0";
+        readout.value = `loaded video + ${sum} = +${total} new frames · ~${seconds}s new @ 16fps · ${mode}`;
+        node.setDirtyCanvas?.(true, true);
+        return;
+    }
     const sum = parts.length > 1 ? `${parts.join(" + ")} = ` : "";
     const segLabel = isAuto(node) ? ` · ${extendCount} extend${extendCount === 1 ? "" : "s"}` : "";
     readout.value = `${sum}${total} frames · ~${seconds}s @ 16fps${segLabel} · ${mode}`;
@@ -508,6 +532,14 @@ app.registerExtension({
         nodeType.prototype.onConfigure = function () {
             onConfigure?.apply(this, arguments);
             applyAdvanced(this);
+            updateFramesReadout(this);
+        };
+
+        // Linking/unlinking continue_video or target_total_frames_input changes
+        // what the readout can honestly claim — refresh it on connection changes.
+        const onConnectionsChange = nodeType.prototype.onConnectionsChange;
+        nodeType.prototype.onConnectionsChange = function () {
+            onConnectionsChange?.apply(this, arguments);
             updateFramesReadout(this);
         };
 

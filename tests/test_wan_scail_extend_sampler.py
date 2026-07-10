@@ -157,6 +157,12 @@ def test_kept_frame_counts_trims_overlap_on_extends_only():
     assert _mod._kept_frame_counts(plan, 5) == [65, 76, 76]
 
 
+def test_kept_frame_counts_without_base_trims_every_chunk():
+    # Continuation plans have no base chunk: every chunk is an extend.
+    plan = [(81, 1), (81, 2)]
+    assert _mod._kept_frame_counts(plan, 5, has_base=False) == [76, 76]
+
+
 # --- auto ("target total") planning -----------------------------------------
 
 def test_round_to_grid_snaps_to_4k_plus_1():
@@ -208,6 +214,21 @@ def test_auto_plan_respects_segment_cap():
     assert len(plan) == 1 + 3  # base + capped extends
 
 
+def test_auto_plan_with_initial_frames_plans_extends_only():
+    # 81 loaded frames toward a 157 target: one 81-frame extend closes the gap
+    # exactly (81 - 5 overlap = 76 kept), and there is no base chunk.
+    assert _mod._auto_plan(157, 81, 5, 7, initial_frames=81) == [(81, 8)]
+    # Longer continuation: full extends plus a resized last chunk, landing exact.
+    plan = _mod._auto_plan(300, 81, 5, 0, initial_frames=100)
+    assert plan == [(81, 1), (81, 2), (53, 3)]
+    assert 100 + sum(_mod._kept_frame_counts(plan, 5, has_base=False)) == 300
+
+
+def test_auto_plan_with_initial_frames_meeting_target_is_empty():
+    assert _mod._auto_plan(81, 81, 5, 7, initial_frames=81) == []
+    assert _mod._auto_plan(60, 81, 5, 7, initial_frames=81) == []
+
+
 # --- INPUT_TYPES -------------------------------------------------------------
 
 def test_exposes_dynamic_segment_widgets():
@@ -243,6 +264,7 @@ def test_masks_and_clip_vision_are_optional_inputs():
     assert optional["clip_vision"][0] == "CLIP_VISION"
     assert optional["target_total_frames_input"][0] == "INT"
     assert optional["target_total_frames_input"][1]["forceInput"] is True
+    assert optional["continue_video"][0] == "IMAGE"
 
 
 # --- generate() wiring -------------------------------------------------------
@@ -295,6 +317,50 @@ def test_target_total_link_input_overrides_widget_value():
     )
     assert len(_called("WanSCAILToVideo")) == 2
     assert frame_count == 157
+
+
+def test_continue_video_skips_base_and_anchors_first_chunk():
+    # 81 loaded frames toward a 157 target: exactly one extend chunk renders,
+    # anchored on the loaded video's tail, pose walked from frame 81.
+    images, frame_count = _generate(
+        frame_mode="target total", target_total_frames=157, base_frames=81,
+        continue_video=_FakeFrames(81),
+    )
+    scail = _called("WanSCAILToVideo")
+    assert len(scail) == 1
+    assert scail[0]["previous_frames"] is not None
+    assert scail[0]["video_frame_offset"] == 81
+    # Output = loaded 81 + (81 - 5 overlap) kept from the new chunk.
+    assert frame_count == 81 + 76 == images.count
+
+
+def test_continue_video_manual_mode_runs_extends_only():
+    images, frame_count = _generate(
+        extend_segments=1, extend_1_frames=81, continue_video=_FakeFrames(65),
+    )
+    scail = _called("WanSCAILToVideo")
+    assert len(scail) == 1  # no base chunk — the loaded video takes its place
+    assert scail[0]["video_frame_offset"] == 65
+    assert scail[0]["previous_frames"] is not None
+    assert frame_count == 65 + 76 == images.count
+
+
+def test_continue_video_covering_target_passes_through():
+    loaded = _FakeFrames(81)
+    images, frame_count = _generate(
+        frame_mode="target total", target_total_frames=81, continue_video=loaded,
+    )
+    assert not _called("WanSCAILToVideo")
+    assert images is loaded and frame_count == 81
+
+
+def test_continue_video_shorter_than_overlap_is_rejected():
+    try:
+        _generate(continue_video=_FakeFrames(3), previous_frame_count=5)
+    except ValueError as exc:
+        assert "continue_video" in str(exc)
+    else:
+        raise AssertionError("expected ValueError for continue_video shorter than overlap")
 
 
 def test_each_chunk_gets_fresh_text_conditioning_and_own_seed():
