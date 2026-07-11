@@ -75,6 +75,8 @@ const ICONS = {
     ellipse: '<svg viewBox="0 0 16 16" fill="none"><ellipse cx="8" cy="8" rx="5.6" ry="4.4" stroke="currentColor" stroke-width="1.3"/></svg>',
     arrow: '<svg viewBox="0 0 16 16" fill="none"><path d="M3 13L12.4 3.6M12.8 8V3.2H8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     image: '<svg viewBox="0 0 16 16" fill="none"><rect x="2.4" y="3" width="11.2" height="10" rx="1.4" stroke="currentColor" stroke-width="1.2"/><circle cx="6" cy="6.6" r="1.1" fill="currentColor"/><path d="M3.4 11.6l3-3 2.3 2.3 2-2 2.5 2.7" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>',
+    frame: '<svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M5 1.8v2.4M11 1.8v2.4" stroke="currentColor" stroke-width="1.2"/></svg>',
+    group: '<svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="7" y="7" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.2"/></svg>',
     save: '<svg viewBox="0 0 16 16" fill="none"><path d="M3 2.5h8.5l1.5 1.6v9.4H3z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M5 2.5V6h5V2.5M5 13v-4h6v4" stroke="currentColor" stroke-width="1.2"/></svg>',
     load: '<svg viewBox="0 0 16 16" fill="none"><path d="M3 2.5h8.5l1.5 1.6v9.4H3z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M8 5v5m-2-2 2 2 2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     recover: '<svg viewBox="0 0 16 16" fill="none"><path d="M4.2 5.2H1.8V2.8M2.1 5a6 6 0 111.1 6.8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 4.5V8l2.4 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
@@ -173,6 +175,8 @@ function makeBoardEditor(node) {
     node.properties.toobusy_board_storage_id ||= makeItemId();
     const autosaveKey = `toobusy:whiteboard:${node.properties.toobusy_board_storage_id}`;
     let selected = null;
+    const selectedIds = new Set();
+    let marquee = null;
     let editing = null; // item currently in the inline text editor
     let tool = "select";
     let spaceHeld = false;
@@ -364,6 +368,31 @@ function makeBoardEditor(node) {
                 text-align: right;
                 pointer-events: none;
             }
+            .toobusy-board .layers {
+                top: 56px;
+                right: 10px;
+                width: 220px;
+                max-height: calc(100% - 110px);
+                flex-direction: column;
+                align-items: stretch;
+                overflow: hidden;
+                padding: 8px;
+            }
+            .toobusy-board .layers-head {
+                display: flex; justify-content: space-between; align-items: center;
+                color: #aeb9c5; font-size: 11px; font-weight: 700; padding: 2px 3px 7px;
+            }
+            .toobusy-board .layers-list { overflow: auto; display: flex; flex-direction: column; gap: 3px; }
+            .toobusy-board .layer-row {
+                display: grid; grid-template-columns: 22px 1fr 22px 22px; align-items: center;
+                min-height: 30px; border-radius: 7px; padding: 2px;
+                color: #c8d2dc; background: rgba(255,255,255,.025); cursor: pointer;
+            }
+            .toobusy-board .layer-row:hover { background: #2a323c; }
+            .toobusy-board .layer-row.active { background: rgba(127,200,255,.16); color: ${ACCENT}; }
+            .toobusy-board .layer-row.grouped { padding-left: 12px; }
+            .toobusy-board .layer-row button { border: 0; background: transparent; color: inherit; cursor: pointer; padding: 2px; }
+            .toobusy-board .layer-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
             .toobusy-board textarea.inline-editor {
                 position: absolute;
                 display: none;
@@ -386,6 +415,7 @@ function makeBoardEditor(node) {
         <canvas class="board-surface" tabindex="0"></canvas>
         <div class="island toolbar"></div>
         <div class="island props" hidden></div>
+        <div class="island layers"><div class="layers-head"><span>LAYERS</span><span class="layers-count"></span></div><div class="layers-list"></div></div>
         <div class="island zoom"></div>
         <div class="hint">Pressure stylus · Wheel zoom · Space-drag pan · Ctrl+V image · double-click text</div>
         <textarea class="inline-editor" spellcheck="false"></textarea>
@@ -396,6 +426,8 @@ function makeBoardEditor(node) {
     const canvas = root.querySelector("canvas.board-surface");
     const toolbarEl = root.querySelector(".island.toolbar");
     const propsEl = root.querySelector(".island.props");
+    const layersEl = root.querySelector(".layers-list");
+    const layersCountEl = root.querySelector(".layers-count");
     const zoomEl = root.querySelector(".island.zoom");
     const editorEl = root.querySelector("textarea.inline-editor");
     const fileInput = root.querySelector("input.image-file");
@@ -456,10 +488,25 @@ function makeBoardEditor(node) {
         closeTextEditor();
         draw();
     };
-    const outputFrame = () => ({
-        w: Number(findWidget(node, "width")?.value) || 1280,
-        h: Number(findWidget(node, "height")?.value) || 720,
-    });
+    const ensureArtboards = () => {
+        const w = Number(findWidget(node, "width")?.value) || 1280;
+        const h = Number(findWidget(node, "height")?.value) || 720;
+        let frames = board.items.filter((item) => item.type === "frame");
+        if (!frames.length) {
+            const first = { id: makeItemId(), type: "frame", name: "Artboard 1", x: 0, y: 0, w, h, color: ACCENT, fill: "rgba(255,255,255,.035)", strokeWidth: 2 };
+            board.items.unshift(first);
+            board.activeArtboardId = first.id;
+            frames = [first];
+        }
+        if (!frames.some((item) => item.id === board.activeArtboardId)) board.activeArtboardId = frames[0].id;
+        return frames;
+    };
+    const activeArtboard = () => ensureArtboards().find((item) => item.id === board.activeArtboardId) || ensureArtboards()[0];
+    const outputFrame = () => {
+        const frame = activeArtboard();
+        return { x: frame.x, y: frame.y, w: frame.w, h: frame.h, item: frame };
+    };
+    ensureArtboards();
     const fitOutputFrame = () => {
         const frame = outputFrame();
         const pad = 48;
@@ -468,8 +515,8 @@ function makeBoardEditor(node) {
             (canvas.clientHeight - pad * 2) / frame.h,
         );
         view.scale = Math.max(0.08, Math.min(4, scale));
-        view.x = (canvas.clientWidth - frame.w * view.scale) / 2;
-        view.y = (canvas.clientHeight - frame.h * view.scale) / 2;
+        view.x = (canvas.clientWidth - frame.w * view.scale) / 2 - frame.x * view.scale;
+        view.y = (canvas.clientHeight - frame.h * view.scale) / 2 - frame.y * view.scale;
         persistView();
         syncZoomLabel();
         closeTextEditor();
@@ -524,6 +571,7 @@ function makeBoardEditor(node) {
         }
         writeAutosave();
         node.setDirtyCanvas?.(true, true);
+        renderLayers();
         draw();
     };
     const snapshot = () => serializeBoard(board);
@@ -739,12 +787,27 @@ function makeBoardEditor(node) {
     }
 
     function drawItem(c, item) {
+        if (item.hidden) return;
         c.save();
         c.lineWidth = item.strokeWidth || 3;
         c.strokeStyle = item.color || "#1b1f24";
         c.fillStyle = item.fill || "rgba(0,0,0,0)";
 
-        if (item.type === "image") {
+        if (item.type === "frame") {
+            roundedPath(c, item.x, item.y, item.w, item.h, 8);
+            c.fillStyle = item.fill || "rgba(255,255,255,0.04)";
+            c.fill();
+            c.strokeStyle = item.color || "rgba(127,200,255,0.8)";
+            c.lineWidth = Math.max(2, item.strokeWidth || 2);
+            c.setLineDash([10, 7]);
+            c.stroke();
+            c.setLineDash([]);
+            c.fillStyle = item.color || "rgba(127,200,255,0.9)";
+            c.font = "700 18px system-ui, sans-serif";
+            c.textBaseline = "bottom";
+            const active = item.id === board.activeArtboardId;
+            c.fillText(`${active ? "output · " : ""}${item.name || "Artboard"} · ${Math.round(item.w)} × ${Math.round(item.h)}`, item.x + 8, item.y - 8);
+        } else if (item.type === "image") {
             const img = imageFromSrc(item.src);
             const radius = 10;
             c.save();
@@ -882,25 +945,17 @@ function makeBoardEditor(node) {
 
         ctx.setTransform(dpr * view.scale, 0, 0, dpr * view.scale, dpr * view.x, dpr * view.y);
 
-        // Output frame: the region the Python render captures.
-        const frame = outputFrame();
-        ctx.save();
-        ctx.strokeStyle = "rgba(127, 200, 255, 0.55)";
-        ctx.lineWidth = 1.5 / view.scale;
-        roundedPath(ctx, 0, 0, frame.w, frame.h, 4 / view.scale);
-        ctx.stroke();
-        ctx.fillStyle = "rgba(127, 200, 255, 0.75)";
-        ctx.font = `600 ${11 / view.scale}px system-ui, sans-serif`;
-        ctx.textBaseline = "bottom";
-        ctx.fillText(`output ${frame.w} × ${frame.h}`, 2 / view.scale, -6 / view.scale);
-        ctx.restore();
-
-        for (const item of board.items) {
+        for (const item of board.items.filter((entry) => entry.type === "frame")) {
+            drawItem(ctx, item);
+        }
+        for (const item of board.items.filter((entry) => entry.type !== "frame")) {
             drawItem(ctx, item);
         }
 
-        if (selected && board.items.includes(selected)) {
-            const b = itemBounds(selected);
+        const activeSelection = board.items.filter((item) => selectedIds.has(item.id) && !item.hidden);
+        if (!activeSelection.length && selected && board.items.includes(selected)) activeSelection.push(selected);
+        for (const selectionItem of activeSelection) {
+            const b = itemBounds(selectionItem);
             const pad = 5 / view.scale;
             ctx.save();
             ctx.strokeStyle = ACCENT;
@@ -909,7 +964,7 @@ function makeBoardEditor(node) {
             ctx.strokeRect(b.x - pad, b.y - pad, b.w + pad * 2, b.h + pad * 2);
             ctx.setLineDash([]);
             const hs = 8 / view.scale;
-            for (const handle of selectionHandles(selected)) {
+            for (const handle of activeSelection.length === 1 ? selectionHandles(selectionItem) : []) {
                 ctx.beginPath();
                 ctx.arc(handle.x, handle.y, hs / 2 + 1 / view.scale, 0, Math.PI * 2);
                 ctx.fillStyle = "#ffffff";
@@ -919,8 +974,23 @@ function makeBoardEditor(node) {
                 ctx.stroke();
             }
             ctx.restore();
-        } else if (selected) {
+        }
+        if (!activeSelection.length && selected) {
             selected = null;
+        }
+        if (marquee) {
+            const x = Math.min(marquee.start.x, marquee.end.x);
+            const y = Math.min(marquee.start.y, marquee.end.y);
+            const w = Math.abs(marquee.end.x - marquee.start.x);
+            const h = Math.abs(marquee.end.y - marquee.start.y);
+            ctx.save();
+            ctx.fillStyle = "rgba(127,200,255,.10)";
+            ctx.strokeStyle = ACCENT;
+            ctx.lineWidth = 1.5 / view.scale;
+            ctx.setLineDash([6 / view.scale, 4 / view.scale]);
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeRect(x, y, w, h);
+            ctx.restore();
         }
     }
 
@@ -929,6 +999,7 @@ function makeBoardEditor(node) {
         const tolerance = 6 / view.scale;
         for (let index = board.items.length - 1; index >= 0; index -= 1) {
             const item = board.items[index];
+            if (item.hidden || item.locked) continue;
             const b = itemBounds(item);
             if (
                 point.x >= b.x - tolerance &&
@@ -954,15 +1025,129 @@ function makeBoardEditor(node) {
     }
 
     const select = (item) => {
+        if (!item) selectedIds.clear();
         if (selected === item) {
             renderProps();
+            renderLayers();
             draw();
             return;
         }
         selected = item;
+        selectedIds.clear();
+        if (item) {
+            const group = item.groupId;
+            for (const candidate of board.items) {
+                if (candidate === item || (group && candidate.groupId === group)) selectedIds.add(candidate.id);
+            }
+            if (item.type === "frame") board.activeArtboardId = item.id;
+        }
         renderProps();
+        renderLayers();
         draw();
     };
+
+    const selectedItems = () => board.items.filter((item) => selectedIds.has(item.id));
+    const moveItem = (item, dx, dy) => {
+        if (Number.isFinite(item.x)) item.x += dx;
+        if (Number.isFinite(item.y)) item.y += dy;
+        if (item.type === "line") { item.x2 += dx; item.y2 += dy; }
+        if (Array.isArray(item.points)) item.points = item.points.map((p) => ({ ...p, x: p.x + dx, y: p.y + dy }));
+    };
+    const itemLabel = (item) => item.name || (item.type === "text" ? String(item.text || "Text").split("\n")[0] : item.type[0].toUpperCase() + item.type.slice(1));
+    function renderLayers() {
+        if (!layersEl) return;
+        layersEl.replaceChildren();
+        layersCountEl.textContent = String(board.items.length);
+        [...board.items].reverse().forEach((item) => {
+            const row = document.createElement("div");
+            row.className = `layer-row${selectedIds.has(item.id) ? " active" : ""}${item.groupId ? " grouped" : ""}`;
+            const type = document.createElement("span");
+            type.textContent = item.type === "frame" ? "▣" : item.groupId ? "⌁" : "◆";
+            const name = document.createElement("span");
+            name.className = "layer-name";
+            name.textContent = itemLabel(item);
+            const eye = document.createElement("button");
+            eye.textContent = item.hidden ? "○" : "●";
+            eye.title = item.hidden ? "Show" : "Hide";
+            eye.onclick = (event) => { event.stopPropagation(); pushHistory(); item.hidden = !item.hidden; commit(); renderLayers(); };
+            const lock = document.createElement("button");
+            lock.textContent = item.locked ? "▣" : "□";
+            lock.title = item.locked ? "Unlock" : "Lock";
+            lock.onclick = (event) => { event.stopPropagation(); pushHistory(); item.locked = !item.locked; commit(); renderLayers(); };
+            row.append(type, name, eye, lock);
+            row.onclick = () => select(item);
+            row.draggable = true;
+            row.ondragstart = (event) => event.dataTransfer.setData("text/toobusy-layer", item.id);
+            row.ondragover = (event) => { event.preventDefault(); };
+            row.ondrop = (event) => {
+                event.preventDefault();
+                const sourceId = event.dataTransfer.getData("text/toobusy-layer");
+                if (!sourceId || sourceId === item.id) return;
+                const sourceIndex = board.items.findIndex((entry) => entry.id === sourceId);
+                const targetIndex = board.items.findIndex((entry) => entry.id === item.id);
+                if (sourceIndex < 0 || targetIndex < 0) return;
+                pushHistory();
+                const [source] = board.items.splice(sourceIndex, 1);
+                board.items.splice(targetIndex, 0, source);
+                commit();
+            };
+            layersEl.appendChild(row);
+        });
+    }
+
+    function addFrame() {
+        pushHistory();
+        const base = outputFrame();
+        const frames = board.items.filter((item) => item.type === "frame");
+        const right = frames.length ? Math.max(...frames.map((item) => item.x + item.w)) : base.w;
+        const frame = { id: makeItemId(), type: "frame", name: `Artboard ${frames.length + 1}`, x: right + 120, y: frames[0]?.y || 0, w: base.w, h: base.h, color: ACCENT, fill: "rgba(255,255,255,.035)", strokeWidth: 2 };
+        board.items.unshift(frame);
+        select(frame);
+        commit();
+        fitBounds(frame);
+    }
+
+    function groupSelection() {
+        const items = selectedItems().filter((item) => item.type !== "frame");
+        if (items.length < 2) return;
+        pushHistory();
+        const existing = items.every((item) => item.groupId && item.groupId === items[0].groupId) ? items[0].groupId : null;
+        const groupId = existing ? null : makeItemId();
+        items.forEach((item) => { if (groupId) item.groupId = groupId; else delete item.groupId; });
+        commit();
+        renderLayers();
+    }
+
+    function alignArtboards(mode) {
+        const frames = selectedItems().filter((item) => item.type === "frame");
+        if (frames.length < 2) return;
+        pushHistory();
+        const anchor = frames[0];
+        if (mode === "top") frames.forEach((item) => { item.y = anchor.y; });
+        if (mode === "left") frames.forEach((item) => { item.x = anchor.x; });
+        if (mode === "row") {
+            const sorted = [...frames].sort((a, b) => a.x - b.x);
+            let x = sorted[0].x;
+            sorted.forEach((item, index) => { if (index) x += 120; item.x = x; item.y = anchor.y; x += item.w; });
+        }
+        if (mode === "column") {
+            const sorted = [...frames].sort((a, b) => a.y - b.y);
+            let y = sorted[0].y;
+            sorted.forEach((item, index) => { if (index) y += 120; item.y = y; item.x = anchor.x; y += item.h; });
+        }
+        commit();
+        renderLayers();
+    }
+
+    function fitBounds(item) {
+        const b = itemBounds(item);
+        const pad = 70;
+        view.scale = Math.max(0.05, Math.min(3, Math.min((canvas.clientWidth - pad * 2) / b.w, (canvas.clientHeight - pad * 2) / b.h)));
+        view.x = (canvas.clientWidth - b.w * view.scale) / 2 - b.x * view.scale;
+        view.y = (canvas.clientHeight - b.h * view.scale) / 2 - b.y * view.scale;
+        persistView();
+        draw();
+    }
 
     // ----- inline text editor ------------------------------------------------------
     function openTextEditor(item) {
@@ -1120,6 +1305,8 @@ function makeBoardEditor(node) {
     toolbarButton("ellipse", "Ellipse (O)", () => setTool("ellipse"), { toggles: "ellipse" });
     toolbarButton("arrow", "Arrow (A)", () => setTool("arrow"), { toggles: "arrow" });
     toolbarButton("image", "Insert image (or drop / Ctrl+V)", () => fileInput.click());
+    toolbarButton("frame", "Add artboard to the right", addFrame);
+    toolbarButton("group", "Group / ungroup selected items (Ctrl+G)", groupSelection);
     const sep2 = document.createElement("div");
     sep2.className = "tb-sep";
     toolbarEl.appendChild(sep2);
@@ -1283,6 +1470,35 @@ function makeBoardEditor(node) {
         const item = selected;
         propsEl.hidden = false;
         propsEl.replaceChildren();
+        const multi = selectedItems();
+        if (multi.length > 1) {
+            propsEl.append(
+                rowLabel(`${multi.length} selected`),
+                chipRow([{ label: multi.every((entry) => entry.groupId && entry.groupId === multi[0].groupId) ? "Ungroup" : "Group", action: groupSelection }]),
+            );
+            if (multi.filter((entry) => entry.type === "frame").length > 1) {
+                propsEl.append(
+                    rowLabel("Artboard align"),
+                    chipRow([
+                        { label: "Row", action: () => alignArtboards("row") },
+                        { label: "Column", action: () => alignArtboards("column") },
+                        { label: "Top", action: () => alignArtboards("top") },
+                        { label: "Left", action: () => alignArtboards("left") },
+                    ]),
+                );
+            }
+            return;
+        }
+
+        if (item.type === "frame") {
+            propsEl.append(
+                rowLabel("Artboard name"),
+                textField(item.name || "Artboard", (value) => { item.name = value || "Artboard"; renderLayers(); }),
+                rowLabel("Output"),
+                chipRow([{ label: item.id === board.activeArtboardId ? "✓ Active output" : "Set active output", active: item.id === board.activeArtboardId, action: () => { board.activeArtboardId = item.id; commit(); renderProps(); renderLayers(); } }]),
+            );
+            return;
+        }
 
         if (item.type !== "image") {
             propsEl.append(
@@ -1491,8 +1707,11 @@ function makeBoardEditor(node) {
     function deleteSelected() {
         if (!selected) return;
         pushHistory();
-        board.items = board.items.filter((item) => item.id !== selected.id);
+        const ids = selectedIds.size ? new Set(selectedIds) : new Set([selected.id]);
+        board.items = board.items.filter((item) => !ids.has(item.id));
+        selectedIds.clear();
         selected = null;
+        ensureArtboards();
         renumberKeyframes();
         renderProps();
         commit();
@@ -1557,7 +1776,7 @@ function makeBoardEditor(node) {
         }
 
         // select tool
-        const handle = handleAt(selected, point);
+        const handle = selectedIds.size <= 1 ? handleAt(selected, point) : null;
         if (handle) {
             pushHistory();
             if (selected.type === "line") {
@@ -1581,7 +1800,17 @@ function makeBoardEditor(node) {
         }
 
         const hit = hitItem(point);
-        select(hit);
+        if (event.shiftKey && hit) {
+            if (selectedIds.has(hit.id)) selectedIds.delete(hit.id);
+            else selectedIds.add(hit.id);
+            selected = hit;
+            if (hit.type === "frame") board.activeArtboardId = hit.id;
+            renderProps();
+            renderLayers();
+            draw();
+        } else {
+            select(hit);
+        }
         if (hit) {
             pushHistory();
             // Track pointer deltas instead of item.x/y. Freehand pen items only
@@ -1589,6 +1818,12 @@ function makeBoardEditor(node) {
             // stroke as soon as it was dragged.
             drag = { mode: "move", lastPointerX: point.x, lastPointerY: point.y };
             canvas.setPointerCapture(event.pointerId);
+        } else {
+            if (!event.shiftKey) selectedIds.clear();
+            marquee = { start: point, end: point, additive: event.shiftKey };
+            drag = { mode: "marquee" };
+            canvas.setPointerCapture(event.pointerId);
+            draw();
         }
     });
 
@@ -1643,6 +1878,11 @@ function makeBoardEditor(node) {
             draw();
             return;
         }
+        if (drag.mode === "marquee") {
+            marquee.end = point;
+            draw();
+            return;
+        }
         if (drag.mode === "line-end" && selected) {
             if (drag.end === "start") {
                 selected.x = point.x;
@@ -1676,15 +1916,17 @@ function makeBoardEditor(node) {
             const dy = point.y - drag.lastPointerY;
             drag.lastPointerX = point.x;
             drag.lastPointerY = point.y;
-            if (Number.isFinite(selected.x)) selected.x += dx;
-            if (Number.isFinite(selected.y)) selected.y += dy;
-            if (selected.type === "line") {
-                selected.x2 += dx;
-                selected.y2 += dy;
+            const moving = selectedItems().length ? selectedItems() : [selected];
+            const moveIds = new Set(moving.map((item) => item.id));
+            for (const frame of moving.filter((item) => item.type === "frame")) {
+                const fb = itemBounds(frame);
+                for (const item of board.items) {
+                    if (item.type === "frame" || item.locked) continue;
+                    const b = itemBounds(item);
+                    if (b.x >= fb.x && b.y >= fb.y && b.x + b.w <= fb.x + fb.w && b.y + b.h <= fb.y + fb.h) moveIds.add(item.id);
+                }
             }
-            if (Array.isArray(selected.points)) {
-                selected.points = selected.points.map((p) => ({ ...p, x: p.x + dx, y: p.y + dy }));
-            }
+            board.items.filter((item) => moveIds.has(item.id) && !item.locked).forEach((item) => moveItem(item, dx, dy));
             draw();
         }
     });
@@ -1700,6 +1942,24 @@ function makeBoardEditor(node) {
         if (finished.mode === "pan") {
             persistView();
             canvas.style.cursor = tool === "hand" ? "grab" : "default";
+            return;
+        }
+        if (finished.mode === "marquee" && marquee) {
+            const x1 = Math.min(marquee.start.x, marquee.end.x);
+            const y1 = Math.min(marquee.start.y, marquee.end.y);
+            const x2 = Math.max(marquee.start.x, marquee.end.x);
+            const y2 = Math.max(marquee.start.y, marquee.end.y);
+            if (!marquee.additive) selectedIds.clear();
+            for (const item of board.items) {
+                if (item.hidden || item.locked) continue;
+                const b = itemBounds(item);
+                if (b.x >= x1 && b.y >= y1 && b.x + b.w <= x2 && b.y + b.h <= y2) selectedIds.add(item.id);
+            }
+            selected = board.items.find((item) => selectedIds.has(item.id)) || null;
+            marquee = null;
+            renderProps();
+            renderLayers();
+            draw();
             return;
         }
         if (finished.mode === "create") {
@@ -1785,6 +2045,11 @@ function makeBoardEditor(node) {
             if (selected) duplicate(selected);
             return;
         }
+        if (ctrlLike && event.key.toLowerCase() === "g") {
+            event.preventDefault();
+            groupSelection();
+            return;
+        }
         if (event.key === "Delete" || event.key === "Backspace") {
             if (selected) {
                 event.preventDefault();
@@ -1801,15 +2066,8 @@ function makeBoardEditor(node) {
             event.preventDefault();
             const step = (event.shiftKey ? 10 : 1) / view.scale;
             const [dx, dy] = nudges[event.key];
-            selected.x += dx * step;
-            selected.y += dy * step;
-            if (selected.type === "line") {
-                selected.x2 += dx * step;
-                selected.y2 += dy * step;
-            }
-            if (Array.isArray(selected.points)) {
-                selected.points = selected.points.map((p) => ({ ...p, x: p.x + dx * step, y: p.y + dy * step }));
-            }
+            const moving = selectedItems().length ? selectedItems() : [selected];
+            moving.filter((item) => !item.locked).forEach((item) => moveItem(item, dx * step, dy * step));
             commit();
             return;
         }
@@ -1875,6 +2133,7 @@ function makeBoardEditor(node) {
     }
 
     renderProps();
+    renderLayers();
     requestAnimationFrame(() => {
         if (!storedView) fitOutputFrame();
         else draw();

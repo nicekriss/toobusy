@@ -263,6 +263,19 @@ class ToobusyStoryboardBoard:
         width = int(width)
         height = int(height)
         board = _parse_board(board_data)
+        frames = [
+            item for item in board.get("items", [])
+            if isinstance(item, dict) and item.get("type") == "frame"
+        ]
+        active_frame = next(
+            (item for item in frames if item.get("id") == board.get("activeArtboardId")),
+            frames[0] if frames else None,
+        )
+        offset_x = float(active_frame.get("x", 0)) if active_frame else 0.0
+        offset_y = float(active_frame.get("y", 0)) if active_frame else 0.0
+        if active_frame:
+            width = max(16, int(active_frame.get("w", width)))
+            height = max(16, int(active_frame.get("h", height)))
         canvas = Image.new("RGB", (width, height), _hex_to_rgba(background)[:3])
         draw = ImageDraw.Draw(canvas, "RGBA")
 
@@ -270,8 +283,10 @@ class ToobusyStoryboardBoard:
             if not isinstance(item, dict):
                 continue
             item_type = item.get("type")
-            x = float(item.get("x", 0))
-            y = float(item.get("y", 0))
+            if item_type == "frame" or item.get("hidden"):
+                continue
+            x = float(item.get("x", 0)) - offset_x
+            y = float(item.get("y", 0)) - offset_y
             w = float(item.get("w", 160))
             h = float(item.get("h", 120))
             color = _hex_to_rgba(item.get("color", "#111111"), item.get("alpha", 1))
@@ -295,8 +310,8 @@ class ToobusyStoryboardBoard:
                 draw.ellipse((x, y, x + w, y + h), fill=fill, outline=color, width=stroke_width)
 
             elif item_type == "line":
-                x2 = float(item.get("x2", x + w))
-                y2 = float(item.get("y2", y + h))
+                x2 = float(item.get("x2", x + offset_x + w)) - offset_x
+                y2 = float(item.get("y2", y + offset_y + h)) - offset_y
                 draw.line((x, y, x2, y2), fill=color, width=stroke_width)
                 if item.get("arrow", False):
                     angle = math.atan2(y2 - y, x2 - x)
@@ -306,7 +321,7 @@ class ToobusyStoryboardBoard:
                     draw.polygon([(x2, y2), left, right], fill=color)
 
             elif item_type == "pen":
-                pts = _pressure_points(item.get("points"))
+                pts = [(px - offset_x, py - offset_y, pressure) for px, py, pressure in _pressure_points(item.get("points"))]
                 _draw_pressure_stroke(
                     draw,
                     pts,
