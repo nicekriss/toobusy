@@ -564,6 +564,7 @@ function makeBoardEditor(node) {
         refreshRecoveryButton();
     };
     const commit = () => {
+        assignArtboards();
         const widget = boardWidget(node);
         if (widget) {
             widget.value = serializeBoard(board);
@@ -1054,15 +1055,36 @@ function makeBoardEditor(node) {
         if (Array.isArray(item.points)) item.points = item.points.map((p) => ({ ...p, x: p.x + dx, y: p.y + dy }));
     };
     const itemLabel = (item) => item.name || (item.type === "text" ? String(item.text || "Text").split("\n")[0] : item.type[0].toUpperCase() + item.type.slice(1));
+    function assignArtboards() {
+        const frames = board.items.filter((item) => item.type === "frame");
+        for (const item of board.items) {
+            if (item.type === "frame") continue;
+            const b = itemBounds(item);
+            let best = null;
+            let bestArea = 0;
+            for (const frame of frames) {
+                const x1 = Math.max(b.x, frame.x);
+                const y1 = Math.max(b.y, frame.y);
+                const x2 = Math.min(b.x + b.w, frame.x + frame.w);
+                const y2 = Math.min(b.y + b.h, frame.y + frame.h);
+                const area = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+                if (area > bestArea) { bestArea = area; best = frame; }
+            }
+            if (best) item.artboardId = best.id;
+            else delete item.artboardId;
+        }
+    }
     function renderLayers() {
         if (!layersEl) return;
+        assignArtboards();
         layersEl.replaceChildren();
         layersCountEl.textContent = String(board.items.length);
-        [...board.items].reverse().forEach((item) => {
+        const appendRow = (item, depth = 0) => {
             const row = document.createElement("div");
-            row.className = `layer-row${selectedIds.has(item.id) ? " active" : ""}${item.groupId ? " grouped" : ""}`;
+            row.className = `layer-row${selectedIds.has(item.id) ? " active" : ""}${depth ? " grouped" : ""}`;
+            row.style.paddingLeft = `${2 + depth * 12}px`;
             const type = document.createElement("span");
-            type.textContent = item.type === "frame" ? "▣" : item.groupId ? "⌁" : "◆";
+            type.textContent = item.type === "frame" ? "AB" : item.groupId ? "G" : "·";
             const name = document.createElement("span");
             name.className = "layer-name";
             name.textContent = itemLabel(item);
@@ -1092,7 +1114,33 @@ function makeBoardEditor(node) {
                 commit();
             };
             layersEl.appendChild(row);
-        });
+        };
+        const frames = board.items.filter((item) => item.type === "frame").reverse();
+        for (const frame of frames) {
+            appendRow(frame, 0);
+            const children = board.items.filter((item) => item.type !== "frame" && item.artboardId === frame.id).reverse();
+            const shownGroups = new Set();
+            for (const child of children) {
+                if (!child.groupId) { appendRow(child, 1); continue; }
+                if (shownGroups.has(child.groupId)) continue;
+                shownGroups.add(child.groupId);
+                const members = children.filter((item) => item.groupId === child.groupId);
+                const groupRow = document.createElement("div");
+                groupRow.className = `layer-row grouped${members.some((item) => selectedIds.has(item.id)) ? " active" : ""}`;
+                groupRow.innerHTML = `<span>G</span><span class="layer-name">Group · ${members.length} objects</span><span></span><span></span>`;
+                groupRow.onclick = () => select(members[0]);
+                layersEl.appendChild(groupRow);
+                members.forEach((item) => appendRow(item, 2));
+            }
+        }
+        const outside = board.items.filter((item) => item.type !== "frame" && !item.artboardId).reverse();
+        if (outside.length) {
+            const heading = document.createElement("div");
+            heading.className = "layers-head";
+            heading.textContent = "OUTSIDE ARTBOARDS";
+            layersEl.appendChild(heading);
+            for (const item of outside) appendRow(item, item.groupId ? 1 : 0);
+        }
     }
 
     function addFrame() {
