@@ -493,11 +493,12 @@ function makeBoardEditor(node) {
         const h = Number(findWidget(node, "height")?.value) || 720;
         let frames = board.items.filter((item) => item.type === "frame");
         if (!frames.length) {
-            const first = { id: makeItemId(), type: "frame", name: "Artboard 1", x: 0, y: 0, w, h, color: ACCENT, fill: "rgba(255,255,255,.035)", strokeWidth: 2 };
+            const first = { id: makeItemId(), type: "frame", name: "Artboard 1", order: 1, x: 0, y: 0, w, h, color: ACCENT, fill: "rgba(255,255,255,.035)", strokeWidth: 2 };
             board.items.unshift(first);
             board.activeArtboardId = first.id;
             frames = [first];
         }
+        frames.forEach((frame, index) => { if (!Number.isFinite(Number(frame.order))) frame.order = index + 1; });
         if (!frames.some((item) => item.id === board.activeArtboardId)) board.activeArtboardId = frames[0].id;
         return frames;
     };
@@ -1148,7 +1149,7 @@ function makeBoardEditor(node) {
         const base = outputFrame();
         const frames = board.items.filter((item) => item.type === "frame");
         const right = frames.length ? Math.max(...frames.map((item) => item.x + item.w)) : base.w;
-        const frame = { id: makeItemId(), type: "frame", name: `Artboard ${frames.length + 1}`, x: right + 120, y: frames[0]?.y || 0, w: base.w, h: base.h, color: ACCENT, fill: "rgba(255,255,255,.035)", strokeWidth: 2 };
+        const frame = { id: makeItemId(), type: "frame", name: `Artboard ${frames.length + 1}`, order: frames.length + 1, x: right + 120, y: frames[0]?.y || 0, w: base.w, h: base.h, color: ACCENT, fill: "rgba(255,255,255,.035)", strokeWidth: 2 };
         board.items.unshift(frame);
         select(frame);
         commit();

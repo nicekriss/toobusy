@@ -233,6 +233,58 @@ def _keyframe_items(board):
     return sorted(items, key=lambda item: int(item.get("keyframe") or 0))
 
 
+def _render_artboard(board, artboard, fallback_width, fallback_height, background):
+    width = max(16, int(artboard.get("w", fallback_width))) if artboard else int(fallback_width)
+    height = max(16, int(artboard.get("h", fallback_height))) if artboard else int(fallback_height)
+    offset_x = float(artboard.get("x", 0)) if artboard else 0.0
+    offset_y = float(artboard.get("y", 0)) if artboard else 0.0
+    canvas = Image.new("RGB", (width, height), _hex_to_rgba(background)[:3])
+    draw = ImageDraw.Draw(canvas, "RGBA")
+    for item in board.get("items", []):
+        if not isinstance(item, dict) or item.get("type") == "frame" or item.get("hidden"):
+            continue
+        item_type = item.get("type")
+        x = float(item.get("x", 0)) - offset_x
+        y = float(item.get("y", 0)) - offset_y
+        w = float(item.get("w", 160))
+        h = float(item.get("h", 120))
+        color = _hex_to_rgba(item.get("color", "#111111"), item.get("alpha", 1))
+        fill = _hex_to_rgba(item.get("fill", "#ffffff"), item.get("fillAlpha", 0.6))
+        stroke_width = max(1, int(item.get("strokeWidth", 3)))
+        if item_type == "image":
+            image = _data_url_to_pil(item.get("src"))
+            if image is not None:
+                canvas.paste(_fit_image(image, w, h), (int(x), int(y)))
+        elif item_type == "rect":
+            radius = max(0, min(12, w / 4, h / 4))
+            _rounded_rect(draw, (x, y, x + w, y + h), radius, fill=fill, outline=color, width=stroke_width)
+        elif item_type == "ellipse":
+            draw.ellipse((x, y, x + w, y + h), fill=fill, outline=color, width=stroke_width)
+        elif item_type == "line":
+            x2 = float(item.get("x2", x + offset_x + w)) - offset_x
+            y2 = float(item.get("y2", y + offset_y + h)) - offset_y
+            draw.line((x, y, x2, y2), fill=color, width=stroke_width)
+            if item.get("arrow", False):
+                angle = math.atan2(y2 - y, x2 - x)
+                length = 18 + stroke_width * 2
+                left = (x2 - length * math.cos(angle - 0.45), y2 - length * math.sin(angle - 0.45))
+                right = (x2 - length * math.cos(angle + 0.45), y2 - length * math.sin(angle + 0.45))
+                draw.polygon([(x2, y2), left, right], fill=color)
+        elif item_type == "pen":
+            points = [(px - offset_x, py - offset_y, pressure) for px, py, pressure in _pressure_points(item.get("points"))]
+            _draw_pressure_stroke(draw, points, color, stroke_width, item.get("pressure", True) is not False, item.get("opacity", 1.0), item.get("softness", 0.0))
+        elif item_type == "text":
+            font = _font(item.get("fontSize", 24), item.get("fontFamily", "system"), item.get("fontWeight", 400))
+            line_y = y
+            for line in _wrap_text(draw, item.get("text", ""), font, max(20, int(w))):
+                draw.text((x, line_y), line, fill=color, font=font)
+                bbox = draw.textbbox((x, line_y), line, font=font)
+                line_y += bbox[3] - bbox[1] + 6
+                if line_y > y + h:
+                    break
+    return canvas
+
+
 class ToobusyStoryboardBoard:
     @classmethod
     def INPUT_TYPES(cls):
@@ -254,8 +306,8 @@ class ToobusyStoryboardBoard:
 
     # keyframes/keyframe_count are appended after the original outputs so
     # existing workflows keep their link slot indices.
-    RETURN_TYPES = ("IMAGE", "STRING", "IMAGE", "INT")
-    RETURN_NAMES = ("image", "board_data", "keyframes", "keyframe_count")
+    RETURN_TYPES = ("IMAGE", "STRING", "IMAGE", "INT", "IMAGE", "INT")
+    RETURN_NAMES = ("image", "board_data", "keyframes", "keyframe_count", "artboards", "artboard_count")
     FUNCTION = "render"
     CATEGORY = "toobusy/Plan"
 
@@ -370,7 +422,28 @@ class ToobusyStoryboardBoard:
             keyframes = board_image
             keyframe_count = 0
 
-        return (board_image, json.dumps(board, ensure_ascii=False), keyframes, keyframe_count)
+        ordered_frames = sorted(
+            frames,
+            key=lambda item: (
+                int(item.get("order", 10_000)),
+                float(item.get("y", 0)),
+                float(item.get("x", 0)),
+            ),
+        )
+        artboard_tensors = []
+        for artboard in ordered_frames:
+            rendered = _render_artboard(board, artboard, width, height, background)
+            if rendered.size != (width, height):
+                rendered = _fit_image(rendered, width, height, fill=background_rgb)
+            artboard_tensors.append(torch.from_numpy(np.asarray(rendered).astype(np.float32) / 255.0))
+        if artboard_tensors:
+            artboards = torch.stack(artboard_tensors, dim=0)
+            artboard_count = len(artboard_tensors)
+        else:
+            artboards = board_image
+            artboard_count = 1
+
+        return (board_image, json.dumps(board, ensure_ascii=False), keyframes, keyframe_count, artboards, artboard_count)
 
 
 NODE_CLASS_MAPPINGS = {
