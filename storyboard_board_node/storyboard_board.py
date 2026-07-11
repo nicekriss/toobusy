@@ -308,6 +308,9 @@ class ToobusyStoryboardBoard:
     # existing workflows keep their link slot indices.
     RETURN_TYPES = ("IMAGE", "STRING", "IMAGE", "INT", "IMAGE", "INT")
     RETURN_NAMES = ("image", "board_data", "keyframes", "keyframe_count", "artboards", "artboard_count")
+    # Match Prompt Line semantics: downstream nodes are mapped over one
+    # single-image tensor at a time instead of receiving one VRAM-heavy batch.
+    OUTPUT_IS_LIST = (False, False, False, False, True, False)
     FUNCTION = "render"
     CATEGORY = "toobusy/Plan"
 
@@ -435,12 +438,12 @@ class ToobusyStoryboardBoard:
             rendered = _render_artboard(board, artboard, width, height, background)
             if rendered.size != (width, height):
                 rendered = _fit_image(rendered, width, height, fill=background_rgb)
-            artboard_tensors.append(torch.from_numpy(np.asarray(rendered).astype(np.float32) / 255.0))
+            artboard_tensors.append(torch.from_numpy(np.asarray(rendered).astype(np.float32) / 255.0)[None,])
         if artboard_tensors:
-            artboards = torch.stack(artboard_tensors, dim=0)
+            artboards = artboard_tensors
             artboard_count = len(artboard_tensors)
         else:
-            artboards = board_image
+            artboards = [board_image]
             artboard_count = 1
 
         return (board_image, json.dumps(board, ensure_ascii=False), keyframes, keyframe_count, artboards, artboard_count)
