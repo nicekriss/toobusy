@@ -7,7 +7,7 @@ import { app } from "../../scripts/app.js";
 // captures the (0,0)-(width,height) output frame.
 
 const ACCENT = "#7fc8ff";
-const INFO_TITLE = "toobusy · Storyboard Board";
+const INFO_TITLE = "toobusy · Whiteboard";
 const INFO_TEXT =
     "An in-graph whiteboard: sketch, write, paste images, arrange them freely " +
     "on an infinite canvas, then mark image cards as keyframes (K). Outputs the " +
@@ -21,8 +21,32 @@ const MAX_IMAGE_EDGE = 1536;
 
 const COLOR_PRESETS = ["#1b1f24", "#e03131", "#f08c00", "#2f9e44", "#1971c2", "#ae3ec9", "#ffffff"];
 const FILL_PRESETS = ["rgba(0,0,0,0)", "rgba(255,255,255,0.85)", "rgba(224,49,49,0.16)", "rgba(240,140,0,0.16)", "rgba(47,158,68,0.16)", "rgba(25,113,194,0.16)"];
-const STROKE_PRESETS = [2, 4, 8];
-const FONT_PRESETS = [20, 32, 48];
+const STROKE_PRESETS = [3, 8, 18];
+const BRUSH_PRESETS = [
+    { label: "Pencil", value: "pencil", width: 3, pressure: true, opacity: 0.62, softness: 0.08 },
+    { label: "Ink", value: "ink", width: 8, pressure: true, opacity: 1, softness: 0 },
+    { label: "Marker", value: "marker", width: 18, pressure: false, opacity: 0.42, softness: 0.04 },
+    { label: "Soft", value: "soft", width: 24, pressure: true, opacity: 0.24, softness: 0.7 },
+];
+const FONT_PRESETS = [16, 24, 32, 48, 72, 96];
+const FONT_FAMILY_PRESETS = [
+    { label: "System", value: "system", css: 'system-ui, -apple-system, "Segoe UI", sans-serif' },
+    { label: "맑은고딕", value: "malgun", css: '"Malgun Gothic", "맑은 고딕", system-ui, sans-serif' },
+    { label: "굴림", value: "gulim", css: 'Gulim, "굴림", sans-serif' },
+    { label: "새굴림", value: "newgulim", css: '"New Gulim", "새굴림", Gulim, sans-serif' },
+    { label: "바탕", value: "batang", css: 'Batang, "바탕", serif' },
+    { label: "궁서", value: "gungsuh", css: 'Gungsuh, "궁서", cursive' },
+    { label: "Serif", value: "serif", css: 'Georgia, "Times New Roman", serif' },
+    { label: "Mono", value: "mono", css: '"Cascadia Mono", Consolas, monospace' },
+    { label: "손글씨", value: "hand", css: '"Segoe Print", "Comic Sans MS", cursive' },
+    { label: "Rounded", value: "rounded", css: '"Arial Rounded MT Bold", "Trebuchet MS", sans-serif' },
+    { label: "Impact", value: "impact", css: 'Impact, Haettenschweiler, sans-serif' },
+];
+const FONT_WEIGHT_PRESETS = [
+    { label: "R", value: 400 },
+    { label: "M", value: 600 },
+    { label: "B", value: 800 },
+];
 
 const DEFAULT_BOARD = {
     version: 3,
@@ -30,6 +54,16 @@ const DEFAULT_BOARD = {
         { type: "text", id: "title", x: 48, y: 40, w: 480, h: 52, text: "Storyboard / mood board", fontSize: 36, color: "#1b1f24" },
     ],
 };
+
+// crypto.randomUUID() is unavailable on plain HTTP LAN origins in several
+// browsers (localhost is treated as secure, http://192.168.x.x is not).
+// Keep the board fully usable from a remote PC without requiring HTTPS.
+function makeItemId() {
+    const secureUuid = globalThis.crypto?.randomUUID?.();
+    if (secureUuid) return secureUuid;
+    const random = Math.random().toString(36).slice(2, 12);
+    return `tb-${Date.now().toString(36)}-${random}`;
+}
 
 // Minimal inline SVG icon set (16x16 viewBox, stroke = currentColor).
 const ICONS = {
@@ -41,6 +75,9 @@ const ICONS = {
     ellipse: '<svg viewBox="0 0 16 16" fill="none"><ellipse cx="8" cy="8" rx="5.6" ry="4.4" stroke="currentColor" stroke-width="1.3"/></svg>',
     arrow: '<svg viewBox="0 0 16 16" fill="none"><path d="M3 13L12.4 3.6M12.8 8V3.2H8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     image: '<svg viewBox="0 0 16 16" fill="none"><rect x="2.4" y="3" width="11.2" height="10" rx="1.4" stroke="currentColor" stroke-width="1.2"/><circle cx="6" cy="6.6" r="1.1" fill="currentColor"/><path d="M3.4 11.6l3-3 2.3 2.3 2-2 2.5 2.7" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>',
+    save: '<svg viewBox="0 0 16 16" fill="none"><path d="M3 2.5h8.5l1.5 1.6v9.4H3z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M5 2.5V6h5V2.5M5 13v-4h6v4" stroke="currentColor" stroke-width="1.2"/></svg>',
+    load: '<svg viewBox="0 0 16 16" fill="none"><path d="M3 2.5h8.5l1.5 1.6v9.4H3z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M8 5v5m-2-2 2 2 2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    recover: '<svg viewBox="0 0 16 16" fill="none"><path d="M4.2 5.2H1.8V2.8M2.1 5a6 6 0 111.1 6.8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 4.5V8l2.4 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
     undo: '<svg viewBox="0 0 16 16" fill="none"><path d="M5.5 3.5L3 6l2.5 2.5M3 6h6a4 4 0 010 8H7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     redo: '<svg viewBox="0 0 16 16" fill="none"><path d="M10.5 3.5L13 6l-2.5 2.5M13 6H7a4 4 0 000 8h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     fit: '<svg viewBox="0 0 16 16" fill="none"><path d="M2.5 5.5v-3h3m5 0h3v3m0 5v3h-3m-5 0h-3v-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
@@ -132,6 +169,9 @@ function encodeImageBlob(blob) {
 
 function makeBoardEditor(node) {
     const board = parseBoard(node);
+    node.properties = node.properties || {};
+    node.properties.toobusy_board_storage_id ||= makeItemId();
+    const autosaveKey = `toobusy:whiteboard:${node.properties.toobusy_board_storage_id}`;
     let selected = null;
     let editing = null; // item currently in the inline text editor
     let tool = "select";
@@ -141,6 +181,7 @@ function makeBoardEditor(node) {
     const imageCache = new Map();
     const undoStack = [];
     const redoStack = [];
+    let recoverButton = null;
 
     const storedView = node.properties?.toobusy_board_view;
     const view = {
@@ -201,7 +242,7 @@ function makeBoardEditor(node) {
                 align-items: stretch;
                 gap: 7px;
                 padding: 9px;
-                width: 168px;
+                width: 196px;
             }
             .toobusy-board .island.zoom {
                 left: 10px;
@@ -286,6 +327,24 @@ function makeBoardEditor(node) {
                 background: rgba(127, 200, 255, 0.12);
             }
             .toobusy-board .chip-btn.danger:hover { border-color: #b04a52; color: #ffb8c1; }
+            .toobusy-board .field-control {
+                width: 100%;
+                min-height: 28px;
+                border: 1px solid #3a4450;
+                border-radius: 7px;
+                background: #1f262e;
+                color: #d6dde4;
+                font: 12px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+                padding: 4px 7px;
+                outline: none;
+            }
+            .toobusy-board input.field-control {
+                width: 72px;
+            }
+            .toobusy-board .field-control:focus {
+                border-color: ${ACCENT};
+                box-shadow: 0 0 0 1px rgba(127, 200, 255, 0.25);
+            }
             .toobusy-board .zoom-label {
                 min-width: 44px;
                 text-align: center;
@@ -321,15 +380,17 @@ function makeBoardEditor(node) {
                 white-space: pre-wrap;
                 word-break: break-word;
             }
-            .toobusy-board input.image-file { display: none; }
+            .toobusy-board input.image-file,
+            .toobusy-board input.board-file { display: none; }
         </style>
         <canvas class="board-surface" tabindex="0"></canvas>
         <div class="island toolbar"></div>
         <div class="island props" hidden></div>
         <div class="island zoom"></div>
-        <div class="hint">Wheel zoom · Space-drag pan · Ctrl+V paste image · double-click text · K keyframe</div>
+        <div class="hint">Pressure stylus · Wheel zoom · Space-drag pan · Ctrl+V image · double-click text</div>
         <textarea class="inline-editor" spellcheck="false"></textarea>
         <input class="image-file" type="file" accept="image/*" multiple />
+        <input class="board-file" type="file" accept="application/json,.json" />
     `;
 
     const canvas = root.querySelector("canvas.board-surface");
@@ -338,6 +399,7 @@ function makeBoardEditor(node) {
     const zoomEl = root.querySelector(".island.zoom");
     const editorEl = root.querySelector("textarea.inline-editor");
     const fileInput = root.querySelector("input.image-file");
+    const boardFileInput = root.querySelector("input.board-file");
     const ctx = canvas.getContext("2d");
 
     // Keep board interactions inside the board: LiteGraph must not also pan
@@ -368,6 +430,14 @@ function makeBoardEditor(node) {
             y: (local.y - view.y) / view.scale,
         };
     };
+    const pointerPressure = (event, { start = false, end = false } = {}) => {
+        if (event.pointerType === "pen") {
+            return Math.max(0.03, Math.min(1, Number(event.pressure) || (end ? 0.03 : 0.5)));
+        }
+        if (start || end) return 0.18;
+        return 0.68;
+    };
+    const penPoint = (event, options) => ({ ...toWorld(event), p: pointerPressure(event, options) });
     const persistView = () => {
         node.properties = node.properties || {};
         node.properties.toobusy_board_view = { x: view.x, y: view.y, scale: view.scale };
@@ -407,12 +477,52 @@ function makeBoardEditor(node) {
     };
 
     // ----- persistence + history ---------------------------------------------
+    const readAutosaveHistory = () => {
+        try {
+            const raw = localStorage.getItem(autosaveKey);
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            if (parsed?.format === "toobusy-whiteboard-autosave" && Array.isArray(parsed.entries)) {
+                return parsed.entries.filter((entry) => typeof entry?.board === "string");
+            }
+            // Migrate the earlier single-snapshot autosave format.
+            if (Array.isArray(parsed?.items)) {
+                return [{ savedAt: new Date().toISOString(), board: raw }];
+            }
+        } catch {
+            return [];
+        }
+        return [];
+    };
+    const refreshRecoveryButton = () => {
+        if (!recoverButton) return;
+        const current = serializeBoard(board);
+        recoverButton.disabled = !readAutosaveHistory().some((entry) => entry.board !== current);
+    };
+    const writeAutosave = () => {
+        try {
+            const current = serializeBoard(board);
+            const entries = readAutosaveHistory();
+            if (entries.at(-1)?.board !== current) {
+                entries.push({ savedAt: new Date().toISOString(), board: current });
+            }
+            localStorage.setItem(autosaveKey, JSON.stringify({
+                format: "toobusy-whiteboard-autosave",
+                version: 1,
+                entries: entries.slice(-30),
+            }));
+        } catch (err) {
+            console.warn("[toobusy Whiteboard] autosave failed", err);
+        }
+        refreshRecoveryButton();
+    };
     const commit = () => {
         const widget = boardWidget(node);
         if (widget) {
             widget.value = serializeBoard(board);
             widget.callback?.(widget.value);
         }
+        writeAutosave();
         node.setDirtyCanvas?.(true, true);
         draw();
     };
@@ -446,6 +556,62 @@ function makeBoardEditor(node) {
         restore(redoStack.pop());
         renderProps();
         commit();
+    };
+
+    // Capture board undo before ComfyUI's global workflow undo sees it. This
+    // prevents Ctrl+Z inside the board from deleting the whole node/workflow
+    // change in one step.
+    root.addEventListener("keydown", (event) => {
+        if (event.target === editorEl) return; // keep native text undo while typing
+        const ctrlLike = event.ctrlKey || event.metaKey;
+        const key = event.key.toLowerCase();
+        if (!ctrlLike || (key !== "z" && key !== "y")) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (key === "y" || (key === "z" && event.shiftKey)) redo();
+        else undo();
+    }, true);
+
+    const exportBoard = () => {
+        const payload = {
+            format: "toobusy-whiteboard",
+            version: 1,
+            savedAt: new Date().toISOString(),
+            board: JSON.parse(serializeBoard(board)),
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `toobusy-whiteboard-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+        link.style.display = "none";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+
+    const importBoardData = (data) => {
+        const incoming = data?.board && Array.isArray(data.board.items) ? data.board : data;
+        if (!incoming || !Array.isArray(incoming.items)) throw new Error("invalid whiteboard backup");
+        pushHistory();
+        board.version = Number(incoming.version) || board.version || 3;
+        board.items = structuredClone(incoming.items);
+        selected = null;
+        closeTextEditor();
+        renderProps();
+        commit();
+    };
+
+    const recoverAutosave = () => {
+        const current = serializeBoard(board);
+        const saved = [...readAutosaveHistory()].reverse().find((entry) => entry.board !== current)?.board;
+        if (!saved) return;
+        try {
+            importBoardData(JSON.parse(saved));
+        } catch (err) {
+            console.warn("[toobusy Whiteboard] recovery failed", err);
+        }
     };
 
     // ----- keyframe order ------------------------------------------------------
@@ -492,26 +658,66 @@ function makeBoardEditor(node) {
         }
     }
 
-    function drawPen(c, points) {
-        if (!Array.isArray(points) || points.length < 2) return;
+    function penWidth(item, pressure) {
+        const base = Math.max(1, Number(item.strokeWidth) || 4);
+        if (item.pressure === false) return base;
+        const p = Math.max(0, Math.min(1, Number.isFinite(Number(pressure)) ? Number(pressure) : 0.65));
+        return Math.max(0.6, base * (0.16 + p * 0.84));
+    }
+
+    function strokeCurve(c, start, control, end, width) {
         c.beginPath();
-        c.moveTo(points[0].x, points[0].y);
-        for (let i = 1; i < points.length - 1; i += 1) {
-            const midX = (points[i].x + points[i + 1].x) / 2;
-            const midY = (points[i].y + points[i + 1].y) / 2;
-            c.quadraticCurveTo(points[i].x, points[i].y, midX, midY);
-        }
-        const last = points[points.length - 1];
-        c.lineTo(last.x, last.y);
+        c.moveTo(start.x, start.y);
+        c.quadraticCurveTo(control.x, control.y, end.x, end.y);
+        c.lineWidth = width;
         c.lineJoin = "round";
         c.lineCap = "round";
         c.stroke();
     }
 
-    function wrapTextLines(c, text, fontPx, width) {
-        c.font = `${fontPx}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+    function drawPen(c, item) {
+        const points = item?.points;
+        if (!Array.isArray(points) || !points.length) return;
+        c.globalAlpha = Math.max(0.04, Math.min(1, Number(item.opacity) || 1));
+        const softness = Math.max(0, Math.min(1, Number(item.softness) || 0));
+        if (softness > 0) {
+            c.shadowColor = item.color || "#1b1f24";
+            c.shadowBlur = Math.max(1, (Number(item.strokeWidth) || 4) * softness * 1.4);
+        }
+        if (points.length === 1) {
+            c.beginPath();
+            c.arc(points[0].x, points[0].y, penWidth(item, points[0].p) / 2, 0, Math.PI * 2);
+            c.fillStyle = item.color || "#1b1f24";
+            c.fill();
+            return;
+        }
+        const midpoint = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+        const firstMid = midpoint(points[0], points[1]);
+        strokeCurve(c, points[0], points[0], firstMid, penWidth(item, (Number(points[0].p) + Number(points[1].p)) / 2));
+        for (let i = 1; i < points.length - 1; i += 1) {
+            const start = midpoint(points[i - 1], points[i]);
+            const end = midpoint(points[i], points[i + 1]);
+            strokeCurve(c, start, points[i], end, penWidth(item, points[i].p));
+        }
+        const last = points[points.length - 1];
+        const before = points[points.length - 2];
+        strokeCurve(c, midpoint(before, last), last, last, penWidth(item, last.p));
+    }
+
+    function fontFamilyCss(item) {
+        const value = item?.fontFamily || "system";
+        return FONT_FAMILY_PRESETS.find((font) => font.value === value)?.css || FONT_FAMILY_PRESETS[0].css;
+    }
+
+    function textFont(item, fontPx = item?.fontSize || 24) {
+        const weight = Math.max(100, Math.min(900, Number(item?.fontWeight) || 400));
+        return `${weight} ${fontPx}px ${fontFamilyCss(item)}`;
+    }
+
+    function wrapTextLines(c, item, width) {
+        c.font = textFont(item);
         const lines = [];
-        for (const raw of String(text || "").split("\n")) {
+        for (const raw of String(item?.text || "").split("\n")) {
             const words = raw.split(/\s+/).filter(Boolean);
             if (!words.length) {
                 lines.push("");
@@ -608,12 +814,13 @@ function makeBoardEditor(node) {
                 c.fill();
             }
         } else if (item.type === "pen") {
-            drawPen(c, item.points);
+            drawPen(c, item);
         } else if (item.type === "text" && item !== editing) {
             c.fillStyle = item.color || "#1b1f24";
             c.textBaseline = "top";
             const fs = item.fontSize || 24;
-            const lines = wrapTextLines(c, item.text, fs, Math.max(MIN_SIZE, item.w || MIN_SIZE));
+            c.font = textFont(item, fs);
+            const lines = wrapTextLines(c, item, Math.max(MIN_SIZE, item.w || MIN_SIZE));
             let lineY = item.y;
             for (const line of lines) {
                 c.fillText(line, item.x, lineY);
@@ -768,6 +975,8 @@ function makeBoardEditor(node) {
         editorEl.style.top = `${item.y * view.scale + view.y - 3}px`;
         editorEl.style.width = `${Math.max(120, (item.w || 200) * view.scale + 12)}px`;
         editorEl.style.fontSize = `${fs}px`;
+        editorEl.style.fontFamily = fontFamilyCss(item);
+        editorEl.style.fontWeight = String(item.fontWeight || 400);
         editorEl.style.color = item.color || "#1b1f24";
         editorEl.value = item.text || "";
         const grow = () => {
@@ -818,7 +1027,7 @@ function makeBoardEditor(node) {
     // ----- item creation -------------------------------------------------------------
     function createItem(type, point) {
         const item = {
-            id: crypto.randomUUID(),
+            id: makeItemId(),
             type,
             x: point.x,
             y: point.y,
@@ -838,6 +1047,8 @@ function makeBoardEditor(node) {
             item.h = 40;
             item.text = "";
             item.fontSize = 32;
+            item.fontFamily = "system";
+            item.fontWeight = 400;
         }
         board.items.push(item);
         return item;
@@ -853,7 +1064,7 @@ function makeBoardEditor(node) {
                 const worldH = worldW * (encoded.height / encoded.width);
                 pushHistory();
                 lastItem = {
-                    id: crypto.randomUUID(),
+                    id: makeItemId(),
                     type: "image",
                     x: point.x + offset - worldW / 2,
                     y: point.y + offset - worldH / 2,
@@ -912,6 +1123,13 @@ function makeBoardEditor(node) {
     const sep2 = document.createElement("div");
     sep2.className = "tb-sep";
     toolbarEl.appendChild(sep2);
+    toolbarButton("save", "Save board backup (.json)", exportBoard);
+    toolbarButton("load", "Load board backup (.json)", () => boardFileInput.click());
+    recoverButton = toolbarButton("recover", "Recover previous browser autosave (up to 30)", recoverAutosave);
+    refreshRecoveryButton();
+    const sep3 = document.createElement("div");
+    sep3.className = "tb-sep";
+    toolbarEl.appendChild(sep3);
     toolbarButton("undo", "Undo (Ctrl+Z)", undo);
     toolbarButton("redo", "Redo (Ctrl+Shift+Z)", redo);
     setTool("select");
@@ -920,6 +1138,16 @@ function makeBoardEditor(node) {
         const files = [...(fileInput.files || [])].filter((file) => file.type.startsWith("image/"));
         fileInput.value = "";
         if (files.length) placeImageBlobs(files, viewCenterWorld());
+    });
+    boardFileInput.addEventListener("change", async () => {
+        const file = boardFileInput.files?.[0];
+        boardFileInput.value = "";
+        if (!file) return;
+        try {
+            importBoardData(JSON.parse(await file.text()));
+        } catch (err) {
+            console.warn("[toobusy Whiteboard] backup load failed", err);
+        }
     });
 
     // ----- zoom island --------------------------------------------------------------------
@@ -1007,6 +1235,45 @@ function makeBoardEditor(node) {
         return el;
     }
 
+    function selectControl(options, current, apply) {
+        const select = document.createElement("select");
+        select.className = "field-control";
+        for (const option of options) {
+            const el = document.createElement("option");
+            el.value = String(option.value);
+            el.textContent = option.label;
+            select.appendChild(el);
+        }
+        select.value = String(current);
+        select.addEventListener("change", () => apply(select.value));
+        return select;
+    }
+
+    function numberControl(current, apply) {
+        const input = document.createElement("input");
+        input.type = "number";
+        input.className = "field-control";
+        input.min = "8";
+        input.max = "220";
+        input.step = "1";
+        input.value = String(Math.round(Number(current) || 32));
+        const commitValue = () => {
+            const value = Math.max(8, Math.min(220, Number(input.value) || 32));
+            input.value = String(Math.round(value));
+            apply(value);
+        };
+        input.addEventListener("change", commitValue);
+        input.addEventListener("keydown", (event) => {
+            event.stopPropagation();
+            if (event.key === "Enter") {
+                event.preventDefault();
+                commitValue();
+                canvas.focus();
+            }
+        });
+        return input;
+    }
+
     function renderProps() {
         if (!selected) {
             propsEl.hidden = true;
@@ -1041,6 +1308,27 @@ function makeBoardEditor(node) {
             );
         }
 
+        if (item.type === "pen") {
+            propsEl.append(
+                rowLabel("Brush"),
+                chipRow(BRUSH_PRESETS.map((brush) => ({
+                    label: brush.label,
+                    title: `${brush.label} · ${Math.round(brush.opacity * 100)}% opacity`,
+                    active: (item.brush || "ink") === brush.value,
+                    action: () => {
+                        pushHistory();
+                        item.brush = brush.value;
+                        item.strokeWidth = brush.width;
+                        item.pressure = brush.pressure;
+                        item.opacity = brush.opacity;
+                        item.softness = brush.softness;
+                        renderProps();
+                        commit();
+                    },
+                }))),
+            );
+        }
+
         if (item.type !== "text" && item.type !== "image") {
             propsEl.append(
                 rowLabel("Stroke width"),
@@ -1058,8 +1346,57 @@ function makeBoardEditor(node) {
             );
         }
 
+        if (item.type === "pen") {
+            propsEl.append(
+                rowLabel("Brush pressure"),
+                chipRow([
+                    {
+                        label: "Pressure",
+                        title: "Stylus pressure + tapered mouse stroke",
+                        active: item.pressure !== false,
+                        action: () => {
+                            pushHistory();
+                            item.pressure = true;
+                            renderProps();
+                            commit();
+                        },
+                    },
+                    {
+                        label: "Uniform",
+                        title: "Constant-width line",
+                        active: item.pressure === false,
+                        action: () => {
+                            pushHistory();
+                            item.pressure = false;
+                            renderProps();
+                            commit();
+                        },
+                    },
+                ]),
+            );
+        }
+
         if (item.type === "text") {
             propsEl.append(
+                rowLabel("Font"),
+                selectControl(FONT_FAMILY_PRESETS, item.fontFamily || "system", (value) => {
+                    pushHistory();
+                    item.fontFamily = value;
+                    renderProps();
+                    commit();
+                }),
+                rowLabel("Weight"),
+                chipRow(FONT_WEIGHT_PRESETS.map((font) => ({
+                    label: font.label,
+                    title: String(font.value),
+                    active: (Number(item.fontWeight) || 400) === font.value,
+                    action: () => {
+                        pushHistory();
+                        item.fontWeight = font.value;
+                        renderProps();
+                        commit();
+                    },
+                }))),
                 rowLabel("Font size"),
                 chipRow(FONT_PRESETS.map((value, index) => ({
                     label: ["S", "M", "L"][index],
@@ -1072,6 +1409,12 @@ function makeBoardEditor(node) {
                         commit();
                     },
                 }))),
+                numberControl(item.fontSize || 32, (value) => {
+                    pushHistory();
+                    item.fontSize = value;
+                    renderProps();
+                    commit();
+                }),
             );
         }
 
@@ -1129,7 +1472,7 @@ function makeBoardEditor(node) {
     function duplicate(item) {
         pushHistory();
         const copy = structuredClone({ ...item, _node: undefined });
-        copy.id = crypto.randomUUID();
+        copy.id = makeItemId();
         copy.x = (copy.x || 0) + 24;
         copy.y = (copy.y || 0) + 24;
         if (copy.type === "line") {
@@ -1137,7 +1480,7 @@ function makeBoardEditor(node) {
             copy.y2 = (copy.y2 || 0) + 24;
         }
         if (Array.isArray(copy.points)) {
-            copy.points = copy.points.map((p) => ({ x: p.x + 24, y: p.y + 24 }));
+            copy.points = copy.points.map((p) => ({ ...p, x: p.x + 24, y: p.y + 24 }));
         }
         delete copy.keyframe;
         board.items.push(copy);
@@ -1173,7 +1516,17 @@ function makeBoardEditor(node) {
 
         if (tool === "pen") {
             pushHistory();
-            const item = { id: crypto.randomUUID(), type: "pen", points: [point], color: "#1b1f24", strokeWidth: 4 };
+            const item = {
+                id: makeItemId(),
+                type: "pen",
+                points: [penPoint(event, { start: true })],
+                color: "#1b1f24",
+                strokeWidth: 8,
+                pressure: true,
+                brush: "ink",
+                opacity: 1,
+                softness: 0,
+            };
             board.items.push(item);
             selected = item;
             drag = { mode: "pen", item };
@@ -1231,7 +1584,10 @@ function makeBoardEditor(node) {
         select(hit);
         if (hit) {
             pushHistory();
-            drag = { mode: "move", offsetX: point.x - hit.x, offsetY: point.y - hit.y, lastX: hit.x, lastY: hit.y };
+            // Track pointer deltas instead of item.x/y. Freehand pen items only
+            // have `points`, so using hit.x/hit.y produced NaN and erased the
+            // stroke as soon as it was dragged.
+            drag = { mode: "move", lastPointerX: point.x, lastPointerY: point.y };
             canvas.setPointerCapture(event.pointerId);
         }
     });
@@ -1262,7 +1618,14 @@ function makeBoardEditor(node) {
             return;
         }
         if (drag.mode === "pen") {
-            drag.item.points.push(point);
+            const events = typeof event.getCoalescedEvents === "function" ? event.getCoalescedEvents() : [event];
+            for (const sample of events) {
+                const next = penPoint(sample);
+                const prev = drag.item.points.at(-1);
+                if (!prev || Math.hypot(next.x - prev.x, next.y - prev.y) >= 0.35 / view.scale) {
+                    drag.item.points.push(next);
+                }
+            }
             draw();
             return;
         }
@@ -1309,20 +1672,18 @@ function makeBoardEditor(node) {
             return;
         }
         if (drag.mode === "move" && selected) {
-            const nextX = point.x - drag.offsetX;
-            const nextY = point.y - drag.offsetY;
-            const dx = nextX - drag.lastX;
-            const dy = nextY - drag.lastY;
-            drag.lastX = nextX;
-            drag.lastY = nextY;
-            selected.x += dx;
-            selected.y += dy;
+            const dx = point.x - drag.lastPointerX;
+            const dy = point.y - drag.lastPointerY;
+            drag.lastPointerX = point.x;
+            drag.lastPointerY = point.y;
+            if (Number.isFinite(selected.x)) selected.x += dx;
+            if (Number.isFinite(selected.y)) selected.y += dy;
             if (selected.type === "line") {
                 selected.x2 += dx;
                 selected.y2 += dy;
             }
             if (Array.isArray(selected.points)) {
-                selected.points = selected.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+                selected.points = selected.points.map((p) => ({ ...p, x: p.x + dx, y: p.y + dy }));
             }
             draw();
         }
@@ -1356,6 +1717,15 @@ function makeBoardEditor(node) {
                 }
             }
             setTool("select");
+        }
+        if (finished.mode === "pen") {
+            const finalPoint = penPoint(event, { end: true });
+            const lastPoint = finished.item.points.at(-1);
+            if (!lastPoint || Math.hypot(finalPoint.x - lastPoint.x, finalPoint.y - lastPoint.y) > 0.1 / view.scale) {
+                finished.item.points.push(finalPoint);
+            } else if (lastPoint) {
+                lastPoint.p = finalPoint.p;
+            }
         }
         commit();
     });
@@ -1438,7 +1808,7 @@ function makeBoardEditor(node) {
                 selected.y2 += dy * step;
             }
             if (Array.isArray(selected.points)) {
-                selected.points = selected.points.map((p) => ({ x: p.x + dx * step, y: p.y + dy * step }));
+                selected.points = selected.points.map((p) => ({ ...p, x: p.x + dx * step, y: p.y + dy * step }));
             }
             commit();
             return;
