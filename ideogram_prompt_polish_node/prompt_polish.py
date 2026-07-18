@@ -610,6 +610,29 @@ def _enrich_palette(payload, image, element_colors=5, style_colors=8):
     return payload
 
 
+def _release_clip_from_vram(clip):
+    """Unload only this prompt CLIP and its clones, preserving other models.
+
+    This is the narrow hand-off needed by large chained workflows: a vision
+    prompt model (for example Gemma 4) can leave VRAM before Ideogram starts,
+    without the global cache destruction performed by generic VRAM cleaners.
+    """
+    patcher = getattr(clip, "patcher", None)
+    if patcher is None:
+        return False
+    try:
+        from comfy import model_management
+
+        model_management.unload_model_and_clones(patcher)
+        model_management.soft_empty_cache()
+        return True
+    except ImportError:
+        return False
+    except Exception as exc:  # noqa: BLE001 - cleanup must not discard a valid prompt
+        print(f"[toobusy] Could not release prompt CLIP from VRAM: {exc}")
+        return False
+
+
 class ToobusyIdeogramPromptPolish:
     """Folds Korean/English scene writing -> English translation -> Ideogram prompt structuring into one node.
 
@@ -643,6 +666,13 @@ class ToobusyIdeogramPromptPolish:
                 "seed": (
                     "INT",
                     {"default": 1, "min": 0, "max": 0xffffffffffffffff, "control_after_generate": True},
+                ),
+                "release_clip_after_run": (
+                    "BOOLEAN",
+                    {
+                        "default": True,
+                        "tooltip": "After creating the prompt, unload only this CLIP model from VRAM. Recommended before a large Ideogram model; unlike a global VRAM cleaner, other models and caches are preserved.",
+                    },
                 ),
             },
             "optional": {
@@ -691,6 +721,7 @@ class ToobusyIdeogramPromptPolish:
         preserve_intent,
         fill_missing_fields,
         seed,
+        release_clip_after_run=True,
         existing_layout_json="",
         image=None,
         image_instruction_mode="Analyze image literally",
@@ -727,6 +758,9 @@ class ToobusyIdeogramPromptPolish:
             print(message)
             fallback = _ensure_shape({}, scene, True)
             return (json.dumps(fallback, ensure_ascii=False, indent=2), message)
+        finally:
+            if release_clip_after_run:
+                _release_clip_from_vram(clip)
 
         data = _extract_json(raw)
         if data is None:

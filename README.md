@@ -60,7 +60,7 @@ ComfyUI를 재시작하세요. 프런트엔드(JS) 변경을 받은 뒤에는 �
 | 기획 | `toobusy Storyboard Board` | ComfyUI 안에서 이미지 보드와 키프레임 마킹을 처리합니다. |
 | 기획 | `toobusy Paint Canvas` | 그래프 앞단에서 러프 페인팅과 마스크를 만들고 바로 생성 노드로 보냅니다. |
 | 텍스트 인코더 | `toobusy Load CLIP` | safetensors/`.gguf` 텍스트 인코더를 한 노드로 로드합니다. |
-| Ideogram | `toobusy Ideogram Prompt Polish` / `Layout Builder` / `Ideogram4 T2I` | 한국어 장면 → 구조화 프롬프트 → 레이아웃 → 로컬 Ideogram4 생성 흐름입니다. Prompt Polish는 `image`+비전 모델(Gemma 4) 연결 시 **이미지 1장을 분석해 레이아웃 JSON 초안**도 만들고, Layout Builder의 `⟳ Pull from input`으로 캔버스에 올립니다. |
+| Ideogram | `toobusy Ideogram Prompt Polish` / `Layout Builder` / `Ideogram4 T2I` | 한국어 장면 → 구조화 프롬프트 → 레이아웃 → 로컬 Ideogram4 생성 흐름입니다. Prompt Polish는 `image`+비전 모델(Gemma 4) 연결 시 **이미지 1장을 분석해 레이아웃 JSON 초안**도 만들고, Layout Builder의 `⟳ Pull from input`으로 캔버스에 올립니다. `release_clip_after_run`은 프롬프트 생성 뒤 해당 CLIP만 VRAM에서 내려 대형 생성 모델과의 병목을 줄입니다. T2I의 공식 품질 프리셋은 권장 sampler/CFG/스케줄 값을 함께 적용하며, KJNodes가 있으면 SageAttention을 노드 안에서 켤 수 있습니다. |
 | Ideogram | `toobusy Layout Text Overlay` | 생성된 이미지 위에 실제 한글 텍스트를 인터랙티브하게(드래그·편집·폰트크기) 얹어, Ideogram이 못 그리는 한글을 크리스피하게 렌더합니다(layout_json 자동 시드). |
 | LTX | `toobusy LTX2.3` 3종 | LTX2.3 AV 프롬프트, 빈 latent, 샘플러 블록을 컴팩트하게 만듭니다. |
 

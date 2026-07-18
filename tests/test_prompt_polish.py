@@ -141,7 +141,10 @@ def test_transform_mode_strips_edit_command_language():
 
 
 def test_image_input_exposed_and_optional():
+    required = _mod.ToobusyIdeogramPromptPolish.INPUT_TYPES()["required"]
     optional = _mod.ToobusyIdeogramPromptPolish.INPUT_TYPES()["optional"]
+    assert required["release_clip_after_run"][0] == "BOOLEAN"
+    assert required["release_clip_after_run"][1]["default"] is True
     assert optional["image"][0] == "IMAGE"
     assert optional["image_instruction_mode"][0] == _mod.IMAGE_INSTRUCTION_MODES
     assert optional["image_instruction_mode"][1]["default"] == "Analyze image literally"
@@ -151,6 +154,31 @@ def test_image_input_exposed_and_optional():
     assert optional["debug_raw"][1]["default"] is False
     # image is optional, not required.
     assert "image" not in _mod.ToobusyIdeogramPromptPolish.INPUT_TYPES()["required"]
+
+
+def test_release_clip_unloads_only_the_supplied_patcher():
+    calls = []
+    previous_comfy = sys.modules.get("comfy")
+    comfy = types.ModuleType("comfy")
+    comfy.model_management = types.SimpleNamespace(
+        unload_model_and_clones=lambda patcher: calls.append(("unload", patcher)),
+        soft_empty_cache=lambda: calls.append(("empty", None)),
+    )
+    sys.modules["comfy"] = comfy
+    try:
+        patcher = object()
+        clip = types.SimpleNamespace(patcher=patcher)
+        _mod.ToobusyIdeogramPromptPolish().polish(
+            clip=clip, scene="hint", style_mode="Literal", language="Auto",
+            preserve_intent=True, fill_missing_fields=True, seed=1,
+            release_clip_after_run=True,
+        )
+        assert calls == [("unload", patcher), ("empty", None)]
+    finally:
+        if previous_comfy is None:
+            sys.modules.pop("comfy", None)
+        else:
+            sys.modules["comfy"] = previous_comfy
 
 
 def test_extract_json_handles_fences_and_prose():
