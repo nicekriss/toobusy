@@ -4,6 +4,27 @@
 
 ## [Unreleased]
 
+## [0.3.8] - 2026-07-18
+
+### Added
+- Added an optional in-node SageAttention switch for both Ideogram 4 model
+  branches, applied after LoRA and CFG model patches.
+- Added `release_clip_after_run` to Ideogram Prompt Polish so a large prompt
+  CLIP such as Gemma 4 can leave VRAM without globally unloading every model.
+- Added movable whiteboard artboards, nested layer groups, safer drawing and
+  recovery, and sequential image-list output for all artboards.
+
+### Changed
+- Ideogram 4 Quality, Default, and Turbo now apply the complete official
+  sampler, schedule, and CFG settings. Manual tuning remains available through
+  Custom mode, while a resolved-settings readout shows what will actually run.
+
+### Fixed
+- Avoided the broad cache destruction caused by using a global VRAM cleaner as
+  the hand-off between prompt generation and Ideogram model initialization.
+- Improved whiteboard coordinate handling, resizing, layer ownership, and
+  restoration after frontend state changes.
+
 ## [0.3.7] - 2026-07-10
 
 ### Added
