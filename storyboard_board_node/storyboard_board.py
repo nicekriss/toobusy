@@ -101,11 +101,30 @@ def _data_url_to_pil(data_url):
         return None
 
 
-def _font(size):
-    # malgun first so Korean scene notes render with real glyphs on Windows.
-    for name in ("malgun.ttf", "arial.ttf", "DejaVuSans.ttf"):
+def _font(size, family="system", weight=400):
+    # Keep frontend text styling and exported board renders aligned. The first
+    # choices are Windows-friendly so Korean scene notes keep real glyphs.
+    family = str(family or "system").lower()
+    is_bold = int(weight or 400) >= 700
+    families = {
+        "malgun": ("malgunbd.ttf", "malgun.ttf") if is_bold else ("malgun.ttf", "malgunbd.ttf"),
+        "gulim": ("gulim.ttc", "gulim.ttf", "malgun.ttf"),
+        "newgulim": ("NGULIM.TTF", "gulim.ttc", "malgun.ttf"),
+        "batang": ("batang.ttc", "batang.ttf", "malgun.ttf"),
+        "gungsuh": (("batang.ttc", 2), "batang.ttc", "malgun.ttf"),
+        "serif": ("georgiab.ttf", "timesbd.ttf", "Georgia.ttf", "times.ttf") if is_bold else ("Georgia.ttf", "times.ttf"),
+        "mono": ("consolab.ttf", "DejaVuSansMono-Bold.ttf", "consola.ttf", "DejaVuSansMono.ttf") if is_bold else ("consola.ttf", "DejaVuSansMono.ttf"),
+        "hand": ("segoeprb.ttf", "comicbd.ttf", "segoepr.ttf", "comic.ttf") if is_bold else ("segoepr.ttf", "comic.ttf"),
+        "rounded": ("ARLRDBD.TTF", "trebucbd.ttf", "malgunbd.ttf") if is_bold else ("ARLRDBD.TTF", "trebuc.ttf", "malgun.ttf"),
+        "impact": ("impact.ttf", "arialbd.ttf", "malgunbd.ttf"),
+        "system": ("malgunbd.ttf", "arialbd.ttf", "DejaVuSans-Bold.ttf", "malgun.ttf", "arial.ttf", "DejaVuSans.ttf")
+        if is_bold
+        else ("malgun.ttf", "arial.ttf", "DejaVuSans.ttf"),
+    }
+    for candidate in families.get(family, families["system"]):
         try:
-            return ImageFont.truetype(name, max(8, int(size)))
+            name, index = candidate if isinstance(candidate, tuple) else (candidate, 0)
+            return ImageFont.truetype(name, max(8, int(size)), index=index)
         except Exception:
             continue
     return ImageFont.load_default()
@@ -129,12 +148,56 @@ def _wrap_text(draw, text, font, width):
     return lines
 
 
-def _points(points):
+def _pressure_points(points):
     result = []
     for point in points or []:
         if isinstance(point, dict):
-            result.append((float(point.get("x", 0)), float(point.get("y", 0))))
+            try:
+                pressure = max(0.0, min(1.0, float(point.get("p", 0.65))))
+            except (TypeError, ValueError):
+                pressure = 0.65
+            result.append((float(point.get("x", 0)), float(point.get("y", 0)), pressure))
     return result
+
+
+def _draw_pressure_stroke(draw, points, color, base_width, pressure_enabled=True, opacity=1.0, softness=0.0):
+    """Render a round, pressure-sensitive freehand stroke for final IMAGE output."""
+    if not points:
+        return
+
+    def width_for(pressure):
+        if not pressure_enabled:
+            return max(1, int(round(base_width)))
+        return max(1, int(round(float(base_width) * (0.16 + pressure * 0.84))))
+
+    rgb = tuple(color[:3])
+    source_alpha = color[3] if len(color) > 3 else 255
+    opacity = max(0.04, min(1.0, float(opacity or 1.0)))
+    softness = max(0.0, min(1.0, float(softness or 0.0)))
+    layers = [(1.0, 1.0)]
+    if softness >= 0.2:
+        layers = [(1.0 + softness * 1.8, 0.12), (1.0 + softness * 0.8, 0.22), (1.0, 0.66)]
+
+    for width_scale, alpha_scale in layers:
+        layer_color = (*rgb, max(1, int(source_alpha * opacity * alpha_scale)))
+        x0, y0, p0 = points[0]
+        r0 = width_for(p0) * width_scale / 2
+        draw.ellipse((x0 - r0, y0 - r0, x0 + r0, y0 + r0), fill=layer_color)
+        for x1, y1, p1 in points[1:]:
+            distance = math.hypot(x1 - x0, y1 - y0)
+            steps = max(1, min(24, int(math.ceil(distance / 2.0))))
+            prev_x, prev_y = x0, y0
+            for step in range(1, steps + 1):
+                t = step / steps
+                x = x0 + (x1 - x0) * t
+                y = y0 + (y1 - y0) * t
+                pressure = p0 + (p1 - p0) * t
+                width = max(1, int(round(width_for(pressure) * width_scale)))
+                draw.line((prev_x, prev_y, x, y), fill=layer_color, width=width)
+                radius = width / 2
+                draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=layer_color)
+                prev_x, prev_y = x, y
+            x0, y0, p0 = x1, y1, p1
 
 
 def _rounded_rect(draw, box, radius, **kwargs):
@@ -170,6 +233,58 @@ def _keyframe_items(board):
     return sorted(items, key=lambda item: int(item.get("keyframe") or 0))
 
 
+def _render_artboard(board, artboard, fallback_width, fallback_height, background):
+    width = max(16, int(artboard.get("w", fallback_width))) if artboard else int(fallback_width)
+    height = max(16, int(artboard.get("h", fallback_height))) if artboard else int(fallback_height)
+    offset_x = float(artboard.get("x", 0)) if artboard else 0.0
+    offset_y = float(artboard.get("y", 0)) if artboard else 0.0
+    canvas = Image.new("RGB", (width, height), _hex_to_rgba(background)[:3])
+    draw = ImageDraw.Draw(canvas, "RGBA")
+    for item in board.get("items", []):
+        if not isinstance(item, dict) or item.get("type") == "frame" or item.get("hidden"):
+            continue
+        item_type = item.get("type")
+        x = float(item.get("x", 0)) - offset_x
+        y = float(item.get("y", 0)) - offset_y
+        w = float(item.get("w", 160))
+        h = float(item.get("h", 120))
+        color = _hex_to_rgba(item.get("color", "#111111"), item.get("alpha", 1))
+        fill = _hex_to_rgba(item.get("fill", "#ffffff"), item.get("fillAlpha", 0.6))
+        stroke_width = max(1, int(item.get("strokeWidth", 3)))
+        if item_type == "image":
+            image = _data_url_to_pil(item.get("src"))
+            if image is not None:
+                canvas.paste(_fit_image(image, w, h), (int(x), int(y)))
+        elif item_type == "rect":
+            radius = max(0, min(12, w / 4, h / 4))
+            _rounded_rect(draw, (x, y, x + w, y + h), radius, fill=fill, outline=color, width=stroke_width)
+        elif item_type == "ellipse":
+            draw.ellipse((x, y, x + w, y + h), fill=fill, outline=color, width=stroke_width)
+        elif item_type == "line":
+            x2 = float(item.get("x2", x + offset_x + w)) - offset_x
+            y2 = float(item.get("y2", y + offset_y + h)) - offset_y
+            draw.line((x, y, x2, y2), fill=color, width=stroke_width)
+            if item.get("arrow", False):
+                angle = math.atan2(y2 - y, x2 - x)
+                length = 18 + stroke_width * 2
+                left = (x2 - length * math.cos(angle - 0.45), y2 - length * math.sin(angle - 0.45))
+                right = (x2 - length * math.cos(angle + 0.45), y2 - length * math.sin(angle + 0.45))
+                draw.polygon([(x2, y2), left, right], fill=color)
+        elif item_type == "pen":
+            points = [(px - offset_x, py - offset_y, pressure) for px, py, pressure in _pressure_points(item.get("points"))]
+            _draw_pressure_stroke(draw, points, color, stroke_width, item.get("pressure", True) is not False, item.get("opacity", 1.0), item.get("softness", 0.0))
+        elif item_type == "text":
+            font = _font(item.get("fontSize", 24), item.get("fontFamily", "system"), item.get("fontWeight", 400))
+            line_y = y
+            for line in _wrap_text(draw, item.get("text", ""), font, max(20, int(w))):
+                draw.text((x, line_y), line, fill=color, font=font)
+                bbox = draw.textbbox((x, line_y), line, font=font)
+                line_y += bbox[3] - bbox[1] + 6
+                if line_y > y + h:
+                    break
+    return canvas
+
+
 class ToobusyStoryboardBoard:
     @classmethod
     def INPUT_TYPES(cls):
@@ -191,8 +306,11 @@ class ToobusyStoryboardBoard:
 
     # keyframes/keyframe_count are appended after the original outputs so
     # existing workflows keep their link slot indices.
-    RETURN_TYPES = ("IMAGE", "STRING", "IMAGE", "INT")
-    RETURN_NAMES = ("image", "board_data", "keyframes", "keyframe_count")
+    RETURN_TYPES = ("IMAGE", "STRING", "IMAGE", "INT", "IMAGE", "INT")
+    RETURN_NAMES = ("image", "board_data", "keyframes", "keyframe_count", "artboards", "artboard_count")
+    # Match Prompt Line semantics: downstream nodes are mapped over one
+    # single-image tensor at a time instead of receiving one VRAM-heavy batch.
+    OUTPUT_IS_LIST = (False, False, False, False, True, False)
     FUNCTION = "render"
     CATEGORY = "toobusy/Plan"
 
@@ -200,6 +318,19 @@ class ToobusyStoryboardBoard:
         width = int(width)
         height = int(height)
         board = _parse_board(board_data)
+        frames = [
+            item for item in board.get("items", [])
+            if isinstance(item, dict) and item.get("type") == "frame"
+        ]
+        active_frame = next(
+            (item for item in frames if item.get("id") == board.get("activeArtboardId")),
+            frames[0] if frames else None,
+        )
+        offset_x = float(active_frame.get("x", 0)) if active_frame else 0.0
+        offset_y = float(active_frame.get("y", 0)) if active_frame else 0.0
+        if active_frame:
+            width = max(16, int(active_frame.get("w", width)))
+            height = max(16, int(active_frame.get("h", height)))
         canvas = Image.new("RGB", (width, height), _hex_to_rgba(background)[:3])
         draw = ImageDraw.Draw(canvas, "RGBA")
 
@@ -207,8 +338,10 @@ class ToobusyStoryboardBoard:
             if not isinstance(item, dict):
                 continue
             item_type = item.get("type")
-            x = float(item.get("x", 0))
-            y = float(item.get("y", 0))
+            if item_type == "frame" or item.get("hidden"):
+                continue
+            x = float(item.get("x", 0)) - offset_x
+            y = float(item.get("y", 0)) - offset_y
             w = float(item.get("w", 160))
             h = float(item.get("h", 120))
             color = _hex_to_rgba(item.get("color", "#111111"), item.get("alpha", 1))
@@ -232,8 +365,8 @@ class ToobusyStoryboardBoard:
                 draw.ellipse((x, y, x + w, y + h), fill=fill, outline=color, width=stroke_width)
 
             elif item_type == "line":
-                x2 = float(item.get("x2", x + w))
-                y2 = float(item.get("y2", y + h))
+                x2 = float(item.get("x2", x + offset_x + w)) - offset_x
+                y2 = float(item.get("y2", y + offset_y + h)) - offset_y
                 draw.line((x, y, x2, y2), fill=color, width=stroke_width)
                 if item.get("arrow", False):
                     angle = math.atan2(y2 - y, x2 - x)
@@ -243,12 +376,19 @@ class ToobusyStoryboardBoard:
                     draw.polygon([(x2, y2), left, right], fill=color)
 
             elif item_type == "pen":
-                pts = _points(item.get("points"))
-                if len(pts) > 1:
-                    draw.line(pts, fill=color, width=stroke_width, joint="curve")
+                pts = [(px - offset_x, py - offset_y, pressure) for px, py, pressure in _pressure_points(item.get("points"))]
+                _draw_pressure_stroke(
+                    draw,
+                    pts,
+                    color,
+                    stroke_width,
+                    item.get("pressure", True) is not False,
+                    item.get("opacity", 1.0),
+                    item.get("softness", 0.0),
+                )
 
             elif item_type == "text":
-                font = _font(item.get("fontSize", 24))
+                font = _font(item.get("fontSize", 24), item.get("fontFamily", "system"), item.get("fontWeight", 400))
                 line_y = y
                 for line in _wrap_text(draw, item.get("text", ""), font, max(20, int(w))):
                     draw.text((x, line_y), line, fill=color, font=font)
@@ -285,7 +425,28 @@ class ToobusyStoryboardBoard:
             keyframes = board_image
             keyframe_count = 0
 
-        return (board_image, json.dumps(board, ensure_ascii=False), keyframes, keyframe_count)
+        ordered_frames = sorted(
+            frames,
+            key=lambda item: (
+                int(item.get("order", 10_000)),
+                float(item.get("y", 0)),
+                float(item.get("x", 0)),
+            ),
+        )
+        artboard_tensors = []
+        for artboard in ordered_frames:
+            rendered = _render_artboard(board, artboard, width, height, background)
+            if rendered.size != (width, height):
+                rendered = _fit_image(rendered, width, height, fill=background_rgb)
+            artboard_tensors.append(torch.from_numpy(np.asarray(rendered).astype(np.float32) / 255.0)[None,])
+        if artboard_tensors:
+            artboards = artboard_tensors
+            artboard_count = len(artboard_tensors)
+        else:
+            artboards = [board_image]
+            artboard_count = 1
+
+        return (board_image, json.dumps(board, ensure_ascii=False), keyframes, keyframe_count, artboards, artboard_count)
 
 
 NODE_CLASS_MAPPINGS = {
@@ -293,7 +454,7 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "ToobusyStoryboardBoard": "toobusy Storyboard Board",
+    "ToobusyStoryboardBoard": "toobusy Whiteboard",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
