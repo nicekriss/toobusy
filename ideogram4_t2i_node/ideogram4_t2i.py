@@ -166,6 +166,13 @@ class ToobusyIdeogram4T2I:
                 ),
                 "cfg": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 100.0, "step": 0.1}),
                 "lora_slots": ("INT", {"default": 0, "min": 0, "max": MAX_LORA_SLOTS}),
+                "use_sage_attention": (
+                    "BOOLEAN",
+                    {
+                        "default": False,
+                        "tooltip": "Patch only this node's conditional and unconditional Ideogram models with KJ SageAttention auto mode.",
+                    },
+                ),
             },
             "optional": {
                 "model_override": ("MODEL",),
@@ -185,7 +192,7 @@ class ToobusyIdeogram4T2I:
                 "mu": ("FLOAT", {"default": 0.5, "min": -10.0, "max": 10.0, "step": 0.05, "tooltip": "Used only when quality = Custom."}),
                 "std": ("FLOAT", {"default": 1.75, "min": 0.1, "max": 5.0, "step": 0.05, "tooltip": "Used only when quality = Custom."}),
                 "cfg_override": ("FLOAT", {"default": 3.0, "min": 0.0, "max": 100.0, "step": 0.1}),
-                "cfg_override_start": ("FLOAT", {"default": 0.9, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "cfg_override_start": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "cfg_override_end": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
             },
         }
@@ -221,12 +228,13 @@ class ToobusyIdeogram4T2I:
         sampler_name,
         cfg,
         lora_slots,
+        use_sage_attention=False,
         width=0,
         height=0,
         mu=0.5,
         std=1.75,
         cfg_override=3.0,
-        cfg_override_start=0.9,
+        cfg_override_start=0.7,
         cfg_override_end=1.0,
         model_override=None,
         uncond_model_override=None,
@@ -235,14 +243,23 @@ class ToobusyIdeogram4T2I:
         **lora_kwargs,
     ):
         if quality == "Custom":
-            preset_steps = int(steps) if int(steps) > 0 else 20
-            preset_mu, preset_std = float(mu), float(std)
+            steps = int(steps) if int(steps) > 0 else 20
+            mu, std = float(mu), float(std)
+            effective_sampler_name = sampler_name
+            effective_cfg = float(cfg)
+            effective_cfg_override = float(cfg_override)
+            effective_cfg_override_start = float(cfg_override_start)
+            effective_cfg_override_end = float(cfg_override_end)
         else:
-            preset_steps, preset_mu, preset_std = QUALITY_PRESETS.get(quality, QUALITY_PRESETS["Turbo"])
-            if int(steps) > 0:  # manual override of the preset step count
-                preset_steps = int(steps)
-
-        steps, mu, std = preset_steps, preset_mu, preset_std
+            # Official Ideogram presets are atomic. Saved legacy widget values
+            # must not silently turn Turbo/Default/Quality into a hand-tuned
+            # hybrid; use Custom when manual control is intentional.
+            steps, mu, std = QUALITY_PRESETS.get(quality, QUALITY_PRESETS["Turbo"])
+            effective_sampler_name = "euler"
+            effective_cfg = 7.0
+            effective_cfg_override = 3.0
+            effective_cfg_override_start = 0.7
+            effective_cfg_override_end = 1.0
 
         # Resolution: explicit width/height (e.g. from the Layout Builder) wins;
         # otherwise derive from ratio_preset + megapixels.
@@ -304,22 +321,45 @@ class ToobusyIdeogram4T2I:
         model = _call_node(
             "CFGOverride",
             model=model,
-            cfg=float(cfg_override),
-            start_percent=float(cfg_override_start),
-            end_percent=float(cfg_override_end),
+            cfg=effective_cfg_override,
+            start_percent=effective_cfg_override_start,
+            end_percent=effective_cfg_override_end,
         )[0]
+
+        # Insert the KJ model patch at the last model-processing point, after
+        # LoRA and CFG have finished cloning/patching the models and immediately
+        # before both branches enter DualModelGuider.
+        if use_sage_attention:
+            try:
+                model = _call_node(
+                    "PathchSageAttentionKJ",
+                    model=model,
+                    sage_attention="auto",
+                    allow_compile=False,
+                )[0]
+                model_uncond = _call_node(
+                    "PathchSageAttentionKJ",
+                    model=model_uncond,
+                    sage_attention="auto",
+                    allow_compile=False,
+                )[0]
+            except Exception as exc:
+                raise RuntimeError(
+                    "use_sage_attention needs KJNodes plus a working SageAttention installation. "
+                    "Turn the switch off to run without it."
+                ) from exc
 
         guider = _call_node(
             "DualModelGuider",
             model=model,
             positive=positive,
-            cfg=float(cfg),
+            cfg=effective_cfg,
             model_negative=model_uncond,
             negative=negative,
         )[0]
 
         noise = _call_node("RandomNoise", noise_seed=int(seed))[0]
-        sampler = _call_node("KSamplerSelect", sampler_name=sampler_name)[0]
+        sampler = _call_node("KSamplerSelect", sampler_name=effective_sampler_name)[0]
         sigmas = _call_node(
             "Ideogram4Scheduler",
             steps=int(steps),

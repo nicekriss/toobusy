@@ -29,6 +29,7 @@ LOADER_NODES = ("UNETLoader", "CLIPLoader", "VAELoader")
 
 # Shared call log populated by the stubbed _call_node.
 _CALLS = []
+_CALL_DETAILS = []
 _samp = None
 
 
@@ -41,6 +42,7 @@ def _install_stubs():
 
     def fake_call_node(node_type, **kwargs):
         _CALLS.append(node_type)
+        _CALL_DETAILS.append((node_type, kwargs))
         return [f"<{node_type}-out>"]
 
     pkg = types.ModuleType("toobusy")
@@ -100,7 +102,9 @@ def test_zimage_exposes_override_inputs():
 
 
 def test_ideogram4_exposes_override_inputs():
+    required = _ideo.ToobusyIdeogram4T2I.INPUT_TYPES()["required"]
     optional = _ideo.ToobusyIdeogram4T2I.INPUT_TYPES()["optional"]
+    assert required["use_sage_attention"][0] == "BOOLEAN"
     assert optional.get("model_override") == ("MODEL",)
     assert optional.get("uncond_model_override") == ("MODEL",)
     assert optional.get("clip_override") == ("CLIP",)
@@ -122,12 +126,19 @@ def _run_zimage(**overrides):
 
 def _run_ideogram4(**overrides):
     _CALLS.clear()
+    _CALL_DETAILS.clear()
     _samp._clear_loader_cache()
-    _ideo.ToobusyIdeogram4T2I().generate(
+    settings = dict(
         model_name="m", unconditional_model_name="um", clip_name="c", vae_name="v",
         prompt="{}", quality="Turbo", steps=0, ratio_preset="1:1", megapixels=1.0,
-        seed=0, sampler_name="res_multistep", cfg=7.0, lora_slots=0, **overrides,
+        seed=0, sampler_name="res_multistep", cfg=7.0, lora_slots=0,
     )
+    settings.update(overrides)
+    _ideo.ToobusyIdeogram4T2I().generate(**settings)
+
+
+def _call_kwargs(node_type):
+    return [kwargs for called_type, kwargs in _CALL_DETAILS if called_type == node_type]
 
 
 def test_zimage_overrides_skip_internal_loaders():
@@ -166,6 +177,46 @@ def test_ideogram4_partial_override_skips_only_connected():
     assert called.count("UNETLoader") == 1  # only the unconditional UNET loads
     assert called.count("CLIPLoader") == 1
     assert called.count("VAELoader") == 1
+
+
+def test_ideogram4_sage_switch_patches_both_models_only():
+    _run_ideogram4(use_sage_attention=True)
+    assert _CALLS.count("PathchSageAttentionKJ") == 2
+
+
+def test_ideogram4_default_does_not_patch_attention():
+    _run_ideogram4()
+    assert "PathchSageAttentionKJ" not in _CALLS
+
+
+def test_ideogram4_named_presets_force_official_settings():
+    _run_ideogram4(
+        quality="Turbo", steps=99, sampler_name="res_multistep", cfg=1.0,
+        mu=9.0, std=9.0, cfg_override=9.0,
+        cfg_override_start=0.9, cfg_override_end=0.9,
+    )
+    assert _call_kwargs("Ideogram4Scheduler")[0]["steps"] == 12
+    assert _call_kwargs("Ideogram4Scheduler")[0]["mu"] == 0.5
+    assert _call_kwargs("Ideogram4Scheduler")[0]["std"] == 1.75
+    assert _call_kwargs("KSamplerSelect")[0]["sampler_name"] == "euler"
+    assert _call_kwargs("CFGOverride")[0]["cfg"] == 3.0
+    assert _call_kwargs("CFGOverride")[0]["start_percent"] == 0.7
+    assert _call_kwargs("CFGOverride")[0]["end_percent"] == 1.0
+    assert _call_kwargs("DualModelGuider")[0]["cfg"] == 7.0
+
+
+def test_ideogram4_custom_keeps_manual_settings():
+    _run_ideogram4(
+        quality="Custom", steps=23, sampler_name="res_multistep", cfg=5.0,
+        mu=0.25, std=1.25, cfg_override=2.5,
+        cfg_override_start=0.6, cfg_override_end=0.95,
+    )
+    assert _call_kwargs("Ideogram4Scheduler")[0]["steps"] == 23
+    assert _call_kwargs("Ideogram4Scheduler")[0]["mu"] == 0.25
+    assert _call_kwargs("Ideogram4Scheduler")[0]["std"] == 1.25
+    assert _call_kwargs("KSamplerSelect")[0]["sampler_name"] == "res_multistep"
+    assert _call_kwargs("CFGOverride")[0]["start_percent"] == 0.6
+    assert _call_kwargs("DualModelGuider")[0]["cfg"] == 5.0
 
 
 def test_loader_wrapper_does_not_retain_outputs():
