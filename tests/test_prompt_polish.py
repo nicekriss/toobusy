@@ -143,8 +143,12 @@ def test_transform_mode_strips_edit_command_language():
 def test_image_input_exposed_and_optional():
     required = _mod.ToobusyIdeogramPromptPolish.INPUT_TYPES()["required"]
     optional = _mod.ToobusyIdeogramPromptPolish.INPUT_TYPES()["optional"]
-    assert required["release_clip_after_run"][0] == "BOOLEAN"
-    assert required["release_clip_after_run"][1]["default"] is True
+    assert "release_clip_after_run" not in required
+    assert optional["release_clip_after_run"][0] == "BOOLEAN"
+    assert optional["release_clip_after_run"][1]["default"] is True
+    assert list(optional)[-4:] == [
+        "image_instruction_mode", "analysis_mode", "debug_raw", "release_clip_after_run"
+    ]
     assert optional["image"][0] == "IMAGE"
     assert optional["image_instruction_mode"][0] == _mod.IMAGE_INSTRUCTION_MODES
     assert optional["image_instruction_mode"][1]["default"] == "Analyze image literally"

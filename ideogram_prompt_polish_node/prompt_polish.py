@@ -667,13 +667,6 @@ class ToobusyIdeogramPromptPolish:
                     "INT",
                     {"default": 1, "min": 0, "max": 0xffffffffffffffff, "control_after_generate": True},
                 ),
-                "release_clip_after_run": (
-                    "BOOLEAN",
-                    {
-                        "default": True,
-                        "tooltip": "After creating the prompt, unload only this CLIP model from VRAM. Recommended before a large Ideogram model; unlike a global VRAM cleaner, other models and caches are preserved.",
-                    },
-                ),
             },
             "optional": {
                 "existing_layout_json": ("STRING", {"multiline": True, "default": ""}),
@@ -704,6 +697,16 @@ class ToobusyIdeogramPromptPolish:
                         "tooltip": "Off: return blank/truncated llm_raw to keep workflows lighter. On: return the full raw LLM response for debugging JSON failures.",
                     },
                 ),
+                # Keep new widgets at the end. ComfyUI serializes widget values
+                # positionally, so inserting this among existing fields breaks
+                # saved workflows by shifting image/analysis mode values.
+                "release_clip_after_run": (
+                    "BOOLEAN",
+                    {
+                        "default": True,
+                        "tooltip": "After creating the prompt, unload only this CLIP model from VRAM. Recommended before a large Ideogram model; unlike a global VRAM cleaner, other models and caches are preserved.",
+                    },
+                ),
             },
         }
 
@@ -721,12 +724,12 @@ class ToobusyIdeogramPromptPolish:
         preserve_intent,
         fill_missing_fields,
         seed,
-        release_clip_after_run=True,
         existing_layout_json="",
         image=None,
         image_instruction_mode="Analyze image literally",
         analysis_mode="balanced",
         debug_raw=False,
+        release_clip_after_run=True,
     ):
         # Imported lazily so this module stays import-light (json/re only) and
         # unit-testable outside ComfyUI; reuses the same TextGenerate call the
