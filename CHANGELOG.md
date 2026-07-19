@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+## [0.3.9] - 2026-07-19
+
+### Fixed
+- Restored positional compatibility for existing Ideogram Prompt Polish
+  workflows. `release_clip_after_run` is now appended after all pre-existing
+  widgets instead of being inserted before the image-analysis controls.
+- Added a frontend migration for workflows saved with the broken v0.3.8 widget
+  order, preventing `balanced` and `debug_raw` values from being validated as
+  the wrong fields.
+
 ## [0.3.8] - 2026-07-18
 
 ### Added

@@ -1,7 +1,7 @@
 [project]
 name = "toobusy"
 description = "toobusy folds tedious multi-step ComfyUI workflows into single production nodes."
-version = "0.3.8"
+version = "0.3.9"
 license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.10"
