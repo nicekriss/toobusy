@@ -4,6 +4,17 @@
 
 ## [Unreleased]
 
+### Added
+- Added `toobusy FlashVSR Loader`, `Long Sampler`, and `Full Decoder` for the
+  FlashVSR v1.1 Full + Block-Sparse Attention path.
+- Added long-video chunking with overlap blending and a 24GB VRAM reference
+  preset (`2x`, 1024x576, 21-frame chunks, 8-frame overlap).
+
+### Changed
+- FlashVSR loads the DiT and VAE in separate phases and releases each phase
+  before loading the next one. Large GPU models are not retained globally
+  between queue runs.
+
 ## [0.3.9] - 2026-07-19
 
 ### Fixed

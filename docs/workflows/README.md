@@ -12,6 +12,9 @@
 
 ## 들어있는 워크플로우
 
+- [x] **`flashvsr_v11_full_bsa_long.json`** — FlashVSR v1.1 Full + BSA 장시간 영상용 2x 예제.
+  `1024x576`, 21프레임 청크, 8프레임 오버랩, tiled VAE 디코드를 사용합니다. RTX 3090 24GB에서 검증했습니다.
+
 - [x] **`wan21_scail2.json`** — Wan 2.1 SCAIL-2 모션 트랜스퍼 예제(36노드, 검증용).
   레퍼런스 이미지 + 댄스 영상 → `toobusy Wan SCAIL Extend Sampler` 중심 구성으로 베이스 + 익스텐드 흐름을 확인합니다. 결과 영상: `wan21_scail2_sample.mp4`. 최신 ComfyUI 코어(SCAIL-2) + SAM3/KJNodes/VHS 필요.
 - [x] **`korean_scene_to_ideogram4.json`** — 한국어 장면 → Prompt Polish → (Import polished로) Layout Builder → Ideogram4 T2I.
