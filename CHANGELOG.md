@@ -2,18 +2,23 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
-## [Unreleased]
+## [0.4.1] - 2026-08-07
 
 ### Added
 - Added `toobusy FlashVSR Loader`, `Long Sampler`, and `Full Decoder` for the
   FlashVSR v1.1 Full + Block-Sparse Attention path.
 - Added long-video chunking with overlap blending and a 24GB VRAM reference
   preset (`2x`, 1024x576, 21-frame chunks, 8-frame overlap).
+- Added `safe`, `balanced`, and `fast` VAE decode tile presets.
 
 ### Changed
 - FlashVSR loads the DiT and VAE in separate phases and releases each phase
   before loading the next one. Large GPU models are not retained globally
   between queue runs.
+
+### Fixed
+- Stopped the decoder from mutating cached sampler latents, allowing users to
+  compare decode presets without rerunning or corrupting the sampler output.
 
 ## [0.3.9] - 2026-07-19
 

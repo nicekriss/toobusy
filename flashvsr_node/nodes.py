@@ -111,6 +111,7 @@ class ToobusyFlashVSRDecoder:
                 "vae": (folder_paths.get_filename_list("vae"),),
                 "tiled": ("BOOLEAN", {"default": True}),
                 "color_fix": ("BOOLEAN", {"default": True}),
+                "tile_preset": (["safe", "balanced", "fast"], {"default": "safe"}),
             }
         }
 
@@ -119,7 +120,7 @@ class ToobusyFlashVSRDecoder:
     FUNCTION = "decode"
     CATEGORY = "toobusy/video/FlashVSR"
 
-    def decode(self, flashvsr_latent, vae, tiled, color_fix):
+    def decode(self, flashvsr_latent, vae, tiled, color_fix, tile_preset="safe"):
         vae_path = folder_paths.get_full_path("vae", vae)
         validate_paths(vae_path)
         chunks = flashvsr_latent["chunks"]
@@ -130,9 +131,8 @@ class ToobusyFlashVSRDecoder:
         try:
             pipe, manager = load_vae_pipeline(vae_path)
             for index, item in enumerate(chunks):
-                decoded = decode_chunk(pipe, item, tiled, color_fix)
+                decoded = decode_chunk(pipe, item, tiled, color_fix, tile_preset)
                 images = decoded if images is None else merge_chunk(images, decoded, overlaps[index])
-                chunks[index] = None
                 progress.update(1)
         finally:
             release_pipeline(pipe, manager)

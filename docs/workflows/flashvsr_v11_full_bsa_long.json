@@ -81,7 +81,7 @@
       ],
       "outputs": [{"name": "images", "type": "IMAGE", "links": [5]}],
       "properties": {"Node name for S&R": "ToobusyFlashVSRDecoder"},
-      "widgets_values": ["Wan2.1_VAE.pth", true, true]
+      "widgets_values": ["Wan2.1_VAE.pth", true, true, "balanced"]
     },
     {
       "id": 6,
