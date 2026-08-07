@@ -1,123 +1,376 @@
 {
   "id": "toobusy-flashvsr-v11-full-bsa-long",
   "revision": 0,
-  "last_node_id": 10,
-  "last_link_id": 8,
+  "last_node_id": 11,
+  "last_link_id": 16,
   "nodes": [
     {
       "id": 1,
       "type": "LoadVideo",
-      "pos": [40, 320],
-      "size": [360, 520],
+      "pos": [
+        40,
+        320
+      ],
+      "size": [
+        360,
+        520
+      ],
       "flags": {},
       "order": 0,
       "mode": 0,
       "inputs": [],
-      "outputs": [{"name": "VIDEO", "type": "VIDEO", "links": [1]}],
-      "properties": {"Node name for S&R": "LoadVideo"},
-      "widgets_values": ["flashcmp_src_mic_face_06mp.mp4", "image"]
+      "outputs": [
+        {
+          "name": "VIDEO",
+          "type": "VIDEO",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadVideo"
+      },
+      "widgets_values": [
+        "flashcmp_src_mic_face_06mp.mp4",
+        "image"
+      ]
     },
     {
       "id": 2,
       "type": "GetVideoComponents",
-      "pos": [450, 430],
-      "size": [210, 110],
+      "pos": [
+        450,
+        430
+      ],
+      "size": [
+        210,
+        110
+      ],
       "flags": {},
       "order": 1,
       "mode": 0,
-      "inputs": [{"name": "video", "type": "VIDEO", "link": 1}],
-      "outputs": [
-        {"name": "images", "type": "IMAGE", "links": [2]},
-        {"name": "audio", "type": "AUDIO", "links": [7]},
-        {"name": "fps", "type": "FLOAT", "links": [6]}
+      "inputs": [
+        {
+          "name": "video",
+          "type": "VIDEO",
+          "link": 1
+        }
       ],
-      "properties": {"Node name for S&R": "GetVideoComponents"},
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            2
+          ]
+        },
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "links": [
+            7
+          ]
+        },
+        {
+          "name": "fps",
+          "type": "FLOAT",
+          "links": [
+            6
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "GetVideoComponents"
+      },
       "widgets_values": []
     },
     {
       "id": 3,
       "type": "ToobusyFlashVSRLoader",
-      "pos": [710, 80],
-      "size": [440, 170],
+      "pos": [
+        710,
+        80
+      ],
+      "size": [
+        440,
+        170
+      ],
       "flags": {},
       "order": 2,
       "mode": 0,
-      "inputs": [],
-      "outputs": [{"name": "flashvsr_model", "type": "TOOBUSY_FLASHVSR_MODEL", "links": [3]}],
-      "properties": {"Node name for S&R": "ToobusyFlashVSRLoader"},
+      "inputs": [
+        {
+          "name": "offload",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "offload"
+          },
+          "link": 14
+        },
+        {
+          "name": "aggressive_offload",
+          "shape": 7,
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "aggressive_offload"
+          },
+          "link": 15
+        }
+      ],
+      "outputs": [
+        {
+          "name": "flashvsr_model",
+          "type": "TOOBUSY_FLASHVSR_MODEL",
+          "links": [
+            3
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ToobusyFlashVSRLoader"
+      },
       "widgets_values": [
         "diffusion_pytorch_model_streaming_dmd.safetensors",
         "LQ_proj_in.ckpt",
         "posi_prompt.pth",
+        false,
         false
       ]
     },
     {
       "id": 4,
       "type": "ToobusyFlashVSRSampler",
-      "pos": [710, 330],
-      "size": [390, 430],
+      "pos": [
+        710,
+        330
+      ],
+      "size": [
+        390,
+        430
+      ],
       "flags": {},
       "order": 3,
       "mode": 0,
       "inputs": [
-        {"name": "flashvsr_model", "type": "TOOBUSY_FLASHVSR_MODEL", "link": 3},
-        {"name": "images", "type": "IMAGE", "link": 2}
+        {
+          "name": "flashvsr_model",
+          "type": "TOOBUSY_FLASHVSR_MODEL",
+          "link": 3
+        },
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 2
+        },
+        {
+          "name": "width",
+          "type": "INT",
+          "widget": {
+            "name": "width"
+          },
+          "link": 9
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": 10
+        },
+        {
+          "name": "scale",
+          "type": "INT",
+          "widget": {
+            "name": "scale"
+          },
+          "link": 11
+        },
+        {
+          "name": "chunk_frames",
+          "type": "INT",
+          "widget": {
+            "name": "chunk_frames"
+          },
+          "link": 12
+        },
+        {
+          "name": "chunk_overlap",
+          "type": "INT",
+          "widget": {
+            "name": "chunk_overlap"
+          },
+          "link": 13
+        }
       ],
-      "outputs": [{"name": "flashvsr_latent", "type": "TOOBUSY_FLASHVSR_LATENT", "links": [4]}],
-      "properties": {"Node name for S&R": "ToobusyFlashVSRSampler"},
-      "widgets_values": [1024, 576, 2, 0, "fixed", 21, 8, 11, 3.0, 2.0, 1]
+      "outputs": [
+        {
+          "name": "flashvsr_latent",
+          "type": "TOOBUSY_FLASHVSR_LATENT",
+          "links": [
+            4
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ToobusyFlashVSRSampler"
+      },
+      "widgets_values": [
+        1024,
+        576,
+        2,
+        0,
+        "fixed",
+        21,
+        8,
+        11,
+        3.0,
+        2.0,
+        1
+      ]
     },
     {
       "id": 5,
       "type": "ToobusyFlashVSRDecoder",
-      "pos": [1190, 350],
-      "size": [390, 190],
+      "pos": [
+        1190,
+        350
+      ],
+      "size": [
+        390,
+        190
+      ],
       "flags": {},
       "order": 4,
       "mode": 0,
       "inputs": [
-        {"name": "flashvsr_latent", "type": "TOOBUSY_FLASHVSR_LATENT", "link": 4}
+        {
+          "name": "flashvsr_latent",
+          "type": "TOOBUSY_FLASHVSR_LATENT",
+          "link": 4
+        },
+        {
+          "name": "tile_preset",
+          "type": "STRING",
+          "widget": {
+            "name": "tile_preset"
+          },
+          "link": 16
+        }
       ],
-      "outputs": [{"name": "images", "type": "IMAGE", "links": [5]}],
-      "properties": {"Node name for S&R": "ToobusyFlashVSRDecoder"},
-      "widgets_values": ["Wan2.1_VAE.pth", true, true, "balanced"]
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            5
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ToobusyFlashVSRDecoder"
+      },
+      "widgets_values": [
+        "Wan2.1_VAE.pth",
+        true,
+        true,
+        "fast"
+      ]
     },
     {
       "id": 6,
       "type": "CreateVideo",
-      "pos": [1650, 350],
-      "size": [300, 130],
+      "pos": [
+        1650,
+        350
+      ],
+      "size": [
+        300,
+        130
+      ],
       "flags": {},
       "order": 5,
       "mode": 0,
       "inputs": [
-        {"name": "images", "type": "IMAGE", "link": 5},
-        {"name": "audio", "shape": 7, "type": "AUDIO", "link": 7},
-        {"name": "fps", "type": "FLOAT", "widget": {"name": "fps"}, "link": 6}
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 5
+        },
+        {
+          "name": "audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": 7
+        },
+        {
+          "name": "fps",
+          "type": "FLOAT",
+          "widget": {
+            "name": "fps"
+          },
+          "link": 6
+        }
       ],
-      "outputs": [{"name": "VIDEO", "type": "VIDEO", "links": [8]}],
-      "properties": {"Node name for S&R": "CreateVideo"},
-      "widgets_values": [24]
+      "outputs": [
+        {
+          "name": "VIDEO",
+          "type": "VIDEO",
+          "links": [
+            8
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CreateVideo"
+      },
+      "widgets_values": [
+        24
+      ]
     },
     {
       "id": 7,
       "type": "SaveVideo",
-      "pos": [2020, 230],
-      "size": [520, 620],
+      "pos": [
+        2020,
+        230
+      ],
+      "size": [
+        520,
+        620
+      ],
       "flags": {},
       "order": 6,
       "mode": 0,
-      "inputs": [{"name": "video", "type": "VIDEO", "link": 8}],
+      "inputs": [
+        {
+          "name": "video",
+          "type": "VIDEO",
+          "link": 8
+        }
+      ],
       "outputs": [],
-      "properties": {"Node name for S&R": "SaveVideo"},
-      "widgets_values": ["video/FlashVSR_Compare/toobusy_flashvsr_v11_full_bsa", "mp4", "h264"]
+      "properties": {
+        "Node name for S&R": "SaveVideo"
+      },
+      "widgets_values": [
+        "video/FlashVSR_Compare/toobusy_flashvsr_v11_full_bsa",
+        "mp4",
+        "h264"
+      ]
     },
     {
       "id": 8,
       "type": "MarkdownNote",
-      "pos": [40, -520],
-      "size": [500, 520],
+      "pos": [
+        40,
+        -520
+      ],
+      "size": [
+        500,
+        520
+      ],
       "flags": {},
       "order": 7,
       "mode": 0,
@@ -125,27 +378,43 @@
       "outputs": [],
       "title": "01 · 설치와 모델 위치",
       "properties": {},
-      "widgets_values": ["## FlashVSR v1.1 Full + BSA 설치\n\n### 1. 커스텀 노드\n- https://github.com/nicekriss/toobusy\n\n### 2. 일반 의존성\n```bash\npython -m pip install -r custom_nodes/toobusy/requirements_flashvsr.txt\n```\n\n### 3. Block-Sparse Attention\n현재 **Python / PyTorch / CUDA와 정확히 일치하는 wheel**이 필요합니다.\n\n이번 검증 환경:\n- Python 3.13\n- PyTorch 2.12.1+cu130\n- CUDA 13.0\n- RTX 3090 24GB\n\n### 4. 모델 위치\n`models/FlashVSR/`\n- diffusion_pytorch_model_streaming_dmd.safetensors\n- LQ_proj_in.ckpt\n- posi_prompt.pth\n\n`models/vae/`\n- Wan2.1_VAE.pth"]
+      "widgets_values": [
+        "## FlashVSR v1.1 Full + BSA 설치\n\n### 1. 커스텀 노드\n- https://github.com/nicekriss/toobusy\n\n### 2. 일반 의존성\n```bash\npython -m pip install -r custom_nodes/toobusy/requirements_flashvsr.txt\n```\n\n### 3. Block-Sparse Attention\n현재 **Python / PyTorch / CUDA와 정확히 일치하는 wheel**이 필요합니다.\n\n이번 검증 환경:\n- Python 3.13\n- PyTorch 2.12.1+cu130\n- CUDA 13.0\n- RTX 3090 24GB\n\n### 4. 모델 위치\n`models/FlashVSR/`\n- diffusion_pytorch_model_streaming_dmd.safetensors\n- LQ_proj_in.ckpt\n- posi_prompt.pth\n\n`models/vae/`\n- Wan2.1_VAE.pth"
+      ]
     },
     {
       "id": 9,
       "type": "MarkdownNote",
-      "pos": [570, -520],
-      "size": [500, 520],
+      "pos": [
+        570,
+        -520
+      ],
+      "size": [
+        500,
+        520
+      ],
       "flags": {},
       "order": 8,
       "mode": 0,
       "inputs": [],
       "outputs": [],
-      "title": "02 · RTX 3090 권장값",
+      "title": "02 · VRAM과 해상도 선택",
       "properties": {},
-      "widgets_values": ["## 촬영용 최종 권장 설정\n\n- 입력 리사이즈: **1024 × 576**\n- 업스케일: **2×**\n- Chunk Frames: **21**\n- Chunk Overlap: **8**\n- Local Range: **11**\n- KV Ratio: **3.0**\n- Sparse Ratio: **2.0**\n- Steps: **1**\n- Decoder: **tiled = true**\n- Color Fix: **true**\n- Loader offload: **false** (24GB 기준)\n\n124프레임 검증 결과:\n- 출력: 2048 × 1152 / 24fps\n- 처리 시간: 약 500초\n- 전체 최고 VRAM: 19,661MiB\n- 종료 후: 1,696MiB\n\n⚠️ 다른 AI 모델이 VRAM을 잡고 있으면 먼저 언로드하세요. 이번 97% 점유 원인은 LM Studio에 남아 있던 EXAONE 5.25GB였습니다."]
+      "widgets_values": [
+        "## VRAM & Resolution Preset 사용법\n\n### VRAM Profile\n- **12GB safe**: Aggressive Offload + Safe Decoder\n- **16GB balanced**: Standard Offload + Balanced Decoder\n- **24GB+ fast**: GPU 상주 + 방향 인식 2-strip Fast Decoder\n\n### Output Resolution\n원하는 최종 출력 크기를 고릅니다. 예를 들어 `2048x1152 landscape`를 선택하면 내부에서 1024x576으로 맞춘 뒤 2배로 복원합니다.\n\n공통 권장값은 Chunk 21 / Overlap 8 / Local Range 11 / KV 3.0 / Sparse 2.0 / 1-step입니다.\n\nRTX 3090 실측:\n- 24GB+ Fast: 전체 323.65초 / Decoder 193.83초 / Peak 약 21.2GB\n- 12GB Safe: 전체 596.23초 / Peak 8.69GB\n\n12GB 프로필은 느리지만 0.8MP 약 5초 입력을 FHD로 정상 완주했습니다."
+      ]
     },
     {
       "id": 10,
       "type": "MarkdownNote",
-      "pos": [1100, -520],
-      "size": [500, 520],
+      "pos": [
+        1100,
+        -520
+      ],
+      "size": [
+        500,
+        520
+      ],
       "flags": {},
       "order": 9,
       "mode": 0,
@@ -153,23 +422,232 @@
       "outputs": [],
       "title": "03 · 노드가 VRAM을 쓰는 방식",
       "properties": {},
-      "widgets_values": ["## 왜 3개 노드로 나눴나?\n\n### Loader\n모델을 즉시 GPU에 올리지 않고 **파일 경로만 전달**합니다.\n\n### Long Sampler\nDiT만 로드해 21프레임 청크를 처리하고 결과 latent를 CPU로 내립니다. 샘플링이 끝나면 DiT를 해제합니다.\n\n### Full Decoder\n그 다음 VAE만 로드하고 청크를 순서대로 디코드합니다. 8프레임 오버랩은 크로스페이드로 병합합니다.\n\n따라서 DiT와 VAE를 동시에 GPU에 상주시킬 필요가 없고, 실행 사이에 대형 모델을 전역 캐시하지 않습니다.\n\n### 촬영 순서\n1. 설치·모델 위치 설명\n2. Loader의 BSA / offload 설명\n3. Sampler의 21 / 8 설정 설명\n4. Decoder tiled / color fix 설명\n5. Queue 실행 후 VRAM과 결과 비교"]
+      "widgets_values": [
+        "## 노드 동작 방식\n\n### Preset\nVRAM 프로필과 출력 해상도를 고르면 Loader, Sampler, Decoder 설정이 함께 바뀝니다.\n\n### Loader\n낮은 VRAM에서는 모델을 단계별로 CPU에 내립니다. Aggressive 모드는 LQ residual과 KV cache도 CPU에 보관합니다.\n\n### Long Sampler\nDiT는 영상을 21프레임 청크로 나눠 처리하고 겹치는 구간을 블렌딩합니다.\n\n### Full Decoder\nVAE는 타일로 나눠 디코딩합니다. Fast는 영상 방향에 맞춘 두 개의 strip으로 중복 계산을 줄입니다.\n\n### 촬영 순서\n1. 배포 ZIP 설치\n2. VRAM Profile 12 / 16 / 24GB 선택\n3. Output Resolution 선택\n4. 24GB Fast 실측과 VRAM 확인\n5. 결과 영상 비교"
+      ]
+    },
+    {
+      "id": 11,
+      "type": "ToobusyFlashVSRSettings",
+      "pos": [
+        350,
+        70
+      ],
+      "size": [
+        300,
+        110
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "width",
+          "type": "INT",
+          "links": [
+            9
+          ]
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "links": [
+            10
+          ]
+        },
+        {
+          "name": "scale",
+          "type": "INT",
+          "links": [
+            11
+          ]
+        },
+        {
+          "name": "chunk_frames",
+          "type": "INT",
+          "links": [
+            12
+          ]
+        },
+        {
+          "name": "chunk_overlap",
+          "type": "INT",
+          "links": [
+            13
+          ]
+        },
+        {
+          "name": "offload",
+          "type": "BOOLEAN",
+          "links": [
+            14
+          ]
+        },
+        {
+          "name": "aggressive_offload",
+          "type": "BOOLEAN",
+          "links": [
+            15
+          ]
+        },
+        {
+          "name": "tile_preset",
+          "type": "STRING",
+          "links": [
+            16
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ToobusyFlashVSRSettings"
+      },
+      "widgets_values": [
+        "24GB+ fast",
+        "2048x1152 landscape"
+      ]
     }
   ],
   "links": [
-    [1, 1, 0, 2, 0, "VIDEO"],
-    [2, 2, 0, 4, 1, "IMAGE"],
-    [3, 3, 0, 4, 0, "TOOBUSY_FLASHVSR_MODEL"],
-    [4, 4, 0, 5, 0, "TOOBUSY_FLASHVSR_LATENT"],
-    [5, 5, 0, 6, 0, "IMAGE"],
-    [6, 2, 2, 6, 2, "FLOAT"],
-    [7, 2, 1, 6, 1, "AUDIO"],
-    [8, 6, 0, 7, 0, "VIDEO"]
+    [
+      1,
+      1,
+      0,
+      2,
+      0,
+      "VIDEO"
+    ],
+    [
+      2,
+      2,
+      0,
+      4,
+      1,
+      "IMAGE"
+    ],
+    [
+      3,
+      3,
+      0,
+      4,
+      0,
+      "TOOBUSY_FLASHVSR_MODEL"
+    ],
+    [
+      4,
+      4,
+      0,
+      5,
+      0,
+      "TOOBUSY_FLASHVSR_LATENT"
+    ],
+    [
+      5,
+      5,
+      0,
+      6,
+      0,
+      "IMAGE"
+    ],
+    [
+      6,
+      2,
+      2,
+      6,
+      2,
+      "FLOAT"
+    ],
+    [
+      7,
+      2,
+      1,
+      6,
+      1,
+      "AUDIO"
+    ],
+    [
+      8,
+      6,
+      0,
+      7,
+      0,
+      "VIDEO"
+    ],
+    [
+      9,
+      11,
+      0,
+      4,
+      2,
+      "INT"
+    ],
+    [
+      10,
+      11,
+      1,
+      4,
+      3,
+      "INT"
+    ],
+    [
+      11,
+      11,
+      2,
+      4,
+      4,
+      "INT"
+    ],
+    [
+      12,
+      11,
+      3,
+      4,
+      5,
+      "INT"
+    ],
+    [
+      13,
+      11,
+      4,
+      4,
+      6,
+      "INT"
+    ],
+    [
+      14,
+      11,
+      5,
+      3,
+      0,
+      "BOOLEAN"
+    ],
+    [
+      15,
+      11,
+      6,
+      3,
+      1,
+      "BOOLEAN"
+    ],
+    [
+      16,
+      11,
+      7,
+      5,
+      1,
+      "STRING"
+    ]
   ],
   "groups": [],
   "config": {},
   "extra": {
-    "ds": {"scale": 0.8, "offset": [40, 40]},
+    "ds": {
+      "scale": 0.8,
+      "offset": [
+        40,
+        40
+      ]
+    },
     "frontendVersion": "1.47.12",
     "workflowRendererVersion": "LG"
   },

@@ -376,6 +376,7 @@ class FlashVSRFullPipeline(BasePipeline):
         local_range = 9,
         color_fix = True,
         offload=False,
+        aggressive_offload=False,
 
     ):
 
@@ -446,6 +447,8 @@ class FlashVSRFullPipeline(BasePipeline):
                         ) if LQ_video is not None else None
                         if cur is None:
                             continue
+                        if aggressive_offload:
+                            cur = [value.cpu() for value in cur]
                         if LQ_latents is None:
                             LQ_latents = cur
                         else:
@@ -469,6 +472,8 @@ class FlashVSRFullPipeline(BasePipeline):
                         ) if LQ_video is not None else None
                         if cur is None:
                             continue
+                        if aggressive_offload:
+                            cur = [value.cpu() for value in cur]
                         if LQ_latents is None:
                             LQ_latents = cur
                         else:
@@ -500,6 +505,7 @@ class FlashVSRFullPipeline(BasePipeline):
                     t=self.t,
                     local_range = local_range,
                     gpu_manager=gpu_manager,
+                    aggressive_offload=aggressive_offload,
                 )
 
                 # 更新 latent
@@ -604,6 +610,7 @@ def model_fn_wan_video(
     t : torch.Tensor = None,
     local_range: int = 9,
     gpu_manager=None,
+    aggressive_offload=False,
     **kwargs,
 ):
     # patchify
@@ -649,18 +656,29 @@ def model_fn_wan_video(
     else:
         for block_id, block in enumerate(dit.blocks):
             if gpu_manager is not None: # apple 1 block to save Vram
+                if block_id > 0 and (block_id - 1) < len(dit.blocks):
+                    prev_module = gpu_manager.managed_modules[block_id - 1]
+                    if hasattr(prev_module, 'to'):
+                        prev_module.to('cpu')
                 if block_id < len(dit.blocks):
                     module = gpu_manager.managed_modules[block_id]
                     if hasattr(module, 'to'):
                         #print(f"move block {block_id} to gpu")
                         module.to(gpu_manager.device)
-                if block_id > 0 and (block_id - 1) < len(dit.blocks):
-                    prev_module = gpu_manager.managed_modules[block_id - 1]
-                    if hasattr(prev_module, 'to'):
-                        prev_module.to('cpu')
 
             if LQ_latents is not None and block_id < len(LQ_latents):
-                x = x + LQ_latents[block_id]
+                lq_latent = LQ_latents[block_id]
+                if aggressive_offload:
+                    lq_latent = lq_latent.to(x.device)
+                x = x + lq_latent
+                del lq_latent
+            cache_k = pre_cache_k[block_id] if pre_cache_k is not None else None
+            cache_v = pre_cache_v[block_id] if pre_cache_v is not None else None
+            if aggressive_offload:
+                if cache_k is not None:
+                    cache_k = cache_k.to(x.device)
+                if cache_v is not None:
+                    cache_v = cache_v.to(x.device)
             x, last_pre_cache_k, last_pre_cache_v = block(
                 x, context, t_mod, freqs, f, h, w,
                 local_num, topk,
@@ -668,12 +686,20 @@ def model_fn_wan_video(
                 kv_len=kv_len,
                 is_full_block=is_full_block,
                 is_stream=is_stream,
-                pre_cache_k=pre_cache_k[block_id] if pre_cache_k is not None else None,
-                pre_cache_v=pre_cache_v[block_id] if pre_cache_v is not None else None,
+                pre_cache_k=cache_k,
+                pre_cache_v=cache_v,
                 local_range = local_range,
             )
+            del cache_k, cache_v
+            if aggressive_offload:
+                if last_pre_cache_k is not None:
+                    last_pre_cache_k = last_pre_cache_k.cpu()
+                if last_pre_cache_v is not None:
+                    last_pre_cache_v = last_pre_cache_v.cpu()
             if pre_cache_k is not None: pre_cache_k[block_id] = last_pre_cache_k
             if pre_cache_v is not None: pre_cache_v[block_id] = last_pre_cache_v
+        if gpu_manager is not None and gpu_manager.managed_modules:
+            gpu_manager.managed_modules[-1].to('cpu')
 
     x = dit.head(x, t)
     if use_unified_sequence_parallel:

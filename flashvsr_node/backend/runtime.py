@@ -19,6 +19,7 @@ class FlashVSRModelHandle:
     projection_path: str
     prompt_path: str
     offload: bool
+    aggressive_offload: bool = False
 
 
 def require_block_sparse_attention():
@@ -91,6 +92,7 @@ def load_dit_pipeline(handle):
     pipe.enable_vram_management(num_persistent_param_in_dit=None)
     pipe.init_cross_kv(handle.prompt_path)
     pipe.offload = bool(handle.offload)
+    pipe.aggressive_offload = bool(handle.aggressive_offload)
     return pipe, manager
 
 
@@ -117,6 +119,7 @@ def sample_chunk(pipe, images, seed, scale, kv_ratio, local_range, steps, sparse
         local_range=int(local_range),
         color_fix=True,
         offload=bool(pipe.offload),
+        aggressive_offload=bool(pipe.aggressive_offload),
     )
     if not pipe.offload:
         pipe.dit.to("cpu")
@@ -147,14 +150,31 @@ def _map_to_image(video):
 DECODE_TILE_PRESETS = {
     "safe": ((60, 104), (30, 52)),
     "balanced": ((96, 160), (64, 112)),
-    "fast": ((120, 208), (88, 152)),
+    "fast": ((112, 192), (80, 136)),
 }
+
+
+def decode_tile_settings(tile_preset, samples):
+    if tile_preset != "fast":
+        return DECODE_TILE_PRESETS[tile_preset]
+
+    height, width = (int(value) for value in samples.shape[-2:])
+    overlap = 32
+    if width >= height:
+        tile_height = ((height + overlap + 1) // 2 + 7) // 8 * 8
+        if tile_height * width <= 22528:
+            return (tile_height, width), (tile_height - overlap, width)
+    else:
+        tile_width = ((width + overlap + 1) // 2 + 7) // 8 * 8
+        if height * tile_width <= 22528:
+            return (height, tile_width), (height, tile_width - overlap)
+    return DECODE_TILE_PRESETS[tile_preset]
 
 
 def decode_chunk(pipe, item, tiled, color_fix, tile_preset="safe"):
     samples = item["samples"]
     pipe.vae.clear_cache()
-    tile_size, tile_stride = DECODE_TILE_PRESETS[tile_preset]
+    tile_size, tile_stride = decode_tile_settings(tile_preset, samples)
     decoded = pipe.vae.decode(
         samples,
         device="cuda",

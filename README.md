@@ -25,10 +25,11 @@ ComfyUI를 재시작하세요. 프런트엔드(JS) 변경을 받은 뒤에는 �
 
 ### FlashVSR v1.1 Full + BSA
 
-긴 영상을 청크 단위로 처리하면서 모델을 단계별로 내리는 3개 노드를 제공합니다.
+긴 영상을 청크 단위로 처리하면서 모델을 단계별로 내리는 노드와 VRAM/해상도 프리셋을 제공합니다.
 
 ```text
 Get Video Components
+-> toobusy FlashVSR VRAM & Resolution Preset
 -> toobusy FlashVSR Loader
 -> toobusy FlashVSR Long Sampler
 -> toobusy FlashVSR Full Decoder
@@ -37,6 +38,8 @@ Get Video Components
 
 - 검증 프리셋: `2x`, `1024x576`, `chunk_frames=21`, `chunk_overlap=8`, Full VAE tiled, BSA.
 - 검증 환경: Windows, RTX 3090 24GB, Python 3.13, PyTorch 2.12.1+cu130.
+- VRAM 프리셋: 12GB는 aggressive offload + Safe decode, 16GB는 standard offload + Balanced decode, 24GB+는 GPU resident + orientation-aware Fast decode를 사용합니다.
+- 해상도 프리셋은 최종 출력 크기를 표시하며 샘플러에는 2배 업스케일 전 기준 크기를 전달합니다.
 - 샘플러가 DiT만 로드한 뒤 CPU latent를 만들고 해제하며, 디코더가 그 다음 VAE만 로드합니다. 실행 사이에 GPU 모델을 전역 캐시하지 않습니다.
 - 모델 자동 다운로드는 하지 않습니다. 아래 파일을 직접 배치해야 합니다.
 
@@ -55,7 +58,7 @@ python -m pip install -r custom_nodes/toobusy/requirements_flashvsr.txt
 
 그 다음 **현재 Python/PyTorch/CUDA 조합과 정확히 맞는** `block_sparse_attn` wheel을 설치해야 합니다. 위 검증 환경 전용 wheel은 [여기](https://huggingface.co/Wildminder/AI-windows-whl/resolve/main/block_sparse_attn/block_sparse_attn-0.0.2.post2%2Bd20260117.cu130torch2.12.1cxx11abiTRUE-cp313-cp313-win_amd64.whl?download=true)입니다. 다른 환경에는 이 wheel을 설치하면 안 됩니다. ComfyUI Desktop의 Torch 선택을 먼저 끝낸 뒤 BSA를 설치하세요.
 
-디코더의 `tile_preset`은 `safe`, `balanced`, `fast`를 제공합니다. 큰 프리셋일수록 VRAM을 더 사용하는 대신 중복 타일 계산을 줄입니다. 24GB 미만 VRAM은 아직 검증하지 않았습니다. `offload=true`가 더 낮은 VRAM 경로지만 속도가 크게 느려질 수 있습니다. 예제는 [`flashvsr_v11_full_bsa_long.json`](docs/workflows/flashvsr_v11_full_bsa_long.json)입니다.
+디코더의 `tile_preset`은 `safe`, `balanced`, `fast`를 제공합니다. 큰 프리셋일수록 VRAM을 더 사용하는 대신 중복 타일 계산을 줄입니다. 12GB Safe는 0.8MP 약 5초 입력을 FHD로 처리하는 실측에서 596.23초, 피크 8.69GB로 완주했습니다. `offload=true` 경로는 VRAM을 크게 낮추지만 속도는 느려질 수 있습니다. 예제는 [`flashvsr_v11_full_bsa_long.json`](docs/workflows/flashvsr_v11_full_bsa_long.json)입니다.
 
 처음 설치했다면 예제 워크플로우부터 여는 것이 가장 빠릅니다.
 

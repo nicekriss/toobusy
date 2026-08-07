@@ -19,6 +19,21 @@ from .backend.runtime import (
 MODEL_TYPE = "TOOBUSY_FLASHVSR_MODEL"
 LATENT_TYPE = "TOOBUSY_FLASHVSR_LATENT"
 
+VRAM_PROFILES = {
+    "12GB safe": (True, True, "safe"),
+    "16GB balanced": (True, False, "balanced"),
+    "24GB+ fast": (False, False, "fast"),
+}
+
+RESOLUTION_PRESETS = {
+    "2048x1152 landscape": (1024, 576),
+    "1152x2048 portrait": (576, 1024),
+    "1792x1024 landscape": (896, 512),
+    "1024x1792 portrait": (512, 896),
+    "1536x896 landscape": (768, 448),
+    "896x1536 portrait": (448, 768),
+}
+
 
 def _flashvsr_names(text):
     extensions = (".safetensors", ".ckpt", ".pth", ".pt")
@@ -38,7 +53,8 @@ class ToobusyFlashVSRLoader:
                 "projection": (_flashvsr_names("proj"),),
                 "prompt_tensor": (_flashvsr_names("prompt"),),
                 "offload": ("BOOLEAN", {"default": False}),
-            }
+            },
+            "optional": {"aggressive_offload": ("BOOLEAN", {"default": False})},
         }
 
     RETURN_TYPES = (MODEL_TYPE,)
@@ -46,10 +62,32 @@ class ToobusyFlashVSRLoader:
     FUNCTION = "load"
     CATEGORY = "toobusy/video/FlashVSR"
 
-    def load(self, dit, projection, prompt_tensor, offload):
+    def load(self, dit, projection, prompt_tensor, offload, aggressive_offload=False):
         paths = [folder_paths.get_full_path("toobusy_flashvsr", name) for name in (dit, projection, prompt_tensor)]
         validate_paths(*paths)
-        return (FlashVSRModelHandle(*paths, bool(offload)),)
+        aggressive_offload = bool(aggressive_offload)
+        return (FlashVSRModelHandle(*paths, bool(offload) or aggressive_offload, aggressive_offload),)
+
+
+class ToobusyFlashVSRSettings:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "vram_profile": (list(VRAM_PROFILES), {"default": "24GB+ fast"}),
+                "output_resolution": (list(RESOLUTION_PRESETS), {"default": "2048x1152 landscape"}),
+            }
+        }
+
+    RETURN_TYPES = ("INT", "INT", "INT", "INT", "INT", "BOOLEAN", "BOOLEAN", "STRING")
+    RETURN_NAMES = ("width", "height", "scale", "chunk_frames", "chunk_overlap", "offload", "aggressive_offload", "tile_preset")
+    FUNCTION = "select"
+    CATEGORY = "toobusy/video/FlashVSR"
+
+    def select(self, vram_profile, output_resolution):
+        width, height = RESOLUTION_PRESETS[output_resolution]
+        offload, aggressive_offload, tile_preset = VRAM_PROFILES[vram_profile]
+        return (width, height, 2, 21, 8, offload, aggressive_offload, tile_preset)
 
 
 class ToobusyFlashVSRSampler:
@@ -63,7 +101,7 @@ class ToobusyFlashVSRSampler:
                 "height": ("INT", {"default": 576, "min": 128, "max": 8192, "step": 64}),
                 "scale": ("INT", {"default": 2, "min": 2, "max": 4}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 2147483647}),
-                "chunk_frames": ("INT", {"default": 21, "min": 5, "max": 81, "step": 8}),
+                "chunk_frames": ("INT", {"default": 21, "min": 21, "max": 81, "step": 8}),
                 "chunk_overlap": ("INT", {"default": 8, "min": 0, "max": 80}),
                 "local_range": ("INT", {"default": 11, "min": 1, "max": 50}),
                 "kv_ratio": ("FLOAT", {"default": 3.0, "min": 0.0, "max": 10.0, "step": 0.1}),
@@ -142,12 +180,14 @@ class ToobusyFlashVSRDecoder:
 
 NODE_CLASS_MAPPINGS = {
     "ToobusyFlashVSRLoader": ToobusyFlashVSRLoader,
+    "ToobusyFlashVSRSettings": ToobusyFlashVSRSettings,
     "ToobusyFlashVSRSampler": ToobusyFlashVSRSampler,
     "ToobusyFlashVSRDecoder": ToobusyFlashVSRDecoder,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ToobusyFlashVSRLoader": "toobusy FlashVSR Loader",
+    "ToobusyFlashVSRSettings": "toobusy FlashVSR VRAM & Resolution Preset",
     "ToobusyFlashVSRSampler": "toobusy FlashVSR Long Sampler",
     "ToobusyFlashVSRDecoder": "toobusy FlashVSR Full Decoder",
 }
