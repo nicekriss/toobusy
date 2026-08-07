@@ -5,7 +5,7 @@
 
 > **Fold the graph.** — toobusy folds tedious multi-step ComfyUI workflows into single production nodes.
 
-현재 문서는 **v0.3.1** 기준입니다.
+현재 문서는 **v0.4.0** 기준입니다.
 
 ## Quick Start
 
@@ -22,6 +22,40 @@ git pull
 ```
 
 ComfyUI를 재시작하세요. 프런트엔드(JS) 변경을 받은 뒤에는 브라우저를 강력 새로고침(hard refresh) 하는 것을 권장합니다.
+
+### FlashVSR v1.1 Full + BSA
+
+긴 영상을 청크 단위로 처리하면서 모델을 단계별로 내리는 3개 노드를 제공합니다.
+
+```text
+Get Video Components
+-> toobusy FlashVSR Loader
+-> toobusy FlashVSR Long Sampler
+-> toobusy FlashVSR Full Decoder
+-> Create Video
+```
+
+- 검증 프리셋: `2x`, `1024x576`, `chunk_frames=21`, `chunk_overlap=8`, Full VAE tiled, BSA.
+- 검증 환경: Windows, RTX 3090 24GB, Python 3.13, PyTorch 2.12.1+cu130.
+- 샘플러가 DiT만 로드한 뒤 CPU latent를 만들고 해제하며, 디코더가 그 다음 VAE만 로드합니다. 실행 사이에 GPU 모델을 전역 캐시하지 않습니다.
+- 모델 자동 다운로드는 하지 않습니다. 아래 파일을 직접 배치해야 합니다.
+
+| 파일 | 저장 위치 | 다운로드 |
+|---|---|---|
+| `diffusion_pytorch_model_streaming_dmd.safetensors` | `ComfyUI/models/FlashVSR/` | [FlashVSR v1.1 DiT](https://huggingface.co/JunhaoZhuang/FlashVSR-v1.1/resolve/main/diffusion_pytorch_model_streaming_dmd.safetensors?download=true) |
+| `LQ_proj_in.ckpt` | `ComfyUI/models/FlashVSR/` | [LQ projection](https://huggingface.co/JunhaoZhuang/FlashVSR-v1.1/resolve/main/LQ_proj_in.ckpt?download=true) |
+| `posi_prompt.pth` | `ComfyUI/models/FlashVSR/` | [prompt tensor](https://github.com/OpenImagingLab/FlashVSR/raw/refs/heads/main/examples/WanVSR/prompt_tensor/posi_prompt.pth) |
+| `Wan2.1_VAE.pth` | `ComfyUI/models/vae/` | [Wan 2.1 VAE](https://huggingface.co/JunhaoZhuang/FlashVSR-v1.1/resolve/main/Wan2.1_VAE.pth?download=true) |
+
+먼저 일반 Python 의존성을 설치합니다.
+
+```bash
+python -m pip install -r custom_nodes/toobusy/requirements_flashvsr.txt
+```
+
+그 다음 **현재 Python/PyTorch/CUDA 조합과 정확히 맞는** `block_sparse_attn` wheel을 설치해야 합니다. 위 검증 환경 전용 wheel은 [여기](https://huggingface.co/Wildminder/AI-windows-whl/resolve/main/block_sparse_attn/block_sparse_attn-0.0.2.post2%2Bd20260117.cu130torch2.12.1cxx11abiTRUE-cp313-cp313-win_amd64.whl?download=true)입니다. 다른 환경에는 이 wheel을 설치하면 안 됩니다. ComfyUI Desktop의 Torch 선택을 먼저 끝낸 뒤 BSA를 설치하세요.
+
+24GB 미만 VRAM은 아직 검증하지 않았습니다. `offload=true`가 더 낮은 VRAM 경로지만 속도가 크게 느려질 수 있습니다. 예제는 [`flashvsr_v11_full_bsa_long.json`](docs/workflows/flashvsr_v11_full_bsa_long.json)입니다.
 
 처음 설치했다면 예제 워크플로우부터 여는 것이 가장 빠릅니다.
 
