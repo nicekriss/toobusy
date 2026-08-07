@@ -2,6 +2,18 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [0.4.2] - 2026-08-07
+
+### Added
+- Added a VRAM and resolution preset node for 12GB, 16GB, and 24GB+ GPUs.
+- Added aggressive sampler offload for 12GB-class GPUs.
+
+### Changed
+- Fast decode now uses two orientation-aware strips when the latent size fits
+  the verified tile budget.
+- Offloaded DiT blocks now release the previous block before loading the next.
+- Long Sampler now exposes 21 frames as its minimum supported chunk size.
+
 ## [0.4.1] - 2026-08-07
 
 ### Added
