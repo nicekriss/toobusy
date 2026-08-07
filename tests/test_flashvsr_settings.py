@@ -1,3 +1,4 @@
+import ast
 import importlib.util
 import pathlib
 import sys
@@ -67,5 +68,30 @@ assert handle.aggressive_offload is True
 assert nodes.ToobusyFlashVSRSampler.INPUT_TYPES()["required"]["chunk_frames"][1]["min"] == 21
 decoder_inputs = nodes.ToobusyFlashVSRDecoder.INPUT_TYPES()
 assert decoder_inputs["optional"]["tile_preset_override"] == ("STRING", {"forceInput": True})
+
+# runtime.py drags in torch/PIL/model code, so lift the pure helper out by AST
+# instead of importing the module.
+runtime_source = (ROOT / "flashvsr_node" / "backend" / "runtime.py").read_text(encoding="utf-8")
+resample_fn = next(
+    node
+    for node in ast.parse(runtime_source).body
+    if isinstance(node, ast.FunctionDef) and node.name == "resample_method"
+)
+resample_ns = {}
+exec(compile(ast.Module(body=[resample_fn], type_ignores=[]), "<resample_method>", "exec"), resample_ns)
+resample_method = resample_ns["resample_method"]
+
+# shrinking must prefilter, enlarging must interpolate; nearest-exact does neither
+assert resample_method(1280 * 720, 1024 * 576) == "area"
+assert resample_method(1192 * 670, 1024 * 576) == "area"
+assert resample_method(832 * 480, 1024 * 576) == "bicubic"
+# equal pixel counts are a no-op resize; bicubic leaves them untouched
+assert resample_method(1024 * 576, 1024 * 576) == "bicubic"
+# never hand common_upscale the unfiltered path again
+assert all(
+    resample_method(src, dst) in ("area", "bicubic")
+    for src in (399360, 589824, 921600, 2073600)
+    for dst in (399360, 589824, 921600, 2073600)
+)
 
 print("FlashVSR settings tests passed")
