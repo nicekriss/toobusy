@@ -2,6 +2,20 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [0.4.4] - 2026-08-07
+
+### Fixed
+- FlashVSR now resamples with a filter that matches the resize direction: `area`
+  when shrinking the source, `bicubic` when enlarging it. Both directions
+  previously used `nearest-exact`, which drops samples without prefiltering, so
+  shrinking aliased and the surviving pixels shifted from frame to frame once
+  anything moved — the sampler was conditioned on a shimmering low-quality
+  input. Enlarging duplicated pixels into blocky edges the model then preserved.
+  Sources close to the selected working resolution were barely affected, which
+  is why the issue only showed up on larger inputs such as 0.8MP or 1280x720.
+  Working resolution and tensor sizes are unchanged, so the verified 12GB, 16GB,
+  and 24GB+ VRAM profiles still apply.
+
 ## [0.4.3] - 2026-08-07
 
 ### Fixed
