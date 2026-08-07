@@ -2,6 +2,12 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [0.4.3] - 2026-08-07
+
+### Fixed
+- Connected the VRAM preset's decoder mode through a dedicated string override
+  input so ComfyUI no longer rejects the workflow as an incompatible combo link.
+
 ## [0.4.2] - 2026-08-07
 
 ### Added

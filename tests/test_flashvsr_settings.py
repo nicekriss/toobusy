@@ -65,5 +65,7 @@ handle = loader.load("dit", "projection", "prompt", False, True)[0]
 assert handle.offload is True
 assert handle.aggressive_offload is True
 assert nodes.ToobusyFlashVSRSampler.INPUT_TYPES()["required"]["chunk_frames"][1]["min"] == 21
+decoder_inputs = nodes.ToobusyFlashVSRDecoder.INPUT_TYPES()
+assert decoder_inputs["optional"]["tile_preset_override"] == ("STRING", {"forceInput": True})
 
 print("FlashVSR settings tests passed")

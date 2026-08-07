@@ -251,11 +251,8 @@
           "link": 4
         },
         {
-          "name": "tile_preset",
+          "name": "tile_preset_override",
           "type": "STRING",
-          "widget": {
-            "name": "tile_preset"
-          },
           "link": 16
         }
       ],

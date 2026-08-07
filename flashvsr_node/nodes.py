@@ -150,7 +150,10 @@ class ToobusyFlashVSRDecoder:
                 "tiled": ("BOOLEAN", {"default": True}),
                 "color_fix": ("BOOLEAN", {"default": True}),
                 "tile_preset": (["safe", "balanced", "fast"], {"default": "safe"}),
-            }
+            },
+            "optional": {
+                "tile_preset_override": ("STRING", {"forceInput": True}),
+            },
         }
 
     RETURN_TYPES = ("IMAGE",)
@@ -158,7 +161,9 @@ class ToobusyFlashVSRDecoder:
     FUNCTION = "decode"
     CATEGORY = "toobusy/video/FlashVSR"
 
-    def decode(self, flashvsr_latent, vae, tiled, color_fix, tile_preset="safe"):
+    def decode(self, flashvsr_latent, vae, tiled, color_fix, tile_preset="safe", tile_preset_override=None):
+        if tile_preset_override is not None:
+            tile_preset = tile_preset_override
         vae_path = folder_paths.get_full_path("vae", vae)
         validate_paths(vae_path)
         chunks = flashvsr_latent["chunks"]
