@@ -55,7 +55,7 @@ python -m pip install -r custom_nodes/toobusy/requirements_flashvsr.txt
 
 그 다음 **현재 Python/PyTorch/CUDA 조합과 정확히 맞는** `block_sparse_attn` wheel을 설치해야 합니다. 위 검증 환경 전용 wheel은 [여기](https://huggingface.co/Wildminder/AI-windows-whl/resolve/main/block_sparse_attn/block_sparse_attn-0.0.2.post2%2Bd20260117.cu130torch2.12.1cxx11abiTRUE-cp313-cp313-win_amd64.whl?download=true)입니다. 다른 환경에는 이 wheel을 설치하면 안 됩니다. ComfyUI Desktop의 Torch 선택을 먼저 끝낸 뒤 BSA를 설치하세요.
 
-24GB 미만 VRAM은 아직 검증하지 않았습니다. `offload=true`가 더 낮은 VRAM 경로지만 속도가 크게 느려질 수 있습니다. 예제는 [`flashvsr_v11_full_bsa_long.json`](docs/workflows/flashvsr_v11_full_bsa_long.json)입니다.
+디코더의 `tile_preset`은 `safe`, `balanced`, `fast`를 제공합니다. 큰 프리셋일수록 VRAM을 더 사용하는 대신 중복 타일 계산을 줄입니다. 24GB 미만 VRAM은 아직 검증하지 않았습니다. `offload=true`가 더 낮은 VRAM 경로지만 속도가 크게 느려질 수 있습니다. 예제는 [`flashvsr_v11_full_bsa_long.json`](docs/workflows/flashvsr_v11_full_bsa_long.json)입니다.
 
 처음 설치했다면 예제 워크플로우부터 여는 것이 가장 빠릅니다.
 

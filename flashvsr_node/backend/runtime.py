@@ -144,15 +144,23 @@ def _map_to_image(video):
     return video.add(1.0).div(2.0).clamp_(0.0, 1.0)
 
 
-def decode_chunk(pipe, item, tiled, color_fix):
+DECODE_TILE_PRESETS = {
+    "safe": ((60, 104), (30, 52)),
+    "balanced": ((96, 160), (64, 112)),
+    "fast": ((120, 208), (88, 152)),
+}
+
+
+def decode_chunk(pipe, item, tiled, color_fix, tile_preset="safe"):
     samples = item["samples"]
     pipe.vae.clear_cache()
+    tile_size, tile_stride = DECODE_TILE_PRESETS[tile_preset]
     decoded = pipe.vae.decode(
         samples,
         device="cuda",
         tiled=bool(tiled),
-        tile_size=(60, 104),
-        tile_stride=(30, 52),
+        tile_size=tile_size,
+        tile_stride=tile_stride,
     )
     decoded = _map_to_image(decoded.cpu().float())
     if item["pad_frames"]:
