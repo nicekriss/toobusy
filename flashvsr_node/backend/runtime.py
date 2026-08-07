@@ -33,9 +33,24 @@ def require_block_sparse_attention():
     return block_sparse_attn_func
 
 
+def resample_method(source_pixels, target_pixels):
+    """Pick a filter that matches the resize direction.
+
+    `nearest-exact` drops samples without prefiltering, so shrinking aliases and
+    the surviving pixels shift frame to frame once anything moves. That reads as
+    shimmer in the LQ the sampler conditions on. Enlarging is just as bad: pixels
+    get duplicated and the blocky edges become structure the model tries to keep.
+    """
+    return "area" if target_pixels < source_pixels else "bicubic"
+
+
 def resize_images(images, width, height):
+    width = int(width)
+    height = int(height)
     samples = images.movedim(-1, 1)
-    samples = common_upscale(samples, int(width), int(height), "nearest-exact", "center")
+    source_pixels = int(samples.shape[-1]) * int(samples.shape[-2])
+    method = resample_method(source_pixels, width * height)
+    samples = common_upscale(samples, width, height, method, "center")
     return samples.movedim(1, -1).contiguous()
 
 
