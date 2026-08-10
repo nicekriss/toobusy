@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.5] - 2026-08-10
+
+### Added
+- Added `toobusy Wan Animate 2 Long Sampler`, which automatically divides a
+  target frame count into valid `4k+1` Wan chunks, continues motion with a
+  one-frame overlap, and crops the final result to the requested exact length.
+- Exposed the final `MODEL`, `CONDITIONING`, `SAMPLER`, and `SIGMAS` sockets so
+  users can keep attention, caching, LoRA, and sampling policy outside the
+  compact node.
+- Added 12GB, 16GB, and 24GB starting-point guidance for 33, 49, and 81 frames
+  per sampler chunk.
+
+### Fixed
+- The Animate 2 chunk-plan readout now detects a link connected directly to the
+  `total_frames` widget input instead of showing the stale stored widget value.
+
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
 ## [0.4.4] - 2026-08-07

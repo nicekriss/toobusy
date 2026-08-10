@@ -5,7 +5,7 @@
 
 > **Fold the graph.** — toobusy folds tedious multi-step ComfyUI workflows into single production nodes.
 
-현재 문서는 **v0.4.0** 기준입니다.
+현재 문서는 **v0.4.5** 기준입니다.
 
 ## Quick Start
 
@@ -22,6 +22,24 @@ git pull
 ```
 
 ComfyUI를 재시작하세요. 프런트엔드(JS) 변경을 받은 뒤에는 브라우저를 강력 새로고침(hard refresh) 하는 것을 권장합니다.
+
+### Wan Animate 2 Long Sampler
+
+`toobusy Wan Animate 2 Long Sampler`는 긴 드라이빙 영상을 Wan의 유효한
+`4k+1` 프레임 청크로 자동 분할하고, 각 청크를 1프레임씩 이어 붙인 뒤
+요청한 총 프레임 수에 정확히 맞춰 마지막을 자릅니다.
+
+```text
+final MODEL / positive / negative / SAMPLER / SIGMAS
++ reference image / driving video / VAE
+-> toobusy Wan Animate 2 Long Sampler
+-> Create Video
+```
+
+- `total_frames`에는 VHS `loaded_frame_count`처럼 실행 시 계산되는 INT를 연결할 수 있습니다.
+- `frames_per_sampler` 시작값: 12GB는 33, 16GB는 49, 24GB는 81프레임.
+- 모델 로더, LoRA, attention, 캐시와 컨디셔닝은 노드 밖에서 구성한 최종 소켓을 연결합니다.
+- ComfyUI 코어의 실험적 `WanAnimate2ToVideo` 노드와 연속 생성 출력이 필요합니다.
 
 ### FlashVSR v1.1 Full + BSA
 
