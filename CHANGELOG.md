@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.6] - 2026-08-10
+
+### Changed
+- Reworked the FlashVSR source inspection test to avoid dynamic `exec`, keeping
+  Registry security scans clean without changing installed node behavior.
+
 ## [0.4.5] - 2026-08-10
 
 ### Added
