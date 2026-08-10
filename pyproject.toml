@@ -1,7 +1,7 @@
 [project]
 name = "toobusy"
 description = "toobusy folds tedious multi-step ComfyUI workflows into single production nodes."
-version = "0.4.4"
+version = "0.4.5"
 license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.10"
@@ -25,6 +25,8 @@ keywords = [
     "video",
     "flashvsr",
     "video-upscale",
+    "wan-animate-2",
+    "long-video",
     "direction",
 ]
 classifiers = [

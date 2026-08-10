@@ -29,6 +29,7 @@ jobs:
             ltx23_compact_sampler_node \
             paint_canvas_node \
             storyboard_board_node \
+            wan_animate2_long_sampler_node \
             wan_scail_extend_sampler_node \
             z_image_turbo_node \
             zit_controlnet_node
