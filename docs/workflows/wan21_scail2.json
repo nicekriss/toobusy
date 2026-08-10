@@ -2,7 +2,7 @@
   "id": "5e3b2cd8-2119-4be4-87d6-b524515abe69",
   "revision": 0,
   "last_node_id": 197,
-  "last_link_id": 531,
+  "last_link_id": 532,
   "nodes": [
     {
       "id": 87,
@@ -1444,7 +1444,8 @@
             "name": "replacement_mode"
           },
           "links": [
-            401
+            401,
+            532
           ]
         }
       ],
@@ -1835,6 +1836,14 @@
           "shape": 7,
           "type": "IMAGE",
           "link": 530
+        },
+        {
+          "name": "replacement_mode",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "replacement_mode"
+          },
+          "link": 532
         }
       ],
       "outputs": [
@@ -1854,7 +1863,9 @@
       "properties": {
         "Node name for S&R": "ToobusyWanSCAILExtendSampler",
         "ue_properties": {
-          "widget_ue_connectable": {},
+          "widget_ue_connectable": {
+            "replacement_mode": true
+          },
           "input_ue_unconnectable": {},
           "version": "7.8"
         },
@@ -2180,6 +2191,14 @@
       71,
       0,
       "IMAGE"
+    ],
+    [
+      532,
+      152,
+      0,
+      197,
+      8,
+      "BOOLEAN"
     ]
   ],
   "groups": [
