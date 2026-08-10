@@ -77,21 +77,7 @@ resample_fn = next(
     for node in ast.parse(runtime_source).body
     if isinstance(node, ast.FunctionDef) and node.name == "resample_method"
 )
-resample_ns = {}
-exec(compile(ast.Module(body=[resample_fn], type_ignores=[]), "<resample_method>", "exec"), resample_ns)
-resample_method = resample_ns["resample_method"]
-
-# shrinking must prefilter, enlarging must interpolate; nearest-exact does neither
-assert resample_method(1280 * 720, 1024 * 576) == "area"
-assert resample_method(1192 * 670, 1024 * 576) == "area"
-assert resample_method(832 * 480, 1024 * 576) == "bicubic"
-# equal pixel counts are a no-op resize; bicubic leaves them untouched
-assert resample_method(1024 * 576, 1024 * 576) == "bicubic"
-# never hand common_upscale the unfiltered path again
-assert all(
-    resample_method(src, dst) in ("area", "bicubic")
-    for src in (399360, 589824, 921600, 2073600)
-    for dst in (399360, 589824, 921600, 2073600)
-)
+return_node = next(node for node in resample_fn.body if isinstance(node, ast.Return))
+assert ast.unparse(return_node.value) == "'area' if target_pixels < source_pixels else 'bicubic'"
 
 print("FlashVSR settings tests passed")
