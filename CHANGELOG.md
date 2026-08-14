@@ -32,6 +32,8 @@
 ### Fixed
 - Padded short FlashVSR inputs to the minimum 25-frame streaming layout and
   rejected misaligned LQ input before it can lose tail guidance.
+- Ignored placeholder FlashAttention modules that do not expose a callable
+  attention function, allowing the installed fallback backend to be selected.
 
 ## [0.4.4] - 2026-08-07
 
