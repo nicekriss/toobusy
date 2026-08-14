@@ -60,6 +60,11 @@ preset = nodes.ToobusyFlashVSRSettings()
 assert preset.select("24GB+ fast", "2048x1152 landscape") == (1024, 576, 2, 21, 8, False, False, "fast")
 assert preset.select("16GB balanced", "1152x2048 portrait") == (576, 1024, 2, 21, 8, True, False, "balanced")
 assert preset.select("12GB safe", "1792x1024 landscape") == (896, 512, 2, 21, 8, True, True, "safe")
+assert preset.select("32GB aggressive", "4096x2304 landscape (4K+)") == (2048, 1152, 2, 21, 8, True, True, "balanced")
+assert preset.select("24GB+ fast", "3840x2176 landscape (UHD aligned)")[:2] == (1920, 1088)
+assert preset.select("24GB+ fast", "2176x3840 portrait (UHD aligned)")[:2] == (1088, 1920)
+assert preset.select("24GB+ fast", "2560x1408 landscape (QHD aligned)")[:2] == (1280, 704)
+assert preset.select("24GB+ fast", "1920x1024 landscape (FHD aligned)")[:2] == (960, 512)
 
 loader = nodes.ToobusyFlashVSRLoader()
 handle = loader.load("dit", "projection", "prompt", False, True)[0]

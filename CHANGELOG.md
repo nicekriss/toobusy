@@ -24,6 +24,17 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [0.4.7] - 2026-08-14
+
+### Added
+- Added a 32GB aggressive VRAM profile and 128-aligned high-resolution presets.
+
+### Fixed
+- Padded short FlashVSR inputs to the minimum 25-frame streaming layout and
+  rejected misaligned LQ input before it can lose tail guidance.
+- Ignored placeholder FlashAttention modules that do not expose a callable
+  attention function, allowing the installed fallback backend to be selected.
+
 ## [0.4.4] - 2026-08-07
 
 ### Fixed
@@ -37,7 +48,6 @@
   is why the issue only showed up on larger inputs such as 0.8MP or 1280x720.
   Working resolution and tensor sizes are unchanged, so the verified 12GB, 16GB,
   and 24GB+ VRAM profiles still apply.
-
 ## [0.4.3] - 2026-08-07
 
 ### Fixed

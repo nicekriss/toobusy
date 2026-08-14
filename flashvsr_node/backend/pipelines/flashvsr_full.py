@@ -399,7 +399,13 @@ class FlashVSRFullPipeline(BasePipeline):
                 "    pipe.init_cross_kv(context_tensor=your_context_tensor)"
             )
 
-        if num_frames % 4 != 1:
+        if LQ_video is not None:
+            lq_frames = int(LQ_video.shape[2])
+            if lq_frames != num_frames:
+                raise ValueError(f"LQ_video has {lq_frames} frames, but num_frames is {num_frames}.")
+            if lq_frames < 25 or lq_frames % 8 != 1:
+                raise ValueError("FlashVSR LQ_video must contain at least 25 frames and follow the 8n+1 frame layout.")
+        elif num_frames % 4 != 1:
             num_frames = (num_frames + 2) // 4 * 4 + 1
             print(f"Only `num_frames % 4 != 1` is acceptable. We round it up to {num_frames}.")
 

@@ -5,7 +5,7 @@
 
 > **Fold the graph.** — toobusy folds tedious multi-step ComfyUI workflows into single production nodes.
 
-현재 문서는 **v0.4.6** 기준입니다.
+현재 문서는 **v0.4.7** 기준입니다.
 
 ## Quick Start
 
@@ -56,8 +56,8 @@ Get Video Components
 
 - 검증 프리셋: `2x`, `1024x576`, `chunk_frames=21`, `chunk_overlap=8`, Full VAE tiled, BSA.
 - 검증 환경: Windows, RTX 3090 24GB, Python 3.13, PyTorch 2.12.1+cu130.
-- VRAM 프리셋: 12GB는 aggressive offload + Safe decode, 16GB는 standard offload + Balanced decode, 24GB+는 GPU resident + orientation-aware Fast decode를 사용합니다.
-- 해상도 프리셋은 최종 출력 크기를 표시하며 샘플러에는 2배 업스케일 전 기준 크기를 전달합니다.
+- VRAM 프리셋: 12GB는 aggressive offload + Safe decode, 16GB는 standard offload + Balanced decode, 24GB+는 GPU resident + orientation-aware Fast decode를 사용합니다. 32GB aggressive는 고해상도 작업을 위해 aggressive offload + Balanced decode를 사용합니다.
+- 해상도 프리셋은 최종 출력 크기를 표시하며 샘플러에는 2배 업스케일 전 기준 크기를 전달합니다. 고해상도 프리셋은 내부 128배수 크롭과 실제 출력값이 일치하도록 표기합니다.
 - 샘플러가 DiT만 로드한 뒤 CPU latent를 만들고 해제하며, 디코더가 그 다음 VAE만 로드합니다. 실행 사이에 GPU 모델을 전역 캐시하지 않습니다.
 - 모델 자동 다운로드는 하지 않습니다. 아래 파일을 직접 배치해야 합니다.
 
