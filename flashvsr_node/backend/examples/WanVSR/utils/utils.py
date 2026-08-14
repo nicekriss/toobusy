@@ -374,7 +374,7 @@ class Causal_LQ4x_Proj(nn.Module):
             return outputs
 
 def calculate_frame_adjustment_simple(original_frames):
-    input_frames = original_frames
+    input_frames = max(original_frames, 21)
 
     # 持续增加输入帧数直到满足输出要求
     while True:

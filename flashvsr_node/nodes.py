@@ -23,6 +23,7 @@ VRAM_PROFILES = {
     "12GB safe": (True, True, "safe"),
     "16GB balanced": (True, False, "balanced"),
     "24GB+ fast": (False, False, "fast"),
+    "32GB aggressive": (True, True, "balanced"),
 }
 
 RESOLUTION_PRESETS = {
@@ -32,6 +33,16 @@ RESOLUTION_PRESETS = {
     "1024x1792 portrait": (512, 896),
     "1536x896 landscape": (768, 448),
     "896x1536 portrait": (448, 768),
+    "4096x2304 landscape (4K+)": (2048, 1152),
+    "2304x4096 portrait (4K+)": (1152, 2048),
+    "3840x2176 landscape (UHD aligned)": (1920, 1088),
+    "2176x3840 portrait (UHD aligned)": (1088, 1920),
+    "3072x1792 landscape (3K aligned)": (1536, 896),
+    "1792x3072 portrait (3K aligned)": (896, 1536),
+    "2560x1408 landscape (QHD aligned)": (1280, 704),
+    "1408x2560 portrait (QHD aligned)": (704, 1280),
+    "1920x1024 landscape (FHD aligned)": (960, 512),
+    "1024x1920 portrait (FHD aligned)": (512, 960),
 }
 
 
