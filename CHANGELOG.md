@@ -24,7 +24,7 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
-## [Unreleased]
+## [0.4.7] - 2026-08-14
 
 ### Added
 - Added a 32GB aggressive VRAM profile and 128-aligned high-resolution presets.
