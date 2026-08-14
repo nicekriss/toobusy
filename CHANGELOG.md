@@ -1,5 +1,23 @@
 # Changelog
 
+이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
+
+## [0.4.7] - 2026-08-14
+
+### Added
+- Added a 32GB aggressive VRAM profile and 128-aligned high-resolution presets.
+
+### Fixed
+- Padded short FlashVSR inputs to the minimum 25-frame streaming layout and
+  rejected misaligned LQ input before it can lose tail guidance.
+- Ignored placeholder FlashAttention modules that do not expose a callable
+  attention function, allowing the installed fallback backend to be selected.
+
+### Credits
+- Thanks to polygizer for reporting the short-video crash with a full repro
+  log and proposing the 32GB profile and 128-aligned high-resolution
+  presets from RTX 5090 runs.
+
 ## [0.4.6] - 2026-08-10
 
 ### Changed
@@ -21,19 +39,6 @@
 ### Fixed
 - The Animate 2 chunk-plan readout now detects a link connected directly to the
   `total_frames` widget input instead of showing the stale stored widget value.
-
-이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
-
-## [0.4.7] - 2026-08-14
-
-### Added
-- Added a 32GB aggressive VRAM profile and 128-aligned high-resolution presets.
-
-### Fixed
-- Padded short FlashVSR inputs to the minimum 25-frame streaming layout and
-  rejected misaligned LQ input before it can lose tail guidance.
-- Ignored placeholder FlashAttention modules that do not expose a callable
-  attention function, allowing the installed fallback backend to be selected.
 
 ## [0.4.4] - 2026-08-07
 
