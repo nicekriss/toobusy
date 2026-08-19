@@ -1,0 +1,1263 @@
+{
+  "id": "f1a23857-b740-401d-acde-6c6ffc5b3199",
+  "revision": 0,
+  "last_node_id": 20,
+  "last_link_id": 28,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "ResolutionSelector",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        340,
+        132
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "aspect_ratio",
+          "name": "aspect_ratio",
+          "type": "COMBO",
+          "widget": {
+            "name": "aspect_ratio"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "megapixels",
+          "name": "megapixels",
+          "type": "FLOAT",
+          "widget": {
+            "name": "megapixels"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "multiple",
+          "name": "multiple",
+          "type": "INT",
+          "widget": {
+            "name": "multiple"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "width",
+          "name": "width",
+          "type": "INT",
+          "links": [
+            16,
+            24
+          ]
+        },
+        {
+          "localized_name": "height",
+          "name": "height",
+          "type": "INT",
+          "links": [
+            17,
+            25
+          ]
+        }
+      ],
+      "title": "Resolution Selector (Size)",
+      "properties": {
+        "Node name for S&R": "ResolutionSelector"
+      },
+      "widgets_values": [
+        "16:9 (Widescreen)",
+        7.9,
+        32
+      ],
+      "widgets_values_named": {
+        "aspect_ratio": "16:9 (Widescreen)",
+        "megapixels": 7.9,
+        "multiple": 32
+      }
+    },
+    {
+      "id": 2,
+      "type": "VAELoader",
+      "pos": [
+        0,
+        220
+      ],
+      "size": [
+        340,
+        90
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "vae_name",
+          "name": "vae_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "vae_name"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "VAE",
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            4,
+            14
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAELoader"
+      },
+      "widgets_values": [
+        "minimax_h3_t1_image_vae_step1597.safetensors"
+      ],
+      "widgets_values_named": {
+        "vae_name": "minimax_h3_t1_image_vae_step1597.safetensors"
+      }
+    },
+    {
+      "id": 3,
+      "type": "VAELoader",
+      "pos": [
+        0,
+        440
+      ],
+      "size": [
+        340,
+        90
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "vae_name",
+          "name": "vae_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "vae_name"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "VAE",
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            2,
+            15
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAELoader"
+      },
+      "widgets_values": [
+        "minimax_h3_audio_vae_fp32.safetensors"
+      ],
+      "widgets_values_named": {
+        "vae_name": "minimax_h3_audio_vae_fp32.safetensors"
+      }
+    },
+    {
+      "id": 4,
+      "type": "VAEDecodeAudio",
+      "pos": [
+        2150,
+        0
+      ],
+      "size": [
+        340,
+        106
+      ],
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "samples",
+          "name": "samples",
+          "type": "LATENT",
+          "link": 1
+        },
+        {
+          "localized_name": "vae",
+          "name": "vae",
+          "type": "VAE",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "AUDIO",
+          "name": "AUDIO",
+          "type": "AUDIO",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecodeAudio"
+      }
+    },
+    {
+      "id": 5,
+      "type": "VAEDecode",
+      "pos": [
+        2150,
+        220
+      ],
+      "size": [
+        340,
+        106
+      ],
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "samples",
+          "name": "samples",
+          "type": "LATENT",
+          "link": 3
+        },
+        {
+          "localized_name": "vae",
+          "name": "vae",
+          "type": "VAE",
+          "link": 4
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "IMAGE",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            19
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      }
+    },
+    {
+      "id": 6,
+      "type": "KSamplerSelect",
+      "pos": [
+        0,
+        660
+      ],
+      "size": [
+        340,
+        90
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "sampler_name",
+          "name": "sampler_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "sampler_name"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "SAMPLER",
+          "name": "SAMPLER",
+          "type": "SAMPLER",
+          "links": [
+            8
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSamplerSelect"
+      },
+      "widgets_values": [
+        "er_sde"
+      ],
+      "widgets_values_named": {
+        "sampler_name": "er_sde"
+      }
+    },
+    {
+      "id": 7,
+      "type": "BasicScheduler",
+      "pos": [
+        1290,
+        0
+      ],
+      "size": [
+        340,
+        132
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "model",
+          "name": "model",
+          "type": "MODEL",
+          "link": 27
+        },
+        {
+          "localized_name": "scheduler",
+          "name": "scheduler",
+          "type": "COMBO",
+          "widget": {
+            "name": "scheduler"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "steps",
+          "name": "steps",
+          "type": "INT",
+          "widget": {
+            "name": "steps"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "denoise",
+          "name": "denoise",
+          "type": "FLOAT",
+          "widget": {
+            "name": "denoise"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "SIGMAS",
+          "name": "SIGMAS",
+          "type": "SIGMAS",
+          "links": [
+            9
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "BasicScheduler"
+      },
+      "widgets_values": [
+        "sgm_uniform",
+        8,
+        1
+      ],
+      "widgets_values_named": {
+        "scheduler": "sgm_uniform",
+        "steps": 8,
+        "denoise": 1
+      }
+    },
+    {
+      "id": 8,
+      "type": "SamplerCustomAdvanced",
+      "pos": [
+        1720,
+        0
+      ],
+      "size": [
+        340,
+        184
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "noise",
+          "name": "noise",
+          "type": "NOISE",
+          "link": 6
+        },
+        {
+          "localized_name": "guider",
+          "name": "guider",
+          "type": "GUIDER",
+          "link": 7
+        },
+        {
+          "localized_name": "sampler",
+          "name": "sampler",
+          "type": "SAMPLER",
+          "link": 8
+        },
+        {
+          "localized_name": "sigmas",
+          "name": "sigmas",
+          "type": "SIGMAS",
+          "link": 9
+        },
+        {
+          "localized_name": "latent_image",
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 26
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "output",
+          "name": "output",
+          "type": "LATENT",
+          "links": [
+            1,
+            3
+          ]
+        },
+        {
+          "localized_name": "denoised_output",
+          "name": "denoised_output",
+          "type": "LATENT",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SamplerCustomAdvanced"
+      }
+    },
+    {
+      "id": 9,
+      "type": "BasicGuider",
+      "pos": [
+        1290,
+        220
+      ],
+      "size": [
+        340,
+        106
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "model",
+          "name": "model",
+          "type": "MODEL",
+          "link": 28
+        },
+        {
+          "localized_name": "conditioning",
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 12
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "GUIDER",
+          "name": "GUIDER",
+          "type": "GUIDER",
+          "links": [
+            7
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "BasicGuider"
+      }
+    },
+    {
+      "id": 10,
+      "type": "UNETLoader",
+      "pos": [
+        0,
+        880
+      ],
+      "size": [
+        340,
+        106
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "unet_name",
+          "name": "unet_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "unet_name"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "weight_dtype",
+          "name": "weight_dtype",
+          "type": "COMBO",
+          "widget": {
+            "name": "weight_dtype"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "MODEL",
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            22
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "UNETLoader"
+      },
+      "widgets_values": [
+        "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+        "default"
+      ],
+      "widgets_values_named": {
+        "unet_name": "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+        "weight_dtype": "default"
+      }
+    },
+    {
+      "id": 11,
+      "type": "CLIPLoader",
+      "pos": [
+        0,
+        1100
+      ],
+      "size": [
+        340,
+        132
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "clip_name",
+          "name": "clip_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "clip_name"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "type",
+          "name": "type",
+          "type": "COMBO",
+          "widget": {
+            "name": "type"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "device",
+          "name": "device",
+          "shape": 7,
+          "type": "COMBO",
+          "widget": {
+            "name": "device"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "CLIP",
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            13
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPLoader"
+      },
+      "widgets_values": [
+        "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+        "minimax",
+        "default"
+      ],
+      "widgets_values_named": {
+        "clip_name": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+        "type": "minimax",
+        "device": "default"
+      }
+    },
+    {
+      "id": 12,
+      "type": "RandomNoise",
+      "pos": [
+        0,
+        1320
+      ],
+      "size": [
+        340,
+        106
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "noise_seed",
+          "name": "noise_seed",
+          "type": "INT",
+          "widget": {
+            "name": "noise_seed"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "NOISE",
+          "name": "NOISE",
+          "type": "NOISE",
+          "links": [
+            6
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "RandomNoise"
+      },
+      "widgets_values": [
+        20261818,
+        "fixed"
+      ],
+      "widgets_values_named": {
+        "noise_seed": 20261818,
+        "control_after_generate": "fixed"
+      }
+    },
+    {
+      "id": 13,
+      "type": "MiniMaxH3ReferenceToVideo",
+      "pos": [
+        430,
+        0
+      ],
+      "size": [
+        520,
+        344
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "clip",
+          "name": "clip",
+          "type": "CLIP",
+          "link": 13
+        },
+        {
+          "localized_name": "vae",
+          "name": "vae",
+          "type": "VAE",
+          "link": 14
+        },
+        {
+          "localized_name": "audio_vae",
+          "name": "audio_vae",
+          "type": "VAE",
+          "link": 15
+        },
+        {
+          "localized_name": "ref_images.ref_image_0",
+          "name": "ref_images.ref_image_0",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 18
+        },
+        {
+          "label": "ref_image_1",
+          "localized_name": "ref_images.ref_image_1",
+          "name": "ref_images.ref_image_1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "label": "ref_video_0",
+          "localized_name": "ref_videos.ref_video_0",
+          "name": "ref_videos.ref_video_0",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "label": "ref_video_audio_0",
+          "localized_name": "ref_video_audios.ref_video_audio_0",
+          "name": "ref_video_audios.ref_video_audio_0",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        },
+        {
+          "label": "ref_audio_0",
+          "localized_name": "ref_audios.ref_audio_0",
+          "name": "ref_audios.ref_audio_0",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        },
+        {
+          "localized_name": "prompt",
+          "name": "prompt",
+          "type": "STRING",
+          "widget": {
+            "name": "prompt"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "width",
+          "name": "width",
+          "type": "INT",
+          "widget": {
+            "name": "width"
+          },
+          "link": 16
+        },
+        {
+          "localized_name": "height",
+          "name": "height",
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": 17
+        },
+        {
+          "localized_name": "length",
+          "name": "length",
+          "type": "INT",
+          "widget": {
+            "name": "length"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "ref_image_size",
+          "name": "ref_image_size",
+          "type": "COMBO",
+          "widget": {
+            "name": "ref_image_size"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "positive",
+          "name": "positive",
+          "type": "CONDITIONING",
+          "links": [
+            12
+          ]
+        },
+        {
+          "localized_name": "LATENT",
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MiniMaxH3ReferenceToVideo"
+      },
+      "widgets_values": [
+        "subject_definitions:\n<Subject 1> is the same adult Korean man in <Picture 1>, with short center-parted black hair, brown eyes, light skin, wearing a navy business suit over a white dress shirt.\n<Picture 1> is the source portrait of <Subject 1> against a neutral light gray studio background.\n\nsummary:\n[reference generation] Create one static high-resolution 2x3 contact-sheet collage containing exactly six separate photographs of <Subject 1>. Each cell presents one requested edit while preserving the same facial identity, age, skin tone, body proportions, suit fabric, studio lighting, and photographic style from <Picture 1>.\n\nretention_analysis:\n<Subject 1>: partially_preserved - preserve identity, age, body proportions, navy suit, white shirt, skin tone, and studio-photo realism while changing only the requested property in each cell.\n<Picture 1>: fully_preserved - use it as the sole identity, wardrobe, lighting, and style reference.\n\ndetailed_description:\nThe target is one still image, not a video. Present exactly six equal-sized borderless photographs in a clean 3-column by 2-row grid on the same light gray studio background. Every cell must show the same recognizable adult man from <Picture 1>. Do not merge cells and do not omit any requested cell.\n\nTop-left, Photo 1: keep the original frontal head-and-shoulders pose and proportions; change only the white dress shirt to a vivid red dress shirt, leaving the navy suit unchanged.\nTop-middle, Photo 2: keep the original frontal head-and-shoulders pose, clothing, and proportions; make him smile naturally with closed lips and relaxed eyes.\nTop-right, Photo 3: keep his identity, clothing, and proportions; reconstruct a strict clean right-side profile view, with only one eye and one cheek visible.\nBottom-left, Photo 4: show a complete full-body standing portrait from head to shoes, natural posture, navy suit and white shirt, both hands and both feet visible.\nBottom-middle, Photo 5: keep identity, clothing, frontal framing, and proportions; change only the hairstyle to a textured layered wolf cut, still black.\nBottom-right, Photo 6: keep identity, clothing, frontal framing, and proportions; add a tasteful black fashion fedora and thin black rectangular eyeglasses.\n\nThe image must contain exactly six panels and exactly one version of <Subject 1> per panel. Keep faces sharp and mutually consistent. No captions, labels, text, logos, borders, extra people, duplicate faces, merged bodies, extra limbs, distorted eyes, asymmetrical glasses, cropped feet in Photo 4, or motion.",
+        1344,
+        768,
+        5,
+        "max"
+      ],
+      "widgets_values_named": {
+        "prompt": "subject_definitions:\n<Subject 1> is the same adult Korean man in <Picture 1>, with short center-parted black hair, brown eyes, light skin, wearing a navy business suit over a white dress shirt.\n<Picture 1> is the source portrait of <Subject 1> against a neutral light gray studio background.\n\nsummary:\n[reference generation] Create one static high-resolution 2x3 contact-sheet collage containing exactly six separate photographs of <Subject 1>. Each cell presents one requested edit while preserving the same facial identity, age, skin tone, body proportions, suit fabric, studio lighting, and photographic style from <Picture 1>.\n\nretention_analysis:\n<Subject 1>: partially_preserved - preserve identity, age, body proportions, navy suit, white shirt, skin tone, and studio-photo realism while changing only the requested property in each cell.\n<Picture 1>: fully_preserved - use it as the sole identity, wardrobe, lighting, and style reference.\n\ndetailed_description:\nThe target is one still image, not a video. Present exactly six equal-sized borderless photographs in a clean 3-column by 2-row grid on the same light gray studio background. Every cell must show the same recognizable adult man from <Picture 1>. Do not merge cells and do not omit any requested cell.\n\nTop-left, Photo 1: keep the original frontal head-and-shoulders pose and proportions; change only the white dress shirt to a vivid red dress shirt, leaving the navy suit unchanged.\nTop-middle, Photo 2: keep the original frontal head-and-shoulders pose, clothing, and proportions; make him smile naturally with closed lips and relaxed eyes.\nTop-right, Photo 3: keep his identity, clothing, and proportions; reconstruct a strict clean right-side profile view, with only one eye and one cheek visible.\nBottom-left, Photo 4: show a complete full-body standing portrait from head to shoes, natural posture, navy suit and white shirt, both hands and both feet visible.\nBottom-middle, Photo 5: keep identity, clothing, frontal framing, and proportions; change only the hairstyle to a textured layered wolf cut, still black.\nBottom-right, Photo 6: keep identity, clothing, frontal framing, and proportions; add a tasteful black fashion fedora and thin black rectangular eyeglasses.\n\nThe image must contain exactly six panels and exactly one version of <Subject 1> per panel. Keep faces sharp and mutually consistent. No captions, labels, text, logos, borders, extra people, duplicate faces, merged bodies, extra limbs, distorted eyes, asymmetrical glasses, cropped feet in Photo 4, or motion.",
+        "width": 1344,
+        "height": 768,
+        "length": 5,
+        "ref_image_size": "max"
+      }
+    },
+    {
+      "id": 14,
+      "type": "SaveImage",
+      "pos": [
+        2580,
+        0
+      ],
+      "size": [
+        340,
+        270
+      ],
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 19
+        },
+        {
+          "localized_name": "filename_prefix",
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {
+            "name": "filename_prefix"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "toobusy_h3_6edit/H3_6EDIT_T1"
+      ],
+      "widgets_values_named": {
+        "filename_prefix": "toobusy_h3_6edit/H3_6EDIT_T1"
+      }
+    },
+    {
+      "id": 16,
+      "type": "LoadImage",
+      "pos": [
+        0,
+        1540
+      ],
+      "size": [
+        340,
+        314
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "COMBO",
+          "widget": {
+            "name": "image"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "choose file to upload",
+          "name": "upload",
+          "type": "IMAGEUPLOAD",
+          "widget": {
+            "name": "upload"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "IMAGE",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            18
+          ]
+        },
+        {
+          "localized_name": "MASK",
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "title": "Load Source Image",
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "replace_with_your_portrait.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "replace_with_your_portrait.png",
+        "upload": "image"
+      }
+    },
+    {
+      "id": 17,
+      "type": "LoraLoaderModelOnly",
+      "pos": [
+        430,
+        440
+      ],
+      "size": [
+        340,
+        106
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "model",
+          "name": "model",
+          "type": "MODEL",
+          "link": 22
+        },
+        {
+          "localized_name": "lora_name",
+          "name": "lora_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "lora_name"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "strength_model",
+          "name": "strength_model",
+          "type": "FLOAT",
+          "widget": {
+            "name": "strength_model"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "MODEL",
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            27,
+            28
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoraLoaderModelOnly"
+      },
+      "widgets_values": [
+        "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+        0.75
+      ],
+      "widgets_values_named": {
+        "lora_name": "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+        "strength_model": 0.75
+      }
+    },
+    {
+      "id": 19,
+      "type": "ToobusyMiniMaxH3ImageLatent",
+      "pos": [
+        430,
+        700
+      ],
+      "size": [
+        292.1197265625,
+        106
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "width",
+          "name": "width",
+          "type": "INT",
+          "widget": {
+            "name": "width"
+          },
+          "link": 24
+        },
+        {
+          "localized_name": "height",
+          "name": "height",
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": 25
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "LATENT",
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            26
+          ]
+        }
+      ],
+      "title": "toobusy MiniMax H3 Image Latent",
+      "properties": {
+        "Node name for S&R": "ToobusyMiniMaxH3ImageLatent"
+      },
+      "widgets_values": [
+        1344,
+        768
+      ],
+      "widgets_values_named": {
+        "width": 1344,
+        "height": 768
+      }
+    },
+    {
+      "id": 20,
+      "type": "MarkdownNote",
+      "pos": [
+        0,
+        1760
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "README — Reddit 6-Edit One-Shot 검증",
+      "properties": {},
+      "widgets_values": [
+        "# MiniMax H3 — six edits in one image\n\n## Verified path\n- MiniMax H3 Ref2VA + Turbo LoRA 0.75\n- Community T=1 Image VAE\n- `toobusy MiniMax H3 Image Latent` supplies the one-frame video+audio NestedTensor\n- 8 steps, er_sde, sgm_uniform; verified at 3840×2144 on RTX 3090 24GB\n\n## Before running\n1. Replace `replace_with_your_portrait.png` in Load Image.\n2. Select matching local H3 model, text encoder, LoRA, image VAE, and audio VAE files.\n3. Keep this latent node for still images. Use the official H3 AV latent and video VAE for video.\n\n## Known limits\n- Regular `Empty Latent Image` is not compatible with the H3 video+audio NestedTensor model input.\n- Feeding the T=1 image VAE from a five-frame H3 latent can cause grid/ghosting artifacts.\n- Six requested edits can merge or drift; high output resolution does not guarantee preserved micro-detail."
+      ],
+      "widgets_values_named": {
+        "text": "# MiniMax H3 — six edits in one image\n\n## Verified path\n- MiniMax H3 Ref2VA + Turbo LoRA 0.75\n- Community T=1 Image VAE\n- `toobusy MiniMax H3 Image Latent` supplies the one-frame video+audio NestedTensor\n- 8 steps, er_sde, sgm_uniform; verified at 3840×2144 on RTX 3090 24GB\n\n## Before running\n1. Replace `replace_with_your_portrait.png` in Load Image.\n2. Select matching local H3 model, text encoder, LoRA, image VAE, and audio VAE files.\n3. Keep this latent node for still images. Use the official H3 AV latent and video VAE for video.\n\n## Known limits\n- Regular `Empty Latent Image` is not compatible with the H3 video+audio NestedTensor model input.\n- Feeding the T=1 image VAE from a five-frame H3 latent can cause grid/ghosting artifacts.\n- Six requested edits can merge or drift; high output resolution does not guarantee preserved micro-detail."
+      },
+      "color": "#432",
+      "bgcolor": "#653"
+    }
+  ],
+  "links": [
+    [
+      1,
+      8,
+      0,
+      4,
+      0,
+      "LATENT"
+    ],
+    [
+      2,
+      3,
+      0,
+      4,
+      1,
+      "VAE"
+    ],
+    [
+      3,
+      8,
+      0,
+      5,
+      0,
+      "LATENT"
+    ],
+    [
+      4,
+      2,
+      0,
+      5,
+      1,
+      "VAE"
+    ],
+    [
+      6,
+      12,
+      0,
+      8,
+      0,
+      "NOISE"
+    ],
+    [
+      7,
+      9,
+      0,
+      8,
+      1,
+      "GUIDER"
+    ],
+    [
+      8,
+      6,
+      0,
+      8,
+      2,
+      "SAMPLER"
+    ],
+    [
+      9,
+      7,
+      0,
+      8,
+      3,
+      "SIGMAS"
+    ],
+    [
+      12,
+      13,
+      0,
+      9,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      13,
+      11,
+      0,
+      13,
+      0,
+      "CLIP"
+    ],
+    [
+      14,
+      2,
+      0,
+      13,
+      1,
+      "VAE"
+    ],
+    [
+      15,
+      3,
+      0,
+      13,
+      2,
+      "VAE"
+    ],
+    [
+      16,
+      1,
+      0,
+      13,
+      9,
+      "INT"
+    ],
+    [
+      17,
+      1,
+      1,
+      13,
+      10,
+      "INT"
+    ],
+    [
+      18,
+      16,
+      0,
+      13,
+      3,
+      "IMAGE"
+    ],
+    [
+      19,
+      5,
+      0,
+      14,
+      0,
+      "IMAGE"
+    ],
+    [
+      22,
+      10,
+      0,
+      17,
+      0,
+      "MODEL"
+    ],
+    [
+      24,
+      1,
+      0,
+      19,
+      0,
+      "INT"
+    ],
+    [
+      25,
+      1,
+      1,
+      19,
+      1,
+      "INT"
+    ],
+    [
+      26,
+      19,
+      0,
+      8,
+      4,
+      "LATENT"
+    ],
+    [
+      27,
+      17,
+      0,
+      7,
+      0,
+      "MODEL"
+    ],
+    [
+      28,
+      17,
+      0,
+      9,
+      0,
+      "MODEL"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.28611463403045023,
+      "offset": [
+        1572.4994030612197,
+        774.6675056843376
+      ]
+    },
+    "comfyui_mcp": {
+      "workflow_uuid": "0c6bf7b2-ef94-4894-9316-f741a53de947",
+      "workflow_path": "workflows/H3_Reddit_6_Edit_OneShot_4K_Verified_KR.json"
+    }
+  },
+  "version": 0.4
+}

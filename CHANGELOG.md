@@ -2,6 +2,14 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [0.4.8] - 2026-08-19
+
+### Added
+- Added `toobusy MiniMax H3 Image Latent`, which creates the native one-frame
+  video+audio `NestedTensor` required to use MiniMax H3 with the community T=1
+  image VAE without modifying ComfyUI core files.
+- Added a verified six-edit character-sheet workflow for the H3 image path.
+
 ## [0.4.7] - 2026-08-14
 
 ### Added

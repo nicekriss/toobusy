@@ -12,6 +12,10 @@
 
 ## 들어있는 워크플로우
 
+- [x] **`minimax_h3_single_image_6edit.json`** — MiniMax H3 Ref2V + T=1 이미지 VAE로
+  한 장에 여섯 가지 편집을 생성하는 예제. `toobusy MiniMax H3 Image Latent`를 사용해
+  ComfyUI 코어 수정 없이 단일 프레임 H3 AV latent를 샘플러에 공급합니다.
+
 - [x] **`flashvsr_v11_full_bsa_long.json`** — FlashVSR v1.1 Full + BSA 장시간 영상용 2x 예제.
   `1024x576`, 21프레임 청크, 8프레임 오버랩, tiled VAE 디코드를 사용합니다. RTX 3090 24GB에서 검증했습니다.
 
