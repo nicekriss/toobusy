@@ -27,6 +27,14 @@
 - [x] **`z_image_turbo.json`** — `toobusy Z-Image Turbo` 한 노드로 t2i 그래프(~10노드)를 접는 예제.
   `image` 입력에 Load Image를 연결하면 자동으로 img2img로 전환됨. 필요한 모델은 워크플로우 안 Note 노드에 링크되어 있음(Comfy-Org Z-Image Turbo / Qwen3-4B / Flux VAE).
 
+- [x] **`2BZ_H3_character_sheet_2stage_v1.json`** / **`..._v1_EN.json`** — MiniMax H3로 캐릭터 시트를
+  만드는 2단계 워크플로우. 1단계는 얼굴 사진 1장 + 의상 이미지 1장으로 전면·측면·후면 3뷰를 만들고,
+  2단계(기본 OFF)는 포즈·소품·배경 패널 1~4장을 더해 최종 16:9 시트로 합성합니다.
+  `toobusy MiniMax H3 Image Latent`(T=1 이미지 VAE)와 `toobusy MiniMax H3 Semantic Reference`를 사용하며
+  2BZ v0.4.9 이상과 rgthree가 필요합니다. RTX 3090 24GB에서 1단계 약 100~125초, 2단계 약 105초.
+  `_EN` 은 노드/그룹/노트를 전부 영어로 옮기고 한국어 자동번역 단계를 뺀 해외 배포용입니다.
+  원본 아이디어: [r/StableDiffusion 게시글](https://www.reddit.com/r/StableDiffusion/comments/1vr1i18/minimax_h3_as_image_editor_6_edits_in_one_shot_at/)
+
 ## 권장 목록 (추가로 만들면 좋은 것)
 
 - [ ] `ltx_compact_av_sampler.json` — 샘플링 블록 8노드 → 1노드
