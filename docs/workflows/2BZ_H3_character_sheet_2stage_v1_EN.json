@@ -454,12 +454,12 @@
           ]
         }
       ],
-      "title": "Stage 1 Prompt · Concise 3-View",
+      "title": "Stage 1 Prompt · Identity / Build / Outfit Separation",
       "properties": {
         "Node name for S&R": "StringConcatenate"
       },
       "widgets_values": [
-        "Create one static high-resolution character turnaround sheet of the same adult Korean man.\n\nUse Picture 1 for facial identity, age, skin tone, and natural facial proportions.\nUse Picture 2 for the costume design, colors, materials, footwear, and wearable accessories. Apply that costume to the person from Picture 1. Keep the face uncovered; do not wear a helmet or mask.\n\nArrange exactly three equal vertical photographs from left to right on a neutral light-grey studio background:\nPhoto 1: complete full-body front view in a relaxed A-pose.\nPhoto 2: complete full-body strict 90-degree right-side view.\nPhoto 3: complete full-body back view.\n\nKeep the same identity, body proportions, costume, scale, ground line, lighting, and realistic photographic finish in all three photos. Show the complete head and feet. No extra panel, no action pose, no separate product display, and no text.",
+        "Create one static high-resolution character turnaround sheet of the same adult person from Picture 1.\n\nIDENTITY AND BODY — Picture 1 has priority:\nPreserve the facial identity, age, gender presentation, skin tone, hairstyle, and natural facial proportions from Picture 1. Use the body build visible in Picture 1 when available. If Picture 1 is face-only, infer a natural full-body build that matches the age and gender presentation of Picture 1.\n\nOUTFIT ONLY — Picture 2:\nUse Picture 2 only for the costume design, colors, materials, footwear, and wearable accessories. Apply those items to the person from Picture 1. Do not copy Picture 2's donor face, age, gender, shoulder width, muscle mass, torso volume, height, limb thickness, body shape, pose, or background. The character wears the costume; the character does not inherit the outfit donor's body. Keep the face uncovered; do not wear a helmet or mask.\n\nArrange exactly three equal vertical photographs from left to right on a neutral light-grey studio background:\nPhoto 1: complete full-body front view in a relaxed A-pose.\nPhoto 2: complete full-body strict 90-degree right-side view.\nPhoto 3: complete full-body back view.\n\nKeep the same Picture 1 identity and body build, the same Picture 2 costume, scale, ground line, lighting, and realistic photographic finish in all three photos. Show the complete head and feet. No extra panel, no action pose, no separate product display, and no text.",
         "",
         "\n\nOptional Stage 1 direction:\n"
       ],
@@ -870,7 +870,7 @@
       "title": "How to Use · Image Roles",
       "properties": {},
       "widgets_values": [
-        "# Stage 1 Image Roles\n\n- **Face / Identity Image:** the character's facial identity.\n- **Hair + Full Outfit Image:** hairstyle, outfit construction, materials, and color design.\n- Stage 1 combines only these two references into one neutral studio turnaround sheet.\n- Do not add pose, prop, or environment references to Stage 1.\n- Output: front, side, and back views of the same character."
+        "# Stage 1 Image Roles\n\n- **Face image:** identity, age, gender presentation, hair, and the basic impression of build\n- **Outfit image:** costume design, colors, materials, footwear, and wearable accessories only\n\nH3 will happily carry the *build* over from the outfit photo too. A mannequin shot, a flat-lay, or any outfit image that shows less of a body is the most reliable choice.\n\nTo change the body type, write it in field ③.\nExample: `slim adult female build, narrow shoulders, slender limbs`\n\nThat text is appended to the Stage 1 prompt as a top-priority instruction."
       ],
       "widgets_values_named": {
         "text": "# Stage 1 Image Roles\n\n- **Face / Identity Image:** the character's facial identity.\n- **Hair + Full Outfit Image:** hairstyle, outfit construction, materials, and color design.\n- Stage 1 combines only these two references into one neutral studio turnaround sheet.\n- Do not add pose, prop, or environment references to Stage 1.\n- Output: front, side, and back views of the same character."
@@ -2034,7 +2034,7 @@
           ]
         }
       ],
-      "title": "Stage 1 Additional Direction · Optional",
+      "title": "Stage 1 Extra Direction · Body Type",
       "properties": {
         "Node name for S&R": "PrimitiveStringMultiline"
       },
