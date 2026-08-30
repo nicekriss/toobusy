@@ -1,0 +1,5956 @@
+{
+  "id": "d636b22b-d4a4-4ec2-8cf0-b854c502c933",
+  "revision": 4,
+  "last_node_id": 137,
+  "last_link_id": 255,
+  "nodes": [
+    {
+      "id": 6,
+      "type": "KSamplerSelect",
+      "pos": [
+        1819.455115346695,
+        1180
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "SAMPLER",
+          "type": "SAMPLER",
+          "links": [
+            8,
+            201
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSamplerSelect"
+      },
+      "widgets_values": [
+        "er_sde"
+      ],
+      "widgets_values_named": {
+        "sampler_name": "er_sde"
+      },
+      "color": "#414e5d",
+      "bgcolor": "#252e38"
+    },
+    {
+      "id": 7,
+      "type": "BasicScheduler",
+      "pos": [
+        1559.455115346695,
+        1180
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 56,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 253
+        }
+      ],
+      "outputs": [
+        {
+          "name": "SIGMAS",
+          "type": "SIGMAS",
+          "links": [
+            9,
+            202
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "BasicScheduler"
+      },
+      "widgets_values": [
+        "sgm_uniform",
+        8,
+        1
+      ],
+      "widgets_values_named": {
+        "scheduler": "sgm_uniform",
+        "steps": 8,
+        "denoise": 1
+      },
+      "color": "#414e5d",
+      "bgcolor": "#252e38"
+    },
+    {
+      "id": 9,
+      "type": "BasicGuider",
+      "pos": [
+        1279.455115346695,
+        1250
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 57,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 254
+        },
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 12
+        }
+      ],
+      "outputs": [
+        {
+          "name": "GUIDER",
+          "type": "GUIDER",
+          "links": [
+            7
+          ]
+        }
+      ],
+      "title": "1단계 Guider",
+      "properties": {
+        "Node name for S&R": "BasicGuider"
+      },
+      "color": "#414e5d",
+      "bgcolor": "#252e38"
+    },
+    {
+      "id": 11,
+      "type": "CLIPLoader",
+      "pos": [
+        1240,
+        410
+      ],
+      "size": [
+        296.7452758789062,
+        110
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            13,
+            193
+          ]
+        }
+      ],
+      "title": "필수 ③ H3 Qwen 인코더 · text_encoders",
+      "properties": {
+        "Node name for S&R": "CLIPLoader"
+      },
+      "widgets_values": [
+        "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+        "minimax",
+        "default"
+      ],
+      "widgets_values_named": {
+        "clip_name": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+        "type": "minimax",
+        "device": "default"
+      },
+      "color": "#414e5d",
+      "bgcolor": "#252e38"
+    },
+    {
+      "id": 13,
+      "type": "MiniMaxH3ReferenceToVideo",
+      "pos": [
+        2079.455115346695,
+        1180
+      ],
+      "size": [
+        249.1001953125,
+        214
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 50,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 13
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 14
+        },
+        {
+          "name": "audio_vae",
+          "type": "VAE",
+          "link": 15
+        },
+        {
+          "name": "ref_images.ref_image_0",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 18
+        },
+        {
+          "label": "ref_image_1",
+          "name": "ref_images.ref_image_1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 122
+        },
+        {
+          "label": "ref_image_2",
+          "name": "ref_images.ref_image_2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "label": "ref_video_0",
+          "name": "ref_videos.ref_video_0",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "label": "ref_video_audio_0",
+          "name": "ref_video_audios.ref_video_audio_0",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        },
+        {
+          "label": "ref_audio_0",
+          "name": "ref_audios.ref_audio_0",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        },
+        {
+          "name": "prompt",
+          "type": "STRING",
+          "widget": {
+            "name": "prompt"
+          },
+          "link": 127
+        },
+        {
+          "name": "width",
+          "type": "INT",
+          "widget": {
+            "name": "width"
+          },
+          "link": 16
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": 17
+        }
+      ],
+      "outputs": [
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "links": [
+            12
+          ]
+        },
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": null
+        }
+      ],
+      "title": "1단계 H3 · 얼굴+의상 3뷰",
+      "properties": {
+        "Node name for S&R": "MiniMaxH3ReferenceToVideo"
+      },
+      "widgets_values": [
+        "subject_definitions:\n<Subject 1> is the same adult Korean man in <Picture 1>, with short center-parted black hair, brown eyes, light skin, wearing a navy business suit over a white dress shirt.\n<Picture 1> is the source portrait of <Subject 1> against a neutral light gray studio background.\n\nsummary:\n[reference generation] Create one static high-resolution 2x3 contact-sheet collage containing exactly six separate photographs of <Subject 1>. Each cell presents one requested edit while preserving the same facial identity, age, skin tone, body proportions, suit fabric, studio lighting, and photographic style from <Picture 1>.\n\nretention_analysis:\n<Subject 1>: partially_preserved - preserve identity, age, body proportions, navy suit, white shirt, skin tone, and studio-photo realism while changing only the requested property in each cell.\n<Picture 1>: fully_preserved - use it as the sole identity, wardrobe, lighting, and style reference.\n\ndetailed_description:\nThe target is one still image, not a video. Present exactly six equal-sized borderless photographs in a clean 3-column by 2-row grid on the same light gray studio background. Every cell must show the same recognizable adult man from <Picture 1>. Do not merge cells and do not omit any requested cell.\n\nTop-left, Photo 1: keep the original frontal head-and-shoulders pose and proportions; change only the white dress shirt to a vivid red dress shirt, leaving the navy suit unchanged.\nTop-middle, Photo 2: keep the original frontal head-and-shoulders pose, clothing, and proportions; make him smile naturally with closed lips and relaxed eyes.\nTop-right, Photo 3: keep his identity, clothing, and proportions; reconstruct a strict clean right-side profile view, with only one eye and one cheek visible.\nBottom-left, Photo 4: show a complete full-body standing portrait from head to shoes, natural posture, navy suit and white shirt, both hands and both feet visible.\nBottom-middle, Photo 5: keep identity, clothing, frontal framing, and proportions; change only the hairstyle to a textured layered wolf cut, still black.\nBottom-right, Photo 6: keep identity, clothing, frontal framing, and proportions; add a tasteful black fashion fedora and thin black rectangular eyeglasses.\n\nThe image must contain exactly six panels and exactly one version of <Subject 1> per panel. Keep faces sharp and mutually consistent. No captions, labels, text, logos, borders, extra people, duplicate faces, merged bodies, extra limbs, distorted eyes, asymmetrical glasses, cropped feet in Photo 4, or motion.",
+        1344,
+        768,
+        5,
+        "max"
+      ],
+      "widgets_values_named": {
+        "prompt": "subject_definitions:\n<Subject 1> is the same adult Korean man in <Picture 1>, with short center-parted black hair, brown eyes, light skin, wearing a navy business suit over a white dress shirt.\n<Picture 1> is the source portrait of <Subject 1> against a neutral light gray studio background.\n\nsummary:\n[reference generation] Create one static high-resolution 2x3 contact-sheet collage containing exactly six separate photographs of <Subject 1>. Each cell presents one requested edit while preserving the same facial identity, age, skin tone, body proportions, suit fabric, studio lighting, and photographic style from <Picture 1>.\n\nretention_analysis:\n<Subject 1>: partially_preserved - preserve identity, age, body proportions, navy suit, white shirt, skin tone, and studio-photo realism while changing only the requested property in each cell.\n<Picture 1>: fully_preserved - use it as the sole identity, wardrobe, lighting, and style reference.\n\ndetailed_description:\nThe target is one still image, not a video. Present exactly six equal-sized borderless photographs in a clean 3-column by 2-row grid on the same light gray studio background. Every cell must show the same recognizable adult man from <Picture 1>. Do not merge cells and do not omit any requested cell.\n\nTop-left, Photo 1: keep the original frontal head-and-shoulders pose and proportions; change only the white dress shirt to a vivid red dress shirt, leaving the navy suit unchanged.\nTop-middle, Photo 2: keep the original frontal head-and-shoulders pose, clothing, and proportions; make him smile naturally with closed lips and relaxed eyes.\nTop-right, Photo 3: keep his identity, clothing, and proportions; reconstruct a strict clean right-side profile view, with only one eye and one cheek visible.\nBottom-left, Photo 4: show a complete full-body standing portrait from head to shoes, natural posture, navy suit and white shirt, both hands and both feet visible.\nBottom-middle, Photo 5: keep identity, clothing, frontal framing, and proportions; change only the hairstyle to a textured layered wolf cut, still black.\nBottom-right, Photo 6: keep identity, clothing, frontal framing, and proportions; add a tasteful black fashion fedora and thin black rectangular eyeglasses.\n\nThe image must contain exactly six panels and exactly one version of <Subject 1> per panel. Keep faces sharp and mutually consistent. No captions, labels, text, logos, borders, extra people, duplicate faces, merged bodies, extra limbs, distorted eyes, asymmetrical glasses, cropped feet in Photo 4, or motion.",
+        "width": 1344,
+        "height": 768,
+        "length": 5,
+        "ref_image_size": "max"
+      },
+      "color": "#414e5d",
+      "bgcolor": "#252e38"
+    },
+    {
+      "id": 24,
+      "type": "StringConcatenate",
+      "pos": [
+        1160,
+        2480
+      ],
+      "size": [
+        274.7058624267578,
+        70
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 39,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_b",
+          "type": "STRING",
+          "widget": {
+            "name": "string_b"
+          },
+          "link": 155
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            127,
+            128
+          ]
+        }
+      ],
+      "title": "1단계 프롬프트 · 짧은 3뷰",
+      "properties": {
+        "Node name for S&R": "StringConcatenate"
+      },
+      "widgets_values": [
+        "Create one static high-resolution character turnaround sheet of the same adult Korean man.\n\nUse Picture 1 for facial identity, age, skin tone, and natural facial proportions.\nUse Picture 2 for the costume design, colors, materials, footwear, and wearable accessories. Apply that costume to the person from Picture 1. Keep the face uncovered; do not wear a helmet or mask.\n\nArrange exactly three equal vertical photographs from left to right on a neutral light-grey studio background:\nPhoto 1: complete full-body front view in a relaxed A-pose.\nPhoto 2: complete full-body strict 90-degree right-side view.\nPhoto 3: complete full-body back view.\n\nKeep the same identity, body proportions, costume, scale, ground line, lighting, and realistic photographic finish in all three photos. Show the complete head and feet. No extra panel, no action pose, no separate product display, and no text.",
+        "",
+        "\n\nOptional Stage 1 direction:\n"
+      ],
+      "widgets_values_named": {
+        "string_a": "Create one static high-resolution character turnaround sheet of the same adult Korean man.\n\nUse Picture 1 for facial identity, age, skin tone, and natural facial proportions.\nUse Picture 2 for the costume design, colors, materials, footwear, and wearable accessories. Apply that costume to the person from Picture 1. Keep the face uncovered; do not wear a helmet or mask.\n\nArrange exactly three equal vertical photographs from left to right on a neutral light-grey studio background:\nPhoto 1: complete full-body front view in a relaxed A-pose.\nPhoto 2: complete full-body strict 90-degree right-side view.\nPhoto 3: complete full-body back view.\n\nKeep the same identity, body proportions, costume, scale, ground line, lighting, and realistic photographic finish in all three photos. Show the complete head and feet. No extra panel, no action pose, no separate product display, and no text.",
+        "string_b": "",
+        "delimiter": "\n\nOptional Stage 1 direction:\n"
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 27,
+      "type": "PreviewAny",
+      "pos": [
+        1160,
+        2620
+      ],
+      "size": [
+        700,
+        300
+      ],
+      "flags": {},
+      "order": 51,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "source",
+          "type": "*",
+          "link": 128
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "title": "1단계 완성 프롬프트 확인",
+      "properties": {
+        "Node name for S&R": "PreviewAny"
+      },
+      "widgets_values": [],
+      "widgets_values_named": {},
+      "color": "#62407b",
+      "bgcolor": "#362644"
+    },
+    {
+      "id": 28,
+      "type": "MarkdownNote",
+      "pos": [
+        1700,
+        1600
+      ],
+      "size": [
+        540,
+        220
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "③ 기본은 자동 · 필요할 때만 수동 입력",
+      "properties": {},
+      "widgets_values": [
+        "# 2단계 패널별 요청 · 한국어 입력 가능\n\n- 아래 입력칸에는 **한국어로 그대로** 적으면 됩니다.\n- 예시:\n  - `패널1: 점프하며 물총을 조준`\n  - `패널2: 무기를 양손으로 든 낮은 자세`\n  - `패널3: 한쪽 눈을 감고 웃는 상반신 클로즈업`\n- `3번 패널:`, `세 번째 패널:`처럼 적어도 자동으로 인식합니다.\n- Gemma가 실행 전에 영어 `Panel N:` 지시로 자동 변환합니다.\n- 아래 **한국어 요청 자동 번역 확인**에서 변환 결과를 볼 수 있습니다.\n- 적지 않은 패널은 자동 기본값을 사용합니다."
+      ],
+      "widgets_values_named": {
+        "text": "# 2단계 패널별 요청 · 한국어 입력 가능\n\n- 아래 입력칸에는 **한국어로 그대로** 적으면 됩니다.\n- 예시:\n  - `패널1: 점프하며 물총을 조준`\n  - `패널2: 무기를 양손으로 든 낮은 자세`\n  - `패널3: 한쪽 눈을 감고 웃는 상반신 클로즈업`\n- `3번 패널:`, `세 번째 패널:`처럼 적어도 자동으로 인식합니다.\n- Gemma가 실행 전에 영어 `Panel N:` 지시로 자동 변환합니다.\n- 아래 **한국어 요청 자동 번역 확인**에서 변환 결과를 볼 수 있습니다.\n- 적지 않은 패널은 자동 기본값을 사용합니다."
+      },
+      "color": "#24324a",
+      "bgcolor": "#35496b"
+    },
+    {
+      "id": 54,
+      "type": "StringConcatenate",
+      "pos": [
+        1920,
+        2550
+      ],
+      "size": [
+        231.94815673828126,
+        70
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 67,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_a",
+          "type": "STRING",
+          "widget": {
+            "name": "string_a"
+          },
+          "link": 210
+        },
+        {
+          "name": "string_b",
+          "type": "STRING",
+          "widget": {
+            "name": "string_b"
+          },
+          "link": 158
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            216
+          ]
+        }
+      ],
+      "title": "2단계 최종 프롬프트 + 선택 역할",
+      "properties": {
+        "Node name for S&R": "StringConcatenate"
+      },
+      "widgets_values": [
+        "",
+        "",
+        "\n\nEnabled reference roles:\n"
+      ],
+      "widgets_values_named": {
+        "string_a": "",
+        "string_b": "",
+        "delimiter": "\n\nEnabled reference roles:\n"
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 58,
+      "type": "LoadImage",
+      "pos": [
+        800,
+        1610
+      ],
+      "size": [
+        340,
+        314.0000000000001
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            94,
+            101
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "title": "2단계 선택 2 · 배경/환경",
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "grasshopper_summer_character_sheet_v3.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "grasshopper_summer_character_sheet_v3.png",
+        "upload": "image"
+      },
+      "color": "#57427a",
+      "bgcolor": "#302640"
+    },
+    {
+      "id": 59,
+      "type": "LoadImage",
+      "pos": [
+        1180,
+        1610
+      ],
+      "size": [
+        340,
+        314.0000000000001
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            95,
+            103
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "title": "2단계 선택 3 · 추가 소품/액세서리",
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "RiderKids_20260617_204430_reference.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "RiderKids_20260617_204430_reference.png",
+        "upload": "image"
+      },
+      "color": "#57427a",
+      "bgcolor": "#302640"
+    },
+    {
+      "id": 67,
+      "type": "MarkdownNote",
+      "pos": [
+        2000,
+        80
+      ],
+      "size": [
+        540,
+        250
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "사용법 · 이미지별 역할",
+      "properties": {},
+      "widgets_values": [
+        "# 1단계 이미지 역할\n\n- 얼굴 이미지: 캐릭터 정체성 기준\n- 의상 이미지: 헤어·복장 디자인과 재질 기준\n\n1단계는 이 두 이미지만 사용해 동일 캐릭터의 **전면·측면·후면 3뷰**를 만듭니다.\n\n포즈·소품·배경은 1단계에 사용하지 않습니다. 아래 **⑦ 2단계 입력**에서만 사용합니다."
+      ],
+      "widgets_values_named": {
+        "text": "# 1단계 이미지 역할\n\n- 얼굴 이미지: 캐릭터 정체성 기준\n- 의상 이미지: 헤어·복장 디자인과 재질 기준\n\n1단계는 이 두 이미지만 사용해 동일 캐릭터의 **전면·측면·후면 3뷰**를 만듭니다.\n\n포즈·소품·배경은 1단계에 사용하지 않습니다. 아래 **⑦ 2단계 입력**에서만 사용합니다."
+      },
+      "color": "#654b7c",
+      "bgcolor": "#382b45"
+    },
+    {
+      "id": 68,
+      "type": "MarkdownNote",
+      "pos": [
+        2280,
+        1600
+      ],
+      "size": [
+        520,
+        220
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "출력 구조 · 1단계 기본 / 2단계 선택",
+      "properties": {},
+      "widgets_values": [
+        "# 출력 구조\n\n- 2단계 OFF: 1단계 전·측·후면 결과만 생성합니다.\n- 2단계 ON: 선택한 1~4장 패널 결과와 최종 16:9 합성 결과를 함께 생성합니다.\n- 루트 오른쪽의 초록색 미리보기 두 개에서 2단계 결과와 최종 결과를 바로 확인할 수 있습니다."
+      ],
+      "widgets_values_named": {
+        "text": "# 출력 구조\n\n- 2단계 OFF: 1단계 전·측·후면 결과만 생성합니다.\n- 2단계 ON: 선택한 1~4장 패널 결과와 최종 16:9 합성 결과를 함께 생성합니다.\n- 루트 오른쪽의 초록색 미리보기 두 개에서 2단계 결과와 최종 결과를 바로 확인할 수 있습니다."
+      },
+      "color": "#285d86",
+      "bgcolor": "#193850"
+    },
+    {
+      "id": 77,
+      "type": "TextGenerate",
+      "pos": [
+        540.0450782752466,
+        2480.2846041303274
+      ],
+      "size": [
+        220,
+        143
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 42,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 88
+        },
+        {
+          "name": "image",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 93
+        },
+        {
+          "name": "video",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generated_text",
+          "type": "STRING",
+          "links": [
+            98
+          ]
+        }
+      ],
+      "title": "③ Gemma 비전 · 선택 4 분석",
+      "properties": {
+        "Node name for S&R": "TextGenerate"
+      },
+      "widgets_values": [
+        "Analyze this optional prop or weapon reference for MiniMax H3. Output exactly two lines.\nLine 1: VISUAL_REFERENCE: YES only when a clear prop, weapon, or coherent object set is visible; otherwise VISUAL_REFERENCE: NO.\nLine 2 must begin SEMANTIC_DESCRIPTION: and concisely describe only the object's type, silhouette, colors, materials, scale, and distinctive parts. Ignore people, pose, face, clothing, background, text, and style.",
+        384,
+        "off",
+        false,
+        true
+      ],
+      "widgets_values_named": {
+        "prompt": "Analyze this optional prop or weapon reference for MiniMax H3. Output exactly two lines.\nLine 1: VISUAL_REFERENCE: YES only when a clear prop, weapon, or coherent object set is visible; otherwise VISUAL_REFERENCE: NO.\nLine 2 must begin SEMANTIC_DESCRIPTION: and concisely describe only the object's type, silhouette, colors, materials, scale, and distinctive parts. Ignore people, pose, face, clothing, background, text, and style.",
+        "max_length": 384,
+        "sampling_mode": "off",
+        "thinking": false,
+        "use_default_template": true
+      }
+    },
+    {
+      "id": 78,
+      "type": "TextGenerate",
+      "pos": [
+        790.045078275248,
+        2480.2846041303274
+      ],
+      "size": [
+        220,
+        143
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 36,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 89
+        },
+        {
+          "name": "image",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 94
+        },
+        {
+          "name": "video",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generated_text",
+          "type": "STRING",
+          "links": [
+            100
+          ]
+        }
+      ],
+      "title": "③ Gemma 비전 · 선택 5 분석",
+      "properties": {
+        "Node name for S&R": "TextGenerate"
+      },
+      "widgets_values": [
+        "Analyze this optional environment reference for MiniMax H3. Output exactly two lines.\nLine 1: VISUAL_REFERENCE: YES when a readable setting or environment is visible; otherwise VISUAL_REFERENCE: NO.\nLine 2 must begin SEMANTIC_DESCRIPTION: and concisely describe only the setting, architecture, spatial mood, lighting, palette, and ground surface. Ignore people, identity, clothing, pose, props, text, and image style.",
+        384,
+        "off",
+        false,
+        true
+      ],
+      "widgets_values_named": {
+        "prompt": "Analyze this optional environment reference for MiniMax H3. Output exactly two lines.\nLine 1: VISUAL_REFERENCE: YES when a readable setting or environment is visible; otherwise VISUAL_REFERENCE: NO.\nLine 2 must begin SEMANTIC_DESCRIPTION: and concisely describe only the setting, architecture, spatial mood, lighting, palette, and ground surface. Ignore people, identity, clothing, pose, props, text, and image style.",
+        "max_length": 384,
+        "sampling_mode": "off",
+        "thinking": false,
+        "use_default_template": true
+      }
+    },
+    {
+      "id": 79,
+      "type": "TextGenerate",
+      "pos": [
+        40.045078275246624,
+        2550.2846041303274
+      ],
+      "size": [
+        220,
+        143
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 37,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 90
+        },
+        {
+          "name": "image",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 95
+        },
+        {
+          "name": "video",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generated_text",
+          "type": "STRING",
+          "links": [
+            102
+          ]
+        }
+      ],
+      "title": "③ Gemma 비전 · 선택 6 분석",
+      "properties": {
+        "Node name for S&R": "TextGenerate"
+      },
+      "widgets_values": [
+        "Analyze this optional extra prop or accessory reference for MiniMax H3. Output exactly two lines.\nLine 1: VISUAL_REFERENCE: YES only when a clear prop, accessory, or coherent object set is visible; otherwise VISUAL_REFERENCE: NO.\nLine 2 must begin SEMANTIC_DESCRIPTION: and concisely describe only the object's type, silhouette, colors, materials, scale, and distinctive parts. Ignore people, pose, face, clothing, background, text, and style.",
+        384,
+        "off",
+        false,
+        true
+      ],
+      "widgets_values_named": {
+        "prompt": "Analyze this optional extra prop or accessory reference for MiniMax H3. Output exactly two lines.\nLine 1: VISUAL_REFERENCE: YES only when a clear prop, accessory, or coherent object set is visible; otherwise VISUAL_REFERENCE: NO.\nLine 2 must begin SEMANTIC_DESCRIPTION: and concisely describe only the object's type, silhouette, colors, materials, scale, and distinctive parts. Ignore people, pose, face, clothing, background, text, and style.",
+        "max_length": 384,
+        "sampling_mode": "off",
+        "thinking": false,
+        "use_default_template": true
+      }
+    },
+    {
+      "id": 81,
+      "type": "ToobusyMiniMaxH3SemanticReference",
+      "pos": [
+        540.0450782752466,
+        2550.2846041303274
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 53,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 99
+        },
+        {
+          "name": "enabled",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "enabled"
+          },
+          "link": 104
+        },
+        {
+          "name": "analysis",
+          "shape": 7,
+          "type": "STRING",
+          "widget": {
+            "name": "analysis"
+          },
+          "link": 98
+        }
+      ],
+      "outputs": [
+        {
+          "name": "visual_reference",
+          "type": "IMAGE",
+          "links": [
+            230
+          ]
+        },
+        {
+          "name": "semantic_role",
+          "type": "STRING",
+          "links": [
+            129
+          ]
+        }
+      ],
+      "title": "③ 자동 게이트 · 선택 4",
+      "properties": {
+        "Node name for S&R": "ToobusyMiniMaxH3SemanticReference"
+      },
+      "widgets_values": [
+        true,
+        "auto",
+        "<Picture 2> = optional prop or weapon reference controlled by PROP USAGE MODE. Preserve the exact object's recognizable silhouette, scale, colors, materials, construction, grip, and distinctive parts. In held mode use it visibly in Panels 1 and 2 with different poses. In separate-display mode show the object alone in Panel 2.",
+        ""
+      ],
+      "widgets_values_named": {
+        "enabled": true,
+        "routing": "auto",
+        "role_label": "<Picture 2> = optional prop or weapon reference controlled by PROP USAGE MODE. Preserve the exact object's recognizable silhouette, scale, colors, materials, construction, grip, and distinctive parts. In held mode use it visibly in Panels 1 and 2 with different poses. In separate-display mode show the object alone in Panel 2.",
+        "analysis": ""
+      }
+    },
+    {
+      "id": 83,
+      "type": "ToobusyMiniMaxH3SemanticReference",
+      "pos": [
+        40.045078275246624,
+        2620.2846041303274
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 48,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 103
+        },
+        {
+          "name": "enabled",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "enabled"
+          },
+          "link": 106
+        },
+        {
+          "name": "analysis",
+          "shape": 7,
+          "type": "STRING",
+          "widget": {
+            "name": "analysis"
+          },
+          "link": 102
+        }
+      ],
+      "outputs": [
+        {
+          "name": "visual_reference",
+          "type": "IMAGE",
+          "links": [
+            232
+          ]
+        },
+        {
+          "name": "semantic_role",
+          "type": "STRING",
+          "links": [
+            133
+          ]
+        }
+      ],
+      "title": "③ 자동 게이트 · 선택 6",
+      "properties": {
+        "Node name for S&R": "ToobusyMiniMaxH3SemanticReference"
+      },
+      "widgets_values": [
+        true,
+        "auto",
+        "<Picture 4> = optional additional prop or accessory reference. Use only its object or wearable design. Apply it consistently under the selected PROP USAGE MODE without changing the character identity or costume.",
+        ""
+      ],
+      "widgets_values_named": {
+        "enabled": true,
+        "routing": "auto",
+        "role_label": "<Picture 4> = optional additional prop or accessory reference. Use only its object or wearable design. Apply it consistently under the selected PROP USAGE MODE without changing the character identity or costume.",
+        "analysis": ""
+      }
+    },
+    {
+      "id": 86,
+      "type": "PrimitiveBoolean",
+      "pos": [
+        835,
+        1960
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "BOOLEAN",
+          "type": "BOOLEAN",
+          "links": [
+            105
+          ]
+        }
+      ],
+      "title": "배경/환경 사용 ON/OFF",
+      "properties": {
+        "Node name for S&R": "PrimitiveBoolean"
+      },
+      "widgets_values": [
+        false
+      ],
+      "widgets_values_named": {
+        "value": false
+      }
+    },
+    {
+      "id": 87,
+      "type": "PrimitiveBoolean",
+      "pos": [
+        1215,
+        1960
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "BOOLEAN",
+          "type": "BOOLEAN",
+          "links": [
+            106
+          ]
+        }
+      ],
+      "title": "추가 소품 사용 ON/OFF",
+      "properties": {
+        "Node name for S&R": "PrimitiveBoolean"
+      },
+      "widgets_values": [
+        false
+      ],
+      "widgets_values_named": {
+        "value": false
+      }
+    },
+    {
+      "id": 25,
+      "type": "CLIPLoader",
+      "pos": [
+        1240,
+        570
+      ],
+      "size": [
+        358.77997436523435,
+        110
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 9,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            88,
+            89,
+            90,
+            233,
+            242
+          ]
+        }
+      ],
+      "title": "필수 ⑥ Gemma 포즈·선택참조 분석",
+      "properties": {
+        "Node name for S&R": "CLIPLoader"
+      },
+      "widgets_values": [
+        "gemma4_e4b_it_fp8_scaled.safetensors",
+        "krea2",
+        "default"
+      ],
+      "widgets_values_named": {
+        "clip_name": "gemma4_e4b_it_fp8_scaled.safetensors",
+        "type": "krea2",
+        "device": "default"
+      },
+      "color": "#62407b",
+      "bgcolor": "#362644"
+    },
+    {
+      "id": 3,
+      "type": "VAELoader",
+      "pos": [
+        1600,
+        250
+      ],
+      "size": [
+        250,
+        110
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 10,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            15,
+            195
+          ]
+        }
+      ],
+      "title": "필수 ⑤ H3 오디오 VAE · vae",
+      "properties": {
+        "Node name for S&R": "VAELoader"
+      },
+      "widgets_values": [
+        "minimax_h3_audio_vae_fp32.safetensors"
+      ],
+      "widgets_values_named": {
+        "vae_name": "minimax_h3_audio_vae_fp32.safetensors"
+      },
+      "color": "#414e5d",
+      "bgcolor": "#252e38"
+    },
+    {
+      "id": 2,
+      "type": "VAELoader",
+      "pos": [
+        1600,
+        80
+      ],
+      "size": [
+        250,
+        110
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 11,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            4,
+            14,
+            194
+          ]
+        }
+      ],
+      "title": "필수 ④ T=1 이미지 VAE · vae",
+      "properties": {
+        "Node name for S&R": "VAELoader"
+      },
+      "widgets_values": [
+        "minimax_h3_t1_image_vae_step1597.safetensors"
+      ],
+      "widgets_values_named": {
+        "vae_name": "minimax_h3_t1_image_vae_step1597.safetensors"
+      },
+      "color": "#414e5d",
+      "bgcolor": "#252e38"
+    },
+    {
+      "id": 5,
+      "type": "VAEDecode",
+      "pos": [
+        1799.455115346695,
+        1250
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 64,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 3
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 4
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            185,
+            190
+          ]
+        }
+      ],
+      "title": "1단계 Decode",
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      },
+      "color": "#2d704f",
+      "bgcolor": "#1b402f"
+    },
+    {
+      "id": 88,
+      "type": "StringConcatenate",
+      "pos": [
+        31.271308034355343,
+        2660.1451477238134
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 58,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_b",
+          "type": "STRING",
+          "widget": {
+            "name": "string_b"
+          },
+          "link": 129
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            130
+          ]
+        }
+      ],
+      "title": "선택 4 역할 연결",
+      "properties": {
+        "Node name for S&R": "StringConcatenate"
+      },
+      "widgets_values": [
+        "<Picture 1> = the fused Stage 1 character. Preserve this identity, hair, costume, colors, materials, and proportions in every photo.\n",
+        "",
+        ""
+      ],
+      "widgets_values_named": {
+        "string_a": "<Picture 1> = the fused Stage 1 character. Preserve this identity, hair, costume, colors, materials, and proportions in every photo.\n",
+        "string_b": "",
+        "delimiter": ""
+      },
+      "color": "#233",
+      "bgcolor": "#355"
+    },
+    {
+      "id": 89,
+      "type": "StringConcatenate",
+      "pos": [
+        281.27130803435534,
+        2660.1451477238134
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 62,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_a",
+          "type": "STRING",
+          "widget": {
+            "name": "string_a"
+          },
+          "link": 130
+        },
+        {
+          "name": "string_b",
+          "type": "STRING",
+          "widget": {
+            "name": "string_b"
+          },
+          "link": 131
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            132
+          ]
+        }
+      ],
+      "title": "선택 5 역할 연결",
+      "properties": {
+        "Node name for S&R": "StringConcatenate"
+      },
+      "widgets_values": [
+        "",
+        "",
+        "\n"
+      ],
+      "widgets_values_named": {
+        "string_a": "",
+        "string_b": "",
+        "delimiter": "\n"
+      },
+      "color": "#233",
+      "bgcolor": "#355"
+    },
+    {
+      "id": 90,
+      "type": "StringConcatenate",
+      "pos": [
+        531.2713080343553,
+        2660.1451477238134
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 65,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_a",
+          "type": "STRING",
+          "widget": {
+            "name": "string_a"
+          },
+          "link": 132
+        },
+        {
+          "name": "string_b",
+          "type": "STRING",
+          "widget": {
+            "name": "string_b"
+          },
+          "link": 133
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            158
+          ]
+        }
+      ],
+      "title": "선택 6 역할 연결",
+      "properties": {
+        "Node name for S&R": "StringConcatenate"
+      },
+      "widgets_values": [
+        "",
+        "",
+        "\n"
+      ],
+      "widgets_values_named": {
+        "string_a": "",
+        "string_b": "",
+        "delimiter": "\n"
+      },
+      "color": "#233",
+      "bgcolor": "#355"
+    },
+    {
+      "id": 95,
+      "type": "StringConcatenate",
+      "pos": [
+        1480,
+        2480
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 52,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_a",
+          "type": "STRING",
+          "widget": {
+            "name": "string_a"
+          },
+          "link": 235
+        },
+        {
+          "name": "string_b",
+          "type": "STRING",
+          "widget": {
+            "name": "string_b"
+          },
+          "link": 150
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            151
+          ]
+        }
+      ],
+      "title": "2단계 정밀 포즈 분석 + 수동 요청",
+      "properties": {
+        "Node name for S&R": "StringConcatenate"
+      },
+      "widgets_values": [
+        "Picture 2 is an abstract OpenPose keypoint map for Photo 2. Transfer only its joint positions, limb angles, torso orientation, camera direction, and airborne action silhouette to Subject 1 from Picture 1. Preserve the Picture 1 face, hair, black costume, colors, and body identity. Do not render the colored joints, black background, skeleton, guide lines, or dots.",
+        "",
+        "\n\nUSER POSE OVERRIDE — if this conflicts with the automatic pose analysis, follow the user text:\n"
+      ],
+      "widgets_values_named": {
+        "string_a": "Picture 2 is an abstract OpenPose keypoint map for Photo 2. Transfer only its joint positions, limb angles, torso orientation, camera direction, and airborne action silhouette to Subject 1 from Picture 1. Preserve the Picture 1 face, hair, black costume, colors, and body identity. Do not render the colored joints, black background, skeleton, guide lines, or dots.",
+        "string_b": "",
+        "delimiter": "\n\nUSER POSE OVERRIDE — if this conflicts with the automatic pose analysis, follow the user text:\n"
+      },
+      "color": "#323",
+      "bgcolor": "#535"
+    },
+    {
+      "id": 12,
+      "type": "RandomNoise",
+      "pos": [
+        2039.455115346695,
+        990
+      ],
+      "size": [
+        220,
+        82
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 12,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "NOISE",
+          "type": "NOISE",
+          "links": [
+            6
+          ]
+        }
+      ],
+      "title": "1단계 Noise",
+      "properties": {
+        "Node name for S&R": "RandomNoise"
+      },
+      "widgets_values": [
+        1,
+        "fixed"
+      ],
+      "widgets_values_named": {
+        "noise_seed": 1,
+        "control_after_generate": "fixed"
+      },
+      "color": "#414e5d",
+      "bgcolor": "#252e38"
+    },
+    {
+      "id": 17,
+      "type": "LoraLoaderModelOnly",
+      "pos": [
+        1240,
+        250
+      ],
+      "size": [
+        258.98712768554685,
+        95.94076655142351
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 38,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 22
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            252
+          ]
+        }
+      ],
+      "title": "필수 ② 4-Step Turbo LoRA · loras",
+      "properties": {
+        "Node name for S&R": "LoraLoaderModelOnly"
+      },
+      "widgets_values": [
+        "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+        0.75
+      ],
+      "widgets_values_named": {
+        "lora_name": "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+        "strength_model": 0.75
+      },
+      "color": "#414e5d",
+      "bgcolor": "#252e38"
+    },
+    {
+      "id": 44,
+      "type": "PrimitiveStringMultiline",
+      "pos": [
+        2280,
+        1880
+      ],
+      "size": [
+        520,
+        100
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            150
+          ]
+        }
+      ],
+      "title": "2단계 포즈 요청 · 직접 참조 보정",
+      "properties": {
+        "Node name for S&R": "PrimitiveStringMultiline"
+      },
+      "widgets_values": [
+        ""
+      ],
+      "widgets_values_named": {
+        "value": ""
+      },
+      "color": "#287069",
+      "bgcolor": "#193f3b"
+    },
+    {
+      "id": 110,
+      "type": "MarkdownNote",
+      "pos": [
+        3120,
+        980
+      ],
+      "size": [
+        550,
+        250
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "2단계 ON/OFF · 사용법",
+      "properties": {},
+      "widgets_values": [
+        "# 2단계 실행 여부 결정\n\n**기본값 OFF:** Queue하면 1단계 얼굴+의상 전·측·후면만 생성합니다.\n\n## 2단계를 사용할 때\n1. 아래 **⑦ 2단계 입력**에 포즈 이미지를 넣습니다.\n2. 필요한 소품·배경만 각 스위치를 ON으로 켭니다.\n3. 필요하면 **⑧ 추가 프롬프트**를 입력합니다.\n4. 오른쪽 클릭 스위치에서 `Enable STAGE2_SWITCH`를 ON으로 바꾸고 Queue합니다.\n\n다시 1단계만 쓸 때는 같은 스위치를 OFF로 돌리세요."
+      ],
+      "widgets_values_named": {
+        "text": "# 2단계 실행 여부 결정\n\n**기본값 OFF:** Queue하면 1단계 얼굴+의상 전·측·후면만 생성합니다.\n\n## 2단계를 사용할 때\n1. 아래 **⑦ 2단계 입력**에 포즈 이미지를 넣습니다.\n2. 필요한 소품·배경만 각 스위치를 ON으로 켭니다.\n3. 필요하면 **⑧ 추가 프롬프트**를 입력합니다.\n4. 오른쪽 클릭 스위치에서 `Enable STAGE2_SWITCH`를 ON으로 바꾸고 Queue합니다.\n\n다시 1단계만 쓸 때는 같은 스위치를 OFF로 돌리세요."
+      },
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 113,
+      "type": "PrimitiveString",
+      "pos": [
+        1880,
+        2620
+      ],
+      "size": [
+        220,
+        58
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 15,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            206
+          ]
+        }
+      ],
+      "title": "자동 문구 · 소품 따로 나열",
+      "properties": {
+        "Node name for S&R": "PrimitiveString"
+      },
+      "widgets_values": [
+        "PROP USAGE MODE — SEPARATE DISPLAY: Panel 1 shows the analyzed action pose with empty hands. Panel 2 contains ONLY the exact enabled Picture 2 weapon or prop as a clean large product-detail image, with no person, hands, or body. Preserve its silhouette, scale, colors, materials, barrel, tank, grip, and distinctive parts."
+      ],
+      "widgets_values_named": {
+        "value": "PROP USAGE MODE — SEPARATE DISPLAY: Panel 1 shows the analyzed action pose with empty hands. Panel 2 contains ONLY the exact enabled Picture 2 weapon or prop as a clean large product-detail image, with no person, hands, or body. Preserve its silhouette, scale, colors, materials, barrel, tank, grip, and distinctive parts."
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 114,
+      "type": "PrimitiveString",
+      "pos": [
+        2160,
+        2620
+      ],
+      "size": [
+        220,
+        58
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 16,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            207
+          ]
+        }
+      ],
+      "title": "자동 문구 · 캐릭터가 소품 들기",
+      "properties": {
+        "Node name for S&R": "PrimitiveString"
+      },
+      "widgets_values": [
+        "PROP USAGE MODE — CHARACTER USES IT: Panel 1 shows the analyzed action pose while visibly holding and using the exact Picture 2 weapon or prop. Panel 2 shows a clearly different grounded three-quarter two-handed aiming or ready stance using that same object, with different arm angles, leg placement, torso direction, and camera angle. Preserve the object's exact silhouette, scale, colors, construction, grip, and distinctive parts. Do not omit or substitute it."
+      ],
+      "widgets_values_named": {
+        "value": "PROP USAGE MODE — CHARACTER USES IT: Panel 1 shows the analyzed action pose while visibly holding and using the exact Picture 2 weapon or prop. Panel 2 shows a clearly different grounded three-quarter two-handed aiming or ready stance using that same object, with different arm angles, leg placement, torso direction, and camera angle. Preserve the object's exact silhouette, scale, colors, construction, grip, and distinctive parts. Do not omit or substitute it."
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 115,
+      "type": "ComfySwitchNode",
+      "pos": [
+        1880,
+        2710
+      ],
+      "size": [
+        220,
+        78
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 44,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "on_false",
+          "type": "STRING",
+          "link": 206
+        },
+        {
+          "name": "on_true",
+          "type": "STRING",
+          "link": 207
+        },
+        {
+          "name": "switch",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "switch"
+          },
+          "link": 205
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "STRING",
+          "links": [
+            209
+          ]
+        }
+      ],
+      "title": "소품 사용 방식 선택",
+      "properties": {
+        "Node name for S&R": "ComfySwitchNode"
+      },
+      "widgets_values": [
+        false
+      ],
+      "widgets_values_named": {
+        "switch": false
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 116,
+      "type": "StringConcatenate",
+      "pos": [
+        2160,
+        2710
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 63,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_a",
+          "type": "STRING",
+          "widget": {
+            "name": "string_a"
+          },
+          "link": 208
+        },
+        {
+          "name": "string_b",
+          "type": "STRING",
+          "widget": {
+            "name": "string_b"
+          },
+          "link": 209
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            210
+          ]
+        }
+      ],
+      "title": "2단계 프롬프트 + 소품 방식",
+      "properties": {
+        "Node name for S&R": "StringConcatenate"
+      },
+      "widgets_values": [
+        "",
+        "",
+        "\n\n"
+      ],
+      "widgets_values_named": {
+        "string_a": "",
+        "string_b": "",
+        "delimiter": "\n\n"
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 119,
+      "type": "StringConcatenate",
+      "pos": [
+        1880,
+        2800
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 68,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_a",
+          "type": "STRING",
+          "widget": {
+            "name": "string_a"
+          },
+          "link": 216
+        },
+        {
+          "name": "string_b",
+          "type": "STRING",
+          "widget": {
+            "name": "string_b"
+          },
+          "link": 244
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            218
+          ]
+        }
+      ],
+      "title": "2단계 최종 사용자 요청 · 최우선",
+      "properties": {
+        "Node name for S&R": "StringConcatenate"
+      },
+      "widgets_values": [
+        "",
+        "",
+        "\n\nUSER PANEL PLAN — HIGHEST PRIORITY:\nWrite only the panels you want to override, using \"Panel 1:\", \"Panel 2:\", \"Panel 3:\", or \"Panel 4:\". Each numbered line replaces only that panel's default. Ignore any numbered request above the SELECTED PANEL COUNT. Keep Picture 1 identity and outfit:\n"
+      ],
+      "widgets_values_named": {
+        "string_a": "",
+        "string_b": "",
+        "delimiter": "\n\nUSER PANEL PLAN — HIGHEST PRIORITY:\nWrite only the panels you want to override, using \"Panel 1:\", \"Panel 2:\", \"Panel 3:\", or \"Panel 4:\". Each numbered line replaces only that panel's default. Ignore any numbered request above the SELECTED PANEL COUNT. Keep Picture 1 identity and outfit:\n"
+      }
+    },
+    {
+      "id": 124,
+      "type": "TextGenerate",
+      "pos": [
+        40,
+        1960
+      ],
+      "size": [
+        400,
+        143
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 41,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 233
+        },
+        {
+          "name": "image",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 234
+        },
+        {
+          "name": "video",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generated_text",
+          "type": "STRING",
+          "links": [
+            235
+          ]
+        }
+      ],
+      "title": "2단계 Gemma · 정밀 포즈 분석",
+      "properties": {
+        "Node name for S&R": "TextGenerate"
+      },
+      "widgets_values": [
+        "Analyze only the body pose in this image for another image model. Output one concise English block beginning exactly with \"POSE TRANSFER:\".\n\nUse screen-relative directions and describe:\n- torso lean and rotation in approximate degrees;\n- shoulder line and hip line angle;\n- head direction;\n- screen-left arm and screen-right arm: upper-arm direction like a clock hand, elbow bend angle, forearm direction, and hand position relative to the head and torso;\n- screen-left leg and screen-right leg: thigh direction, knee bend angle, shin direction, and foot position;\n- whether the body is airborne and the overall silhouette;\n- which limbs are closer to the camera.\n\nDescribe geometry only. Ignore and never mention identity, face, helmet, hair, costume, colors, accessories, objects, background, lighting, and style. Output only the POSE TRANSFER block.",
+        384,
+        "off",
+        false,
+        true
+      ],
+      "widgets_values_named": {
+        "prompt": "Analyze only the body pose in this image for another image model. Output one concise English block beginning exactly with \"POSE TRANSFER:\".\n\nUse screen-relative directions and describe:\n- torso lean and rotation in approximate degrees;\n- shoulder line and hip line angle;\n- head direction;\n- screen-left arm and screen-right arm: upper-arm direction like a clock hand, elbow bend angle, forearm direction, and hand position relative to the head and torso;\n- screen-left leg and screen-right leg: thigh direction, knee bend angle, shin direction, and foot position;\n- whether the body is airborne and the overall silhouette;\n- which limbs are closer to the camera.\n\nDescribe geometry only. Ignore and never mention identity, face, helmet, hair, costume, colors, accessories, objects, background, lighting, and style. Output only the POSE TRANSFER block.",
+        "max_length": 384,
+        "sampling_mode": "off",
+        "thinking": false,
+        "use_default_template": true
+      }
+    },
+    {
+      "id": 128,
+      "type": "StringConcatenate",
+      "pos": [
+        1160,
+        3020
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 46,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_b",
+          "type": "STRING",
+          "widget": {
+            "name": "string_b"
+          },
+          "link": 241
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            243
+          ]
+        }
+      ],
+      "title": "한국어 패널 요청 · 번역 지시 조립",
+      "properties": {
+        "Node name for S&R": "StringConcatenate"
+      },
+      "widgets_values": [
+        "You are a deterministic translator for MiniMax H3 image-generation panel instructions.\n\nTranslate the user's Korean panel requests into concise English commands.\nNormalize every Korean panel label to exactly \"Panel N:\" where N is 1, 2, 3, or 4.\nExamples of labels that mean the same thing: \"패널3\", \"패널 3\", \"3번 패널\", \"세 번째 패널\".\nPreserve all requested expression, pose, framing, camera, prop, action, and composition details.\nFor a wink, translate explicitly as one eye fully closed and the other eye open.\nOutput only the translated \"Panel N:\" lines. Do not explain, summarize, add headings, or invent requests.\nIf the user input is empty, output nothing.",
+        "",
+        "\n\nKOREAN USER INPUT:\n"
+      ],
+      "widgets_values_named": {
+        "string_a": "You are a deterministic translator for MiniMax H3 image-generation panel instructions.\n\nTranslate the user's Korean panel requests into concise English commands.\nNormalize every Korean panel label to exactly \"Panel N:\" where N is 1, 2, 3, or 4.\nExamples of labels that mean the same thing: \"패널3\", \"패널 3\", \"3번 패널\", \"세 번째 패널\".\nPreserve all requested expression, pose, framing, camera, prop, action, and composition details.\nFor a wink, translate explicitly as one eye fully closed and the other eye open.\nOutput only the translated \"Panel N:\" lines. Do not explain, summarize, add headings, or invent requests.\nIf the user input is empty, output nothing.",
+        "string_b": "",
+        "delimiter": "\n\nKOREAN USER INPUT:\n"
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 129,
+      "type": "TextGenerate",
+      "pos": [
+        1620,
+        3020
+      ],
+      "size": [
+        400,
+        143
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 55,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 242
+        },
+        {
+          "name": "image",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "video",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        },
+        {
+          "name": "prompt",
+          "type": "STRING",
+          "widget": {
+            "name": "prompt"
+          },
+          "link": 243
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generated_text",
+          "type": "STRING",
+          "links": [
+            244,
+            245
+          ]
+        }
+      ],
+      "title": "Gemma · 한국어 패널 요청 자동 번역",
+      "properties": {
+        "Node name for S&R": "TextGenerate"
+      },
+      "widgets_values": [
+        "",
+        256,
+        "off",
+        false,
+        true
+      ],
+      "widgets_values_named": {
+        "prompt": "",
+        "max_length": 256,
+        "sampling_mode": "off",
+        "thinking": false,
+        "use_default_template": true
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 130,
+      "type": "PreviewAny",
+      "pos": [
+        1700,
+        2030
+      ],
+      "size": [
+        540,
+        122
+      ],
+      "flags": {},
+      "order": 60,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "source",
+          "type": "*",
+          "link": 245
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "title": "한국어 요청 자동 번역 확인",
+      "properties": {
+        "Node name for S&R": "PreviewAny"
+      },
+      "widgets_values": [],
+      "widgets_values_named": {},
+      "color": "#62407b",
+      "bgcolor": "#362644"
+    },
+    {
+      "id": 132,
+      "type": "PrimitiveString",
+      "pos": [
+        1160,
+        3160
+      ],
+      "size": [
+        271.07814636230466,
+        58
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 17,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            246
+          ]
+        }
+      ],
+      "title": "자동 문구 · 3패널 왼쪽 세로1 + 오른쪽2",
+      "properties": {
+        "Node name for S&R": "PrimitiveString"
+      },
+      "widgets_values": [
+        "THREE-PANEL LAYOUT PRESET — apply this only when SELECTED PANEL COUNT is 3:\nUse exactly three cells in an asymmetrical two-column layout.\nPanel 1 occupies the entire LEFT HALF as one tall vertical cell.\nPanel 2 occupies the TOP-RIGHT cell.\nPanel 3 occupies the BOTTOM-RIGHT cell.\nExactly three cells total. Do not split Panel 1. Do not create a fourth cell, blank cell, duplicate cell, inset, repeated panel, or extra image.\nWhen the selected count is not 3, ignore this preset and use the normal layout for that count."
+      ],
+      "widgets_values_named": {
+        "value": "THREE-PANEL LAYOUT PRESET — apply this only when SELECTED PANEL COUNT is 3:\nUse exactly three cells in an asymmetrical two-column layout.\nPanel 1 occupies the entire LEFT HALF as one tall vertical cell.\nPanel 2 occupies the TOP-RIGHT cell.\nPanel 3 occupies the BOTTOM-RIGHT cell.\nExactly three cells total. Do not split Panel 1. Do not create a fourth cell, blank cell, duplicate cell, inset, repeated panel, or extra image.\nWhen the selected count is not 3, ignore this preset and use the normal layout for that count."
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 133,
+      "type": "PrimitiveString",
+      "pos": [
+        1440,
+        3160
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 18,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            247
+          ]
+        }
+      ],
+      "title": "자동 문구 · 3패널 위 가로1 + 아래2",
+      "properties": {
+        "Node name for S&R": "PrimitiveString"
+      },
+      "widgets_values": [
+        "THREE-PANEL LAYOUT PRESET — apply this only when SELECTED PANEL COUNT is 3:\nUse exactly three cells in an asymmetrical two-row layout.\nPanel 1 occupies the entire TOP HALF as one wide horizontal cell.\nPanel 2 occupies the BOTTOM-LEFT cell.\nPanel 3 occupies the BOTTOM-RIGHT cell.\nExactly three cells total. Do not split Panel 1. Do not create a fourth cell, blank cell, duplicate cell, inset, repeated panel, or extra image.\nWhen the selected count is not 3, ignore this preset and use the normal layout for that count."
+      ],
+      "widgets_values_named": {
+        "value": "THREE-PANEL LAYOUT PRESET — apply this only when SELECTED PANEL COUNT is 3:\nUse exactly three cells in an asymmetrical two-row layout.\nPanel 1 occupies the entire TOP HALF as one wide horizontal cell.\nPanel 2 occupies the BOTTOM-LEFT cell.\nPanel 3 occupies the BOTTOM-RIGHT cell.\nExactly three cells total. Do not split Panel 1. Do not create a fourth cell, blank cell, duplicate cell, inset, repeated panel, or extra image.\nWhen the selected count is not 3, ignore this preset and use the normal layout for that count."
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 134,
+      "type": "ComfySwitchNode",
+      "pos": [
+        1720,
+        3160
+      ],
+      "size": [
+        270,
+        78
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 45,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "on_false",
+          "type": "STRING",
+          "link": 246
+        },
+        {
+          "name": "on_true",
+          "type": "STRING",
+          "link": 247
+        },
+        {
+          "name": "switch",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "switch"
+          },
+          "link": 248
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "STRING",
+          "links": [
+            250
+          ]
+        }
+      ],
+      "title": "3패널 레이아웃 선택",
+      "properties": {
+        "Node name for S&R": "ComfySwitchNode"
+      },
+      "widgets_values": [
+        false
+      ],
+      "widgets_values_named": {
+        "switch": false
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 135,
+      "type": "StringConcatenate",
+      "pos": [
+        2000,
+        3160
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 54,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_a",
+          "type": "STRING",
+          "widget": {
+            "name": "string_a"
+          },
+          "link": 249
+        },
+        {
+          "name": "string_b",
+          "type": "STRING",
+          "widget": {
+            "name": "string_b"
+          },
+          "link": 250
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            251
+          ]
+        }
+      ],
+      "title": "2단계 기본 계획 + 3패널 고정 레이아웃",
+      "properties": {
+        "Node name for S&R": "StringConcatenate"
+      },
+      "widgets_values": [
+        "",
+        "",
+        "\n\n"
+      ],
+      "widgets_values_named": {
+        "string_a": "",
+        "string_b": "",
+        "delimiter": "\n\n"
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 29,
+      "type": "MarkdownNote",
+      "pos": [
+        1013.9915755652272,
+        2095.083965710177
+      ],
+      "size": [
+        540,
+        198
+      ],
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "2단계 입력 설명 · 패널 수/3패널 배치/소품",
+      "properties": {},
+      "widgets_values": [
+        "# 2단계 입력과 3패널 배치\n\n1. **패널 수**에서 1~4장을 선택합니다.\n2. 3장을 선택했다면 **3패널 배치**를 고릅니다.\n   - OFF: 왼쪽 세로 1칸 + 오른쪽 위·아래 2칸\n   - ON: 위 가로 1칸 + 아래 왼쪽·오른쪽 2칸\n3. 포즈 이미지는 Panel 1의 동작 분석에 사용합니다.\n4. 소품 방식 OFF는 Panel 2에 소품만 표시합니다.\n5. 소품 방식 ON은 Panel 1·2에서 캐릭터가 서로 다른 자세로 소품을 사용합니다.\n6. 추가 내용은 ⑧ 그룹에 한국어로 적습니다."
+      ],
+      "widgets_values_named": {
+        "text": "# 2단계 입력과 3패널 배치\n\n1. **패널 수**에서 1~4장을 선택합니다.\n2. 3장을 선택했다면 **3패널 배치**를 고릅니다.\n   - OFF: 왼쪽 세로 1칸 + 오른쪽 위·아래 2칸\n   - ON: 위 가로 1칸 + 아래 왼쪽·오른쪽 2칸\n3. 포즈 이미지는 Panel 1의 동작 분석에 사용합니다.\n4. 소품 방식 OFF는 Panel 2에 소품만 표시합니다.\n5. 소품 방식 ON은 Panel 1·2에서 캐릭터가 서로 다른 자세로 소품을 사용합니다.\n6. 추가 내용은 ⑧ 그룹에 한국어로 적습니다."
+      },
+      "color": "#24324a",
+      "bgcolor": "#35496b"
+    },
+    {
+      "id": 82,
+      "type": "ToobusyMiniMaxH3SemanticReference",
+      "pos": [
+        790.045078275248,
+        2550.2846041303274
+      ],
+      "size": [
+        220,
+        142
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 47,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 101
+        },
+        {
+          "name": "enabled",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "enabled"
+          },
+          "link": 105
+        },
+        {
+          "name": "analysis",
+          "shape": 7,
+          "type": "STRING",
+          "widget": {
+            "name": "analysis"
+          },
+          "link": 100
+        }
+      ],
+      "outputs": [
+        {
+          "name": "visual_reference",
+          "type": "IMAGE",
+          "links": [
+            231
+          ]
+        },
+        {
+          "name": "semantic_role",
+          "type": "STRING",
+          "links": [
+            131
+          ]
+        }
+      ],
+      "title": "③ 자동 게이트 · 선택 5",
+      "properties": {
+        "Node name for S&R": "ToobusyMiniMaxH3SemanticReference"
+      },
+      "widgets_values": [
+        true,
+        "auto",
+        "<Picture 3> = optional environment reference. Use only its location, surfaces, atmosphere, and lighting as the background of the character panels; do not copy people or text.",
+        ""
+      ],
+      "widgets_values_named": {
+        "enabled": true,
+        "routing": "auto",
+        "role_label": "<Picture 3> = optional environment reference. Use only its location, surfaces, atmosphere, and lighting as the background of the character panels; do not copy people or text.",
+        "analysis": ""
+      }
+    },
+    {
+      "id": 10,
+      "type": "UNETLoader",
+      "pos": [
+        1240,
+        80
+      ],
+      "size": [
+        344.27900317150386,
+        111.19874623727097
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 20,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            22
+          ]
+        }
+      ],
+      "title": "필수 ① H3 Ref2VA 모델 · diffusion_models",
+      "properties": {
+        "Node name for S&R": "UNETLoader"
+      },
+      "widgets_values": [
+        "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+        "default"
+      ],
+      "widgets_values_named": {
+        "unet_name": "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+        "weight_dtype": "default"
+      },
+      "color": "#414e5d",
+      "bgcolor": "#252e38"
+    },
+    {
+      "id": 66,
+      "type": "MarkdownNote",
+      "pos": [
+        40,
+        80
+      ],
+      "size": [
+        520,
+        250
+      ],
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "처음 읽기 · 전체 사용 순서",
+      "properties": {},
+      "widgets_values": [
+        "# 🚀 처음 사용하는 순서\n\n1. **① 모델 장착**에서 필수 모델 6개를 확인합니다.\n2. **② 1단계 입력**에는 얼굴과 의상 이미지만 장착합니다.\n3. 필요하면 **③ 1단계 추가 프롬프트**를 입력합니다.\n4. Queue를 눌러 얼굴+의상 기준의 **전면·측면·후면 3뷰**를 만들고 **⑤ 결과**를 확인합니다.\n5. 추가 포즈·소품 시트가 필요할 때만 **⑥ 설명**을 읽고 2단계를 선택합니다.\n6. 2단계를 쓸 때는 **⑦ 포즈 + 선택 소품/배경**, 필요하면 **⑧ 추가 프롬프트**를 입력한 뒤 스위치를 ON으로 바꾸고 Queue합니다.\n\n기본값은 2단계 OFF입니다."
+      ],
+      "widgets_values_named": {
+        "text": "# 🚀 처음 사용하는 순서\n\n1. **① 모델 장착**에서 필수 모델 6개를 확인합니다.\n2. **② 1단계 입력**에는 얼굴과 의상 이미지만 장착합니다.\n3. 필요하면 **③ 1단계 추가 프롬프트**를 입력합니다.\n4. Queue를 눌러 얼굴+의상 기준의 **전면·측면·후면 3뷰**를 만들고 **⑤ 결과**를 확인합니다.\n5. 추가 포즈·소품 시트가 필요할 때만 **⑥ 설명**을 읽고 2단계를 선택합니다.\n6. 2단계를 쓸 때는 **⑦ 포즈 + 선택 소품/배경**, 필요하면 **⑧ 추가 프롬프트**를 입력한 뒤 스위치를 ON으로 바꾸고 Queue합니다.\n\n기본값은 2단계 OFF입니다."
+      },
+      "color": "#1f5b58",
+      "bgcolor": "#163b39"
+    },
+    {
+      "id": 20,
+      "type": "MarkdownNote",
+      "pos": [
+        720,
+        80
+      ],
+      "size": [
+        480,
+        600
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 22,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "📦 필수 모델 6개 · 다운로드",
+      "properties": {},
+      "widgets_values": [
+        "# 📦 필수 모델 6개\n\n아래 로더가 `MISSING`이면 해당 링크의 파일을 받아 **표시된 폴더에 원래 파일명 그대로** 넣으세요.\n\n## ① H3 Ref2VA 본체 · `models/diffusion_models/`\n[minimax_h3_ref2va_pruned_int8_convrot.safetensors](https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/diffusion_models/minimax_h3_ref2va_pruned_int8_convrot.safetensors)\n\n## ② 4-Step Turbo LoRA · `models/loras/`\n[minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors](https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/loras/minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors)\n\n## ③ H3 Qwen 텍스트 인코더 · `models/text_encoders/`\n[qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors](https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors)\n\n## ④ 캐릭터시트용 T=1 이미지 VAE · `models/vae/`\n[minimax_h3_t1_image_vae_step1597.safetensors](https://huggingface.co/Mamad8/MiniMax-H3-Image-VAE/resolve/main/minimax_h3_t1_image_vae_step1597.safetensors)\n\n## ⑤ H3 오디오 VAE · `models/vae/`\n[minimax_h3_audio_vae_fp32.safetensors](https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_audio_vae_fp32.safetensors)\n\n## ⑥ Gemma 이미지 분석 · `models/text_encoders/`\n[gemma4_e4b_it_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Gemma4/resolve/main/text_encoders/gemma4_e4b_it_fp8_scaled.safetensors)\n\nGemma는 3번 이미지의 포즈 공간관계를 짧게 설명하고, ON 된 선택 이미지 4~6의 역할도 분석합니다. 얼굴과 의상 설명에는 사용하지 않습니다.\n\n---\n설치 후 모델 목록을 새로고침하고, 목록에 안 뜰 때만 ComfyUI를 재시작하세요.\n\n> 이 워크플로는 **T=1 정지 이미지용 VAE**를 사용합니다. 일반 H3 영상 제작에는 Video VAE를 사용하세요."
+      ],
+      "widgets_values_named": {
+        "text": "# 📦 필수 모델 6개\n\n아래 로더가 `MISSING`이면 해당 링크의 파일을 받아 **표시된 폴더에 원래 파일명 그대로** 넣으세요.\n\n## ① H3 Ref2VA 본체 · `models/diffusion_models/`\n[minimax_h3_ref2va_pruned_int8_convrot.safetensors](https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/diffusion_models/minimax_h3_ref2va_pruned_int8_convrot.safetensors)\n\n## ② 4-Step Turbo LoRA · `models/loras/`\n[minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors](https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/loras/minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors)\n\n## ③ H3 Qwen 텍스트 인코더 · `models/text_encoders/`\n[qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors](https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors)\n\n## ④ 캐릭터시트용 T=1 이미지 VAE · `models/vae/`\n[minimax_h3_t1_image_vae_step1597.safetensors](https://huggingface.co/Mamad8/MiniMax-H3-Image-VAE/resolve/main/minimax_h3_t1_image_vae_step1597.safetensors)\n\n## ⑤ H3 오디오 VAE · `models/vae/`\n[minimax_h3_audio_vae_fp32.safetensors](https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_audio_vae_fp32.safetensors)\n\n## ⑥ Gemma 이미지 분석 · `models/text_encoders/`\n[gemma4_e4b_it_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Gemma4/resolve/main/text_encoders/gemma4_e4b_it_fp8_scaled.safetensors)\n\nGemma는 3번 이미지의 포즈 공간관계를 짧게 설명하고, ON 된 선택 이미지 4~6의 역할도 분석합니다. 얼굴과 의상 설명에는 사용하지 않습니다.\n\n---\n설치 후 모델 목록을 새로고침하고, 목록에 안 뜰 때만 ComfyUI를 재시작하세요.\n\n> 이 워크플로는 **T=1 정지 이미지용 VAE**를 사용합니다. 일반 H3 영상 제작에는 Video VAE를 사용하세요."
+      },
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 19,
+      "type": "ToobusyMiniMaxH3ImageLatent",
+      "pos": [
+        1303.9749247454201,
+        1181.0897693066095
+      ],
+      "size": [
+        265.759375,
+        74
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 40,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "width",
+          "type": "INT",
+          "widget": {
+            "name": "width"
+          },
+          "link": 24
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": 25
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            26
+          ]
+        }
+      ],
+      "title": "1단계 Image Latent",
+      "properties": {
+        "Node name for S&R": "ToobusyMiniMaxH3ImageLatent"
+      },
+      "widgets_values": [
+        1344,
+        768
+      ],
+      "widgets_values_named": {
+        "width": 1344,
+        "height": 768
+      },
+      "color": "#414e5d",
+      "bgcolor": "#252e38"
+    },
+    {
+      "id": 16,
+      "type": "LoadImage",
+      "pos": [
+        2000,
+        380
+      ],
+      "size": [
+        340,
+        314
+      ],
+      "flags": {},
+      "order": 23,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            18
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "title": "1단계 필수 1 · 얼굴/정체성 이미지",
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "2bz_character_face_photo1.jpg",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "2bz_character_face_photo1.jpg",
+        "upload": "image"
+      },
+      "color": "#6d3653",
+      "bgcolor": "#3b2230"
+    },
+    {
+      "id": 21,
+      "type": "LoadImage",
+      "pos": [
+        2380,
+        380
+      ],
+      "size": [
+        340,
+        314
+      ],
+      "flags": {},
+      "order": 24,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            122
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "title": "1단계 필수 2 · 헤어+의상 전체 외형",
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "sdxl_00131_.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "sdxl_00131_.png",
+        "upload": "image"
+      },
+      "color": "#766026",
+      "bgcolor": "#40351c"
+    },
+    {
+      "id": 125,
+      "type": "PreviewImage",
+      "pos": [
+        3700,
+        1610
+      ],
+      "size": [
+        320,
+        320
+      ],
+      "flags": {},
+      "order": 70,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 238
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "2단계 선택 패널 결과 확인",
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 8,
+      "type": "SamplerCustomAdvanced",
+      "pos": [
+        1539.455115346695,
+        1250
+      ],
+      "size": [
+        220,
+        106
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 61,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "noise",
+          "type": "NOISE",
+          "link": 6
+        },
+        {
+          "name": "guider",
+          "type": "GUIDER",
+          "link": 7
+        },
+        {
+          "name": "sampler",
+          "type": "SAMPLER",
+          "link": 8
+        },
+        {
+          "name": "sigmas",
+          "type": "SIGMAS",
+          "link": 9
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 26
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "LATENT",
+          "links": [
+            3
+          ]
+        },
+        {
+          "name": "denoised_output",
+          "type": "LATENT",
+          "links": null
+        }
+      ],
+      "title": "1단계 Sampler",
+      "properties": {
+        "Node name for S&R": "SamplerCustomAdvanced"
+      },
+      "color": "#414e5d",
+      "bgcolor": "#252e38"
+    },
+    {
+      "id": 23,
+      "type": "PrimitiveStringMultiline",
+      "pos": [
+        40,
+        990
+      ],
+      "size": [
+        1080,
+        250
+      ],
+      "flags": {},
+      "order": 25,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            155
+          ]
+        }
+      ],
+      "title": "1단계 추가 연출 · 선택",
+      "properties": {
+        "Node name for S&R": "PrimitiveStringMultiline"
+      },
+      "widgets_values": [
+        ""
+      ],
+      "widgets_values_named": {
+        "value": ""
+      },
+      "color": "#7a5727",
+      "bgcolor": "#44321d"
+    },
+    {
+      "id": 1,
+      "type": "ResolutionSelector",
+      "pos": [
+        1276.7306920801702,
+        983.4613841603401
+      ],
+      "size": [
+        340,
+        132
+      ],
+      "flags": {},
+      "order": 26,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "width",
+          "type": "INT",
+          "links": [
+            16,
+            24,
+            192
+          ]
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "links": [
+            17,
+            25,
+            191
+          ]
+        }
+      ],
+      "title": "Resolution Selector (Size)",
+      "properties": {
+        "Node name for S&R": "ResolutionSelector"
+      },
+      "widgets_values": [
+        "1:1 (Square)",
+        7.9,
+        32
+      ],
+      "widgets_values_named": {
+        "aspect_ratio": "1:1 (Square)",
+        "megapixels": 7.9,
+        "multiple": 32
+      },
+      "color": "#414e5d",
+      "bgcolor": "#252e38"
+    },
+    {
+      "id": 136,
+      "type": "ModelAttentionBackend",
+      "pos": [
+        1643.8081221352763,
+        1024.656757981696
+      ],
+      "size": [
+        398.4870361328125,
+        79.80792375948977
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 49,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 252
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            253,
+            254,
+            255
+          ]
+        }
+      ],
+      "title": "MiniMax H3 · Comfy Kitchen Attention · Turbo LoRA 뒤",
+      "properties": {
+        "Node name for S&R": "ModelAttentionBackend"
+      },
+      "widgets_values": [
+        "comfy kitchen attention"
+      ],
+      "widgets_values_named": {
+        "attention": "comfy kitchen attention"
+      },
+      "color": "#53606A",
+      "bgcolor": "#2B3035"
+    },
+    {
+      "id": 106,
+      "type": "SaveImage",
+      "pos": [
+        2540,
+        990
+      ],
+      "size": [
+        420,
+        300
+      ],
+      "flags": {},
+      "order": 66,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 185
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "1단계 3뷰 저장",
+      "properties": {},
+      "widgets_values": [
+        "charsheet/H3_2STAGE_STAGE1_3VIEW"
+      ],
+      "widgets_values_named": {
+        "filename_prefix": "charsheet/H3_2STAGE_STAGE1_3VIEW"
+      }
+    },
+    {
+      "id": 111,
+      "type": "Fast Groups Muter (rgthree)",
+      "pos": [
+        3710,
+        980
+      ],
+      "size": [
+        224.2857421875,
+        298
+      ],
+      "flags": {},
+      "order": 27,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "OPT_CONNECTION",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "title": "2단계 ON/OFF · 클릭 스위치",
+      "properties": {
+        "matchColors": "",
+        "matchTitle": "^STAGE2_SWITCH",
+        "showNav": true,
+        "showAllGraphs": true,
+        "sort": "alphanumeric",
+        "customSortAlphabet": "",
+        "toggleRestriction": "default"
+      },
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 109,
+      "type": "40bb7e22-ac55-41e0-bcec-3c240f06b081",
+      "pos": [
+        2960,
+        1610
+      ],
+      "size": [
+        550,
+        384
+      ],
+      "flags": {},
+      "order": 69,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 190
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": 191
+        },
+        {
+          "name": "a",
+          "type": "INT,FLOAT,IMAGE,LATENT",
+          "widget": {
+            "name": "a"
+          },
+          "link": 192
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 193
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 194
+        },
+        {
+          "name": "audio_vae",
+          "type": "VAE",
+          "link": 195
+        },
+        {
+          "label": "ref_image_1",
+          "name": "ref_images.ref_image_1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 230
+        },
+        {
+          "label": "ref_image_2",
+          "name": "ref_images.ref_image_2",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 231
+        },
+        {
+          "label": "ref_image_3",
+          "name": "ref_images.ref_image_3",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 232
+        },
+        {
+          "name": "prompt",
+          "type": "STRING",
+          "widget": {
+            "name": "prompt"
+          },
+          "link": 218
+        },
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 255
+        },
+        {
+          "name": "sampler",
+          "type": "SAMPLER",
+          "link": 201
+        },
+        {
+          "name": "sigmas",
+          "type": "SIGMAS",
+          "link": 202
+        },
+        {
+          "name": "pose_or_extra_ref",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "stage2_image",
+          "type": "IMAGE",
+          "links": [
+            238
+          ]
+        },
+        {
+          "name": "final_sheet",
+          "type": "IMAGE",
+          "links": [
+            239
+          ]
+        }
+      ],
+      "title": "2단계 전체 · 패널 1~4 선택 · 클릭 ON/OFF",
+      "properties": {
+        "previewExposures": [
+          {
+            "name": "$$canvas-image-preview",
+            "sourceNodeId": "107",
+            "sourcePreviewName": "$$canvas-image-preview"
+          },
+          {
+            "name": "$$canvas-image-preview_1",
+            "sourceNodeId": "14",
+            "sourcePreviewName": "$$canvas-image-preview"
+          }
+        ]
+      },
+      "widgets_values": [
+        512,
+        1344,
+        "",
+        "charsheet/H3_2STAGE_STAGE2_3PLUS1",
+        "charsheet/H3_2STAGE_CHARACTER_SHEET_FINAL"
+      ],
+      "widgets_values_named": {
+        "height": 512,
+        "a": 1344,
+        "prompt": "",
+        "filename_prefix": "charsheet/H3_2STAGE_STAGE2_3PLUS1",
+        "filename_prefix_1": "charsheet/H3_2STAGE_CHARACTER_SHEET_FINAL"
+      },
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 22,
+      "type": "LoadImage",
+      "pos": [
+        40,
+        1610
+      ],
+      "size": [
+        340,
+        314
+      ],
+      "flags": {},
+      "order": 28,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            234
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "title": "2단계 포즈 분석 원본",
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "PS15022100122.jpg",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "PS15022100122.jpg",
+        "upload": "image"
+      },
+      "color": "#28636b",
+      "bgcolor": "#19393e"
+    },
+    {
+      "id": 85,
+      "type": "PrimitiveBoolean",
+      "pos": [
+        455,
+        1960
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 29,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "BOOLEAN",
+          "type": "BOOLEAN",
+          "links": [
+            104
+          ]
+        }
+      ],
+      "title": "소품/무기 사용 ON/OFF",
+      "properties": {
+        "Node name for S&R": "PrimitiveBoolean"
+      },
+      "widgets_values": [
+        true
+      ],
+      "widgets_values_named": {
+        "value": true
+      }
+    },
+    {
+      "id": 57,
+      "type": "LoadImage",
+      "pos": [
+        420,
+        1610
+      ],
+      "size": [
+        340,
+        314.0000000000001
+      ],
+      "flags": {},
+      "order": 30,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            93,
+            99
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "title": "2단계 선택 1 · 소품/무기",
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "k2소총.jfif",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "k2소총.jfif",
+        "upload": "image"
+      },
+      "color": "#57427a",
+      "bgcolor": "#302640"
+    },
+    {
+      "id": 127,
+      "type": "CustomCombo",
+      "pos": [
+        360,
+        2050
+      ],
+      "size": [
+        300,
+        198
+      ],
+      "flags": {},
+      "order": 31,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            240
+          ]
+        },
+        {
+          "name": "INDEX",
+          "type": "INT",
+          "links": null
+        }
+      ],
+      "title": "2단계 패널 수 · 1~4장",
+      "properties": {
+        "Node name for S&R": "CustomCombo"
+      },
+      "widgets_values": [
+        "3 panels",
+        2,
+        "1 panel",
+        "2 panels",
+        "3 panels",
+        "4 panels",
+        ""
+      ],
+      "widgets_values_named": {
+        "choice": "3 panels",
+        "index": 2,
+        "option1": "1 panel",
+        "option2": "2 panels",
+        "option3": "3 panels",
+        "option4": "4 panels",
+        "option5": ""
+      },
+      "color": "#323",
+      "bgcolor": "#535"
+    },
+    {
+      "id": 112,
+      "type": "PrimitiveBoolean",
+      "pos": [
+        14.939252467683195,
+        2005.2847276722564
+      ],
+      "size": [
+        323.8731750488281,
+        58
+      ],
+      "flags": {},
+      "order": 32,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "BOOLEAN",
+          "type": "BOOLEAN",
+          "links": [
+            205
+          ]
+        }
+      ],
+      "title": "소품 방식 · OFF=따로 나열 / ON=캐릭터가 들기",
+      "properties": {
+        "Node name for S&R": "PrimitiveBoolean"
+      },
+      "widgets_values": [
+        true
+      ],
+      "widgets_values_named": {
+        "value": true
+      },
+      "color": "#323",
+      "bgcolor": "#535"
+    },
+    {
+      "id": 131,
+      "type": "PrimitiveBoolean",
+      "pos": [
+        681.3445659130302,
+        2093.52934620293
+      ],
+      "size": [
+        305.2693237304687,
+        59.72613560719674
+      ],
+      "flags": {},
+      "order": 33,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "BOOLEAN",
+          "type": "BOOLEAN",
+          "links": [
+            248
+          ]
+        }
+      ],
+      "title": "3패널 배치 · OFF=왼쪽 세로1 / ON=위 가로1",
+      "properties": {
+        "Node name for S&R": "PrimitiveBoolean"
+      },
+      "widgets_values": [
+        true
+      ],
+      "widgets_values_named": {
+        "value": true
+      },
+      "color": "#323",
+      "bgcolor": "#535"
+    },
+    {
+      "id": 43,
+      "type": "PrimitiveStringMultiline",
+      "pos": [
+        1700,
+        1880
+      ],
+      "size": [
+        540,
+        100
+      ],
+      "flags": {},
+      "order": 34,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            241
+          ]
+        }
+      ],
+      "title": "2단계 패널별 요청 · 한국어로 입력",
+      "properties": {
+        "Node name for S&R": "PrimitiveStringMultiline"
+      },
+      "widgets_values": [
+        "패널3 : 당황한표정, 입을 벌리고, 땀을 흘리고있는 클로즈업 상반신"
+      ],
+      "widgets_values_named": {
+        "value": "패널3 : 당황한표정, 입을 벌리고, 땀을 흘리고있는 클로즈업 상반신"
+      },
+      "color": "#287069",
+      "bgcolor": "#193f3b"
+    },
+    {
+      "id": 126,
+      "type": "PreviewImage",
+      "pos": [
+        4060,
+        1610
+      ],
+      "size": [
+        480,
+        320
+      ],
+      "flags": {},
+      "order": 71,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 239
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "최종 16:9 캐릭터 시트 확인",
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 69,
+      "type": "MarkdownNote",
+      "pos": [
+        2550,
+        2480
+      ],
+      "size": [
+        960,
+        260
+      ],
+      "flags": {},
+      "order": 35,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "⑬ 제작자·배포 정보",
+      "properties": {},
+      "widgets_values": [
+        "# 🎬 2BZ 워크플로우\n\n**기획·제작:** 너무바쁜베짱이 (2BZ)  \n**YouTube:** [@toobusyAI](https://www.youtube.com/@toobusyAI)  \n**버전:** v1.0 · 2026-08-20  \n**AI 협업:** OpenAI Codex\n**원글** https://www.reddit.com/r/StableDiffusion/comments/1vr1i18/minimax_h3_as_image_editor_6_edits_in_one_shot_at/\n\n기반 모델과 커스텀 노드의 권리는 각 제작자에게 있습니다."
+      ],
+      "widgets_values_named": {
+        "text": "# 🎬 2BZ 워크플로우\n\n**기획·제작:** 너무바쁜베짱이 (2BZ)  \n**YouTube:** [@toobusyAI](https://www.youtube.com/@toobusyAI)  \n**버전:** v1.0 · 2026-08-20  \n**AI 협업:** OpenAI Codex\n**원글** https://www.reddit.com/r/StableDiffusion/comments/1vr1i18/minimax_h3_as_image_editor_6_edits_in_one_shot_at/\n\n기반 모델과 커스텀 노드의 권리는 각 제작자에게 있습니다."
+      },
+      "color": "#286878",
+      "bgcolor": "#183f49"
+    },
+    {
+      "id": 49,
+      "type": "StringConcatenate",
+      "pos": [
+        1920,
+        2480
+      ],
+      "size": [
+        220,
+        150
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 43,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_b",
+          "type": "STRING",
+          "widget": {
+            "name": "string_b"
+          },
+          "link": 240
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            249
+          ]
+        }
+      ],
+      "title": "2단계 패널 수 + 기본 계획",
+      "properties": {
+        "Node name for S&R": "StringConcatenate"
+      },
+      "widgets_values": [
+        "Create one static high-resolution character contact sheet of the same adult character from Picture 1.\n\nThe SELECTED PANEL COUNT appended below is mandatory. Create exactly that many panels and no more:\n- 1 panel: one full-canvas image.\n- 2 panels: two equal side-by-side images.\n- 3 panels: follow the selected THREE-PANEL LAYOUT PRESET appended below. Use exactly three cells; they are intentionally asymmetrical and do not need equal dimensions.\n- 4 panels: a clean 2x2 grid.\n\nPicture 1 is the fused Stage 1 character reference. Preserve its face, hair, costume, colors, materials, and body proportions in every character panel. Additional enabled pictures contribute only their named prop, accessory, or environment.\n\nDefault panel plan:\nPanel 1: reproduce the analyzed action pose below as closely as possible, full body visible.\nPanel 2: follow the selected PROP USAGE MODE below.\nPanel 3: chest-up identity and costume-detail close-up, calm posture.\nPanel 4: a clearly different cinematic or environment pose, or another user-requested utility view.\n\nUse only Panels 1 through the selected count and ignore the unused higher-numbered defaults. Every active character panel must use a visibly different body arrangement and camera framing. Use a neutral light-grey studio background unless an enabled environment specifies otherwise. No duplicate or mirrored panel, no merged cell, no pasted source image, no extra person, and no text.",
+        "3 panels",
+        "\n\nSELECTED PANEL COUNT: "
+      ],
+      "widgets_values_named": {
+        "string_a": "Create one static high-resolution character contact sheet of the same adult character from Picture 1.\n\nThe SELECTED PANEL COUNT appended below is mandatory. Create exactly that many panels and no more:\n- 1 panel: one full-canvas image.\n- 2 panels: two equal side-by-side images.\n- 3 panels: follow the selected THREE-PANEL LAYOUT PRESET appended below. Use exactly three cells; they are intentionally asymmetrical and do not need equal dimensions.\n- 4 panels: a clean 2x2 grid.\n\nPicture 1 is the fused Stage 1 character reference. Preserve its face, hair, costume, colors, materials, and body proportions in every character panel. Additional enabled pictures contribute only their named prop, accessory, or environment.\n\nDefault panel plan:\nPanel 1: reproduce the analyzed action pose below as closely as possible, full body visible.\nPanel 2: follow the selected PROP USAGE MODE below.\nPanel 3: chest-up identity and costume-detail close-up, calm posture.\nPanel 4: a clearly different cinematic or environment pose, or another user-requested utility view.\n\nUse only Panels 1 through the selected count and ignore the unused higher-numbered defaults. Every active character panel must use a visibly different body arrangement and camera framing. Use a neutral light-grey studio background unless an enabled environment specifies otherwise. No duplicate or mirrored panel, no merged cell, no pasted source image, no extra person, and no text.",
+        "string_b": "3 panels",
+        "delimiter": "\n\nSELECTED PANEL COUNT: "
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 50,
+      "type": "StringConcatenate",
+      "pos": [
+        2160,
+        2480
+      ],
+      "size": [
+        231.94815673828126,
+        150
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 59,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_a",
+          "type": "STRING",
+          "widget": {
+            "name": "string_a"
+          },
+          "link": 251
+        },
+        {
+          "name": "string_b",
+          "type": "STRING",
+          "widget": {
+            "name": "string_b"
+          },
+          "link": 151
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            208
+          ]
+        }
+      ],
+      "title": "2단계 프롬프트 + 직접 포즈 역할",
+      "properties": {
+        "Node name for S&R": "StringConcatenate"
+      },
+      "widgets_values": [
+        "Panel 6 (right-strip BOTTOM utility): ",
+        "",
+        "\n\nPOSE ANALYSIS FOR PANEL 1:\n"
+      ],
+      "widgets_values_named": {
+        "string_a": "Panel 6 (right-strip BOTTOM utility): ",
+        "string_b": "",
+        "delimiter": "\n\nPOSE ANALYSIS FOR PANEL 1:\n"
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    }
+  ],
+  "links": [
+    [
+      3,
+      8,
+      0,
+      5,
+      0,
+      "LATENT"
+    ],
+    [
+      4,
+      2,
+      0,
+      5,
+      1,
+      "VAE"
+    ],
+    [
+      6,
+      12,
+      0,
+      8,
+      0,
+      "NOISE"
+    ],
+    [
+      7,
+      9,
+      0,
+      8,
+      1,
+      "GUIDER"
+    ],
+    [
+      8,
+      6,
+      0,
+      8,
+      2,
+      "SAMPLER"
+    ],
+    [
+      9,
+      7,
+      0,
+      8,
+      3,
+      "SIGMAS"
+    ],
+    [
+      12,
+      13,
+      0,
+      9,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      13,
+      11,
+      0,
+      13,
+      0,
+      "CLIP"
+    ],
+    [
+      14,
+      2,
+      0,
+      13,
+      1,
+      "VAE"
+    ],
+    [
+      15,
+      3,
+      0,
+      13,
+      2,
+      "VAE"
+    ],
+    [
+      16,
+      1,
+      0,
+      13,
+      10,
+      "INT"
+    ],
+    [
+      17,
+      1,
+      1,
+      13,
+      11,
+      "INT"
+    ],
+    [
+      18,
+      16,
+      0,
+      13,
+      3,
+      "IMAGE"
+    ],
+    [
+      22,
+      10,
+      0,
+      17,
+      0,
+      "MODEL"
+    ],
+    [
+      24,
+      1,
+      0,
+      19,
+      0,
+      "INT"
+    ],
+    [
+      25,
+      1,
+      1,
+      19,
+      1,
+      "INT"
+    ],
+    [
+      26,
+      19,
+      0,
+      8,
+      4,
+      "LATENT"
+    ],
+    [
+      88,
+      25,
+      0,
+      77,
+      0,
+      "CLIP"
+    ],
+    [
+      89,
+      25,
+      0,
+      78,
+      0,
+      "CLIP"
+    ],
+    [
+      90,
+      25,
+      0,
+      79,
+      0,
+      "CLIP"
+    ],
+    [
+      93,
+      57,
+      0,
+      77,
+      1,
+      "IMAGE"
+    ],
+    [
+      94,
+      58,
+      0,
+      78,
+      1,
+      "IMAGE"
+    ],
+    [
+      95,
+      59,
+      0,
+      79,
+      1,
+      "IMAGE"
+    ],
+    [
+      98,
+      77,
+      0,
+      81,
+      2,
+      "STRING"
+    ],
+    [
+      99,
+      57,
+      0,
+      81,
+      0,
+      "IMAGE"
+    ],
+    [
+      100,
+      78,
+      0,
+      82,
+      2,
+      "STRING"
+    ],
+    [
+      101,
+      58,
+      0,
+      82,
+      0,
+      "IMAGE"
+    ],
+    [
+      102,
+      79,
+      0,
+      83,
+      2,
+      "STRING"
+    ],
+    [
+      103,
+      59,
+      0,
+      83,
+      0,
+      "IMAGE"
+    ],
+    [
+      104,
+      85,
+      0,
+      81,
+      1,
+      "BOOLEAN"
+    ],
+    [
+      105,
+      86,
+      0,
+      82,
+      1,
+      "BOOLEAN"
+    ],
+    [
+      106,
+      87,
+      0,
+      83,
+      1,
+      "BOOLEAN"
+    ],
+    [
+      122,
+      21,
+      0,
+      13,
+      4,
+      "IMAGE"
+    ],
+    [
+      127,
+      24,
+      0,
+      13,
+      9,
+      "STRING"
+    ],
+    [
+      128,
+      24,
+      0,
+      27,
+      0,
+      "STRING"
+    ],
+    [
+      129,
+      81,
+      1,
+      88,
+      0,
+      "STRING"
+    ],
+    [
+      130,
+      88,
+      0,
+      89,
+      0,
+      "STRING"
+    ],
+    [
+      131,
+      82,
+      1,
+      89,
+      1,
+      "STRING"
+    ],
+    [
+      132,
+      89,
+      0,
+      90,
+      0,
+      "STRING"
+    ],
+    [
+      133,
+      83,
+      1,
+      90,
+      1,
+      "STRING"
+    ],
+    [
+      150,
+      44,
+      0,
+      95,
+      1,
+      "STRING"
+    ],
+    [
+      151,
+      95,
+      0,
+      50,
+      1,
+      "STRING"
+    ],
+    [
+      155,
+      23,
+      0,
+      24,
+      0,
+      "STRING"
+    ],
+    [
+      158,
+      90,
+      0,
+      54,
+      1,
+      "STRING"
+    ],
+    [
+      185,
+      5,
+      0,
+      106,
+      0,
+      "IMAGE"
+    ],
+    [
+      190,
+      5,
+      0,
+      109,
+      0,
+      "IMAGE"
+    ],
+    [
+      191,
+      1,
+      1,
+      109,
+      1,
+      "INT"
+    ],
+    [
+      192,
+      1,
+      0,
+      109,
+      2,
+      "INT"
+    ],
+    [
+      193,
+      11,
+      0,
+      109,
+      3,
+      "CLIP"
+    ],
+    [
+      194,
+      2,
+      0,
+      109,
+      4,
+      "VAE"
+    ],
+    [
+      195,
+      3,
+      0,
+      109,
+      5,
+      "VAE"
+    ],
+    [
+      201,
+      6,
+      0,
+      109,
+      11,
+      "SAMPLER"
+    ],
+    [
+      202,
+      7,
+      0,
+      109,
+      12,
+      "SIGMAS"
+    ],
+    [
+      205,
+      112,
+      0,
+      115,
+      2,
+      "BOOLEAN"
+    ],
+    [
+      206,
+      113,
+      0,
+      115,
+      0,
+      "STRING"
+    ],
+    [
+      207,
+      114,
+      0,
+      115,
+      1,
+      "STRING"
+    ],
+    [
+      208,
+      50,
+      0,
+      116,
+      0,
+      "STRING"
+    ],
+    [
+      209,
+      115,
+      0,
+      116,
+      1,
+      "STRING"
+    ],
+    [
+      210,
+      116,
+      0,
+      54,
+      0,
+      "STRING"
+    ],
+    [
+      216,
+      54,
+      0,
+      119,
+      0,
+      "STRING"
+    ],
+    [
+      218,
+      119,
+      0,
+      109,
+      9,
+      "STRING"
+    ],
+    [
+      230,
+      81,
+      0,
+      109,
+      6,
+      "IMAGE"
+    ],
+    [
+      231,
+      82,
+      0,
+      109,
+      7,
+      "IMAGE"
+    ],
+    [
+      232,
+      83,
+      0,
+      109,
+      8,
+      "IMAGE"
+    ],
+    [
+      233,
+      25,
+      0,
+      124,
+      0,
+      "CLIP"
+    ],
+    [
+      234,
+      22,
+      0,
+      124,
+      1,
+      "IMAGE"
+    ],
+    [
+      235,
+      124,
+      0,
+      95,
+      0,
+      "STRING"
+    ],
+    [
+      238,
+      109,
+      0,
+      125,
+      0,
+      "IMAGE"
+    ],
+    [
+      239,
+      109,
+      1,
+      126,
+      0,
+      "IMAGE"
+    ],
+    [
+      240,
+      127,
+      0,
+      49,
+      0,
+      "STRING"
+    ],
+    [
+      241,
+      43,
+      0,
+      128,
+      0,
+      "STRING"
+    ],
+    [
+      242,
+      25,
+      0,
+      129,
+      0,
+      "CLIP"
+    ],
+    [
+      243,
+      128,
+      0,
+      129,
+      4,
+      "STRING"
+    ],
+    [
+      244,
+      129,
+      0,
+      119,
+      1,
+      "STRING"
+    ],
+    [
+      245,
+      129,
+      0,
+      130,
+      0,
+      "STRING"
+    ],
+    [
+      246,
+      132,
+      0,
+      134,
+      0,
+      "STRING"
+    ],
+    [
+      247,
+      133,
+      0,
+      134,
+      1,
+      "STRING"
+    ],
+    [
+      248,
+      131,
+      0,
+      134,
+      2,
+      "BOOLEAN"
+    ],
+    [
+      249,
+      49,
+      0,
+      135,
+      0,
+      "STRING"
+    ],
+    [
+      250,
+      134,
+      0,
+      135,
+      1,
+      "STRING"
+    ],
+    [
+      251,
+      135,
+      0,
+      50,
+      0,
+      "STRING"
+    ],
+    [
+      252,
+      17,
+      0,
+      136,
+      0,
+      "MODEL"
+    ],
+    [
+      253,
+      136,
+      0,
+      7,
+      0,
+      "MODEL"
+    ],
+    [
+      254,
+      136,
+      0,
+      9,
+      0,
+      "MODEL"
+    ],
+    [
+      255,
+      136,
+      0,
+      109,
+      10,
+      "MODEL"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "④ 1단계 실행 · 얼굴+의상 전/측/후면",
+      "bounding": [
+        1239.455115346695,
+        900,
+        1180,
+        420
+      ],
+      "color": "#526273",
+      "flags": {}
+    },
+    {
+      "id": 3,
+      "title": "② 1단계 입력 · 얼굴 + 의상만",
+      "bounding": [
+        1960,
+        0,
+        800,
+        820
+      ],
+      "color": "#9a6a45",
+      "flags": {}
+    },
+    {
+      "id": 4,
+      "title": "⑦ 2단계 입력 · 포즈 + 소품/배경",
+      "bounding": [
+        0,
+        1520,
+        1580,
+        800
+      ],
+      "color": "#7657a5",
+      "flags": {}
+    },
+    {
+      "id": 5,
+      "title": "⑩ 자동 프롬프트 조립 · 건드리지 않음",
+      "bounding": [
+        1120,
+        2400,
+        1320,
+        900
+      ],
+      "color": "#665080",
+      "flags": {}
+    },
+    {
+      "id": 7,
+      "title": "⑧ 선택 · 2단계 한국어 패널 요청",
+      "bounding": [
+        1660,
+        1520,
+        1180,
+        720
+      ],
+      "color": "#34759a",
+      "flags": {}
+    },
+    {
+      "id": 8,
+      "title": "③ 선택 · 1단계 추가 프롬프트",
+      "bounding": [
+        0,
+        900,
+        1160,
+        410
+      ],
+      "color": "#9a6b32",
+      "flags": {}
+    },
+    {
+      "id": 11,
+      "title": "⑨ 자동 분석 · 건드리지 않음",
+      "bounding": [
+        0,
+        2400,
+        1040,
+        300
+      ],
+      "color": "#347f86",
+      "flags": {}
+    },
+    {
+      "id": 12,
+      "title": "① 모델 장착 · 필수 모델 6개",
+      "bounding": [
+        680,
+        0,
+        1200,
+        760
+      ],
+      "color": "#5b4b36",
+      "flags": {}
+    },
+    {
+      "id": 13,
+      "title": "STAGE2_SWITCH · ⑪ 2단계 선택 패널 / 최종 합성 (기본 OFF)",
+      "bounding": [
+        2920,
+        1520,
+        650,
+        530
+      ],
+      "color": "#6f4aa8",
+      "flags": {}
+    },
+    {
+      "id": 14,
+      "title": "⑤ 1단계 결과 · 전/측/후면 확인",
+      "bounding": [
+        2500,
+        900,
+        500,
+        500
+      ],
+      "color": "#35805c",
+      "flags": {}
+    },
+    {
+      "id": 15,
+      "title": "⑬ 제작자 정보",
+      "bounding": [
+        2520,
+        2400,
+        1020,
+        420
+      ],
+      "color": "#286878",
+      "flags": {}
+    },
+    {
+      "id": 16,
+      "title": "⑥ 설명 읽기 · 2단계 실행 결정",
+      "bounding": [
+        3080,
+        900,
+        900,
+        450
+      ],
+      "color": "#5f4b7d",
+      "flags": {}
+    },
+    {
+      "id": 18,
+      "title": "⓪ 처음 읽기 · 전체 사용 순서",
+      "bounding": [
+        0,
+        0,
+        600,
+        400
+      ],
+      "color": "#286878",
+      "flags": {}
+    },
+    {
+      "id": 19,
+      "title": "⑫ 2단계 결과 확인 · 선택 패널 / 최종 16:9",
+      "bounding": [
+        3670,
+        1530,
+        900,
+        440
+      ],
+      "color": "#35805c",
+      "flags": {}
+    }
+  ],
+  "definitions": {
+    "subgraphs": [
+      {
+        "id": "40bb7e22-ac55-41e0-bcec-3c240f06b081",
+        "version": 1,
+        "state": {
+          "lastGroupId": 19,
+          "lastNodeId": 137,
+          "lastLinkId": 255,
+          "lastRerouteId": 0
+        },
+        "revision": 4,
+        "config": {},
+        "name": "New Subgraph",
+        "inputNode": {
+          "id": -10,
+          "bounding": [
+            2262,
+            786,
+            144.08203125,
+            368
+          ]
+        },
+        "outputNode": {
+          "id": -20,
+          "bounding": [
+            4530,
+            916,
+            128,
+            88
+          ]
+        },
+        "inputs": [
+          {
+            "id": "9c81500f-2bd5-4066-8da8-d8c055c623d4",
+            "name": "image",
+            "type": "IMAGE",
+            "linkIds": [
+              160,
+              187
+            ],
+            "localized_name": "image",
+            "pos": [
+              2382.08203125,
+              810
+            ]
+          },
+          {
+            "id": "826eaeae-7d5d-4eeb-af50-59cd0faf55d7",
+            "name": "height",
+            "type": "INT",
+            "linkIds": [
+              162,
+              169,
+              174,
+              211
+            ],
+            "localized_name": "height",
+            "pos": [
+              2382.08203125,
+              830
+            ]
+          },
+          {
+            "id": "829496f3-1d4f-4b9f-9cf1-a1d6ed2ffda0",
+            "name": "a",
+            "type": "INT,FLOAT,IMAGE,LATENT",
+            "linkIds": [
+              159,
+              168,
+              173
+            ],
+            "localized_name": "a",
+            "shape": 7,
+            "pos": [
+              2382.08203125,
+              850
+            ]
+          },
+          {
+            "id": "cf8b9725-606b-4524-8eb1-6c45699468e6",
+            "name": "clip",
+            "type": "CLIP",
+            "linkIds": [
+              163
+            ],
+            "localized_name": "clip",
+            "pos": [
+              2382.08203125,
+              870
+            ]
+          },
+          {
+            "id": "641559bb-92ce-43af-a7ff-2c9f8d2bc6fb",
+            "name": "vae",
+            "type": "VAE",
+            "linkIds": [
+              164,
+              183
+            ],
+            "localized_name": "vae",
+            "pos": [
+              2382.08203125,
+              890
+            ]
+          },
+          {
+            "id": "ea0c3dce-96a7-4748-a250-47291f13494a",
+            "name": "audio_vae",
+            "type": "VAE",
+            "linkIds": [
+              165
+            ],
+            "localized_name": "audio_vae",
+            "pos": [
+              2382.08203125,
+              910
+            ]
+          },
+          {
+            "id": "5ee82bd8-cdfa-460f-bf0f-ca518db9b882",
+            "name": "ref_images.ref_image_1",
+            "type": "IMAGE",
+            "linkIds": [
+              170
+            ],
+            "localized_name": "ref_images.ref_image_1",
+            "label": "ref_image_1",
+            "shape": 7,
+            "pos": [
+              2382.08203125,
+              930
+            ]
+          },
+          {
+            "id": "a05cf8c3-c991-4238-9e73-5c732cebaee4",
+            "name": "ref_images.ref_image_2",
+            "type": "IMAGE",
+            "linkIds": [
+              171
+            ],
+            "localized_name": "ref_images.ref_image_2",
+            "label": "ref_image_2",
+            "shape": 7,
+            "pos": [
+              2382.08203125,
+              950
+            ]
+          },
+          {
+            "id": "16e369be-4f77-4c93-97b8-90bd4d89b177",
+            "name": "ref_images.ref_image_3",
+            "type": "IMAGE",
+            "linkIds": [
+              172
+            ],
+            "localized_name": "ref_images.ref_image_3",
+            "label": "ref_image_3",
+            "shape": 7,
+            "pos": [
+              2382.08203125,
+              970
+            ]
+          },
+          {
+            "id": "577b89df-636b-4ecb-917a-5f4f946a818b",
+            "name": "prompt",
+            "type": "STRING",
+            "linkIds": [
+              167,
+              184
+            ],
+            "localized_name": "prompt",
+            "pos": [
+              2382.08203125,
+              990
+            ]
+          },
+          {
+            "id": "b5b8fcb0-d204-4bec-a667-b82dc08953da",
+            "name": "model",
+            "type": "MODEL",
+            "linkIds": [
+              175
+            ],
+            "localized_name": "model",
+            "pos": [
+              2382.08203125,
+              1010
+            ]
+          },
+          {
+            "id": "d548c242-0eec-4692-8124-4a11c819fee3",
+            "name": "sampler",
+            "type": "SAMPLER",
+            "linkIds": [
+              179
+            ],
+            "localized_name": "sampler",
+            "pos": [
+              2382.08203125,
+              1030
+            ]
+          },
+          {
+            "id": "8e83b772-bd19-4794-b0c1-1703fce22830",
+            "name": "sigmas",
+            "type": "SIGMAS",
+            "linkIds": [
+              180
+            ],
+            "localized_name": "sigmas",
+            "pos": [
+              2382.08203125,
+              1050
+            ]
+          },
+          {
+            "id": "67bc5bcc-1adf-4cb6-8920-a365ae7cd300",
+            "name": "filename_prefix",
+            "type": "STRING",
+            "linkIds": [
+              203
+            ],
+            "pos": [
+              2382.08203125,
+              1070
+            ]
+          },
+          {
+            "id": "c019998d-ef3d-43e0-a319-e7ac46ad80cd",
+            "name": "filename_prefix_1",
+            "type": "STRING",
+            "linkIds": [
+              204
+            ],
+            "pos": [
+              2382.08203125,
+              1090
+            ]
+          },
+          {
+            "id": "3e007721-d368-42bf-a9d0-77cd749b3ba9",
+            "name": "pose_or_extra_ref",
+            "type": "IMAGE",
+            "linkIds": [
+              219
+            ],
+            "label": "ref_image_4",
+            "pos": [
+              2382.08203125,
+              1110
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "id": "26ffcf22-6d21-47f0-9acf-1731b21b6ba0",
+            "name": "stage2_image",
+            "type": "IMAGE",
+            "linkIds": [
+              236
+            ],
+            "pos": [
+              4554,
+              940
+            ]
+          },
+          {
+            "id": "a3a9b82c-64c7-4f1e-8eae-150d4394f9e9",
+            "name": "final_sheet",
+            "type": "IMAGE",
+            "linkIds": [
+              237
+            ],
+            "pos": [
+              4554,
+              960
+            ]
+          }
+        ],
+        "widgets": [],
+        "nodes": [
+          {
+            "id": 97,
+            "type": "ImageCrop",
+            "pos": [
+              2890,
+              1150
+            ],
+            "size": [
+              281.7154296875,
+              130
+            ],
+            "flags": {
+              "collapsed": true
+            },
+            "order": 2,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "image",
+                "name": "image",
+                "type": "IMAGE",
+                "link": 160
+              },
+              {
+                "localized_name": "width",
+                "name": "width",
+                "type": "INT",
+                "widget": {
+                  "name": "width"
+                },
+                "link": 161
+              },
+              {
+                "localized_name": "height",
+                "name": "height",
+                "type": "INT",
+                "widget": {
+                  "name": "height"
+                },
+                "link": 162
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "IMAGE",
+                "name": "IMAGE",
+                "type": "IMAGE",
+                "links": [
+                  166
+                ]
+              }
+            ],
+            "title": "1단계 정면 자동 크롭",
+            "properties": {
+              "Node name for S&R": "ImageCrop"
+            },
+            "widgets_values": [
+              512,
+              512,
+              0,
+              0
+            ],
+            "widgets_values_named": {
+              "width": 512,
+              "height": 512,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "id": 98,
+            "type": "MathExpression|pysssss",
+            "pos": [
+              2450,
+              1150
+            ],
+            "size": [
+              400,
+              200
+            ],
+            "flags": {
+              "collapsed": true
+            },
+            "order": 3,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "a",
+                "name": "a",
+                "shape": 7,
+                "type": "INT,FLOAT,IMAGE,LATENT",
+                "link": 159
+              },
+              {
+                "localized_name": "b",
+                "name": "b",
+                "shape": 7,
+                "type": "INT,FLOAT,IMAGE,LATENT",
+                "link": null
+              },
+              {
+                "localized_name": "c",
+                "name": "c",
+                "shape": 7,
+                "type": "INT,FLOAT,IMAGE,LATENT",
+                "link": null
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "INT",
+                "name": "INT",
+                "type": "INT",
+                "links": [
+                  161
+                ]
+              },
+              {
+                "localized_name": "FLOAT",
+                "name": "FLOAT",
+                "type": "FLOAT",
+                "links": null
+              }
+            ],
+            "title": "3뷰 너비 ÷ 3",
+            "properties": {},
+            "widgets_values": [
+              "floor(a / 3)"
+            ],
+            "widgets_values_named": {
+              "expression": "floor(a / 3)"
+            }
+          },
+          {
+            "id": 99,
+            "type": "MiniMaxH3ReferenceToVideo",
+            "pos": [
+              3000,
+              1450
+            ],
+            "size": [
+              400,
+              384
+            ],
+            "flags": {
+              "collapsed": true
+            },
+            "order": 4,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "clip",
+                "name": "clip",
+                "type": "CLIP",
+                "link": 163
+              },
+              {
+                "localized_name": "vae",
+                "name": "vae",
+                "type": "VAE",
+                "link": 164
+              },
+              {
+                "localized_name": "audio_vae",
+                "name": "audio_vae",
+                "type": "VAE",
+                "link": 165
+              },
+              {
+                "label": "ref_image_0",
+                "localized_name": "ref_images.ref_image_0",
+                "name": "ref_images.ref_image_0",
+                "shape": 7,
+                "type": "IMAGE",
+                "link": 166
+              },
+              {
+                "label": "ref_image_1",
+                "localized_name": "ref_images.ref_image_1",
+                "name": "ref_images.ref_image_1",
+                "shape": 7,
+                "type": "IMAGE",
+                "link": 170
+              },
+              {
+                "label": "ref_image_2",
+                "localized_name": "ref_images.ref_image_2",
+                "name": "ref_images.ref_image_2",
+                "shape": 7,
+                "type": "IMAGE",
+                "link": 171
+              },
+              {
+                "label": "ref_image_3",
+                "localized_name": "ref_images.ref_image_3",
+                "name": "ref_images.ref_image_3",
+                "shape": 7,
+                "type": "IMAGE",
+                "link": 172
+              },
+              {
+                "label": "ref_image_4",
+                "localized_name": "ref_images.ref_image_4",
+                "name": "ref_images.ref_image_4",
+                "shape": 7,
+                "type": "IMAGE",
+                "link": 219
+              },
+              {
+                "label": "ref_image_5",
+                "localized_name": "ref_images.ref_image_5",
+                "name": "ref_images.ref_image_5",
+                "shape": 7,
+                "type": "IMAGE",
+                "link": null
+              },
+              {
+                "label": "ref_video_0",
+                "localized_name": "ref_videos.ref_video_0",
+                "name": "ref_videos.ref_video_0",
+                "shape": 7,
+                "type": "IMAGE",
+                "link": null
+              },
+              {
+                "label": "ref_video_audio_0",
+                "localized_name": "ref_video_audios.ref_video_audio_0",
+                "name": "ref_video_audios.ref_video_audio_0",
+                "shape": 7,
+                "type": "AUDIO",
+                "link": null
+              },
+              {
+                "label": "ref_audio_0",
+                "localized_name": "ref_audios.ref_audio_0",
+                "name": "ref_audios.ref_audio_0",
+                "shape": 7,
+                "type": "AUDIO",
+                "link": null
+              },
+              {
+                "localized_name": "prompt",
+                "name": "prompt",
+                "type": "STRING",
+                "widget": {
+                  "name": "prompt"
+                },
+                "link": 167
+              },
+              {
+                "localized_name": "width",
+                "name": "width",
+                "type": "INT",
+                "widget": {
+                  "name": "width"
+                },
+                "link": 168
+              },
+              {
+                "localized_name": "height",
+                "name": "height",
+                "type": "INT",
+                "widget": {
+                  "name": "height"
+                },
+                "link": 169
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "positive",
+                "name": "positive",
+                "type": "CONDITIONING",
+                "links": [
+                  176
+                ]
+              },
+              {
+                "localized_name": "LATENT",
+                "name": "LATENT",
+                "type": "LATENT",
+                "links": null
+              }
+            ],
+            "title": "2단계 H3 · 포즈 3 + 소품/배경 1",
+            "properties": {
+              "Node name for S&R": "MiniMaxH3ReferenceToVideo"
+            },
+            "widgets_values": [
+              "",
+              1344,
+              768,
+              5,
+              "max"
+            ],
+            "widgets_values_named": {
+              "prompt": "",
+              "width": 1344,
+              "height": 768,
+              "length": 5,
+              "ref_image_size": "max"
+            }
+          },
+          {
+            "id": 100,
+            "type": "RandomNoise",
+            "pos": [
+              2450,
+              1830
+            ],
+            "size": [
+              270,
+              82
+            ],
+            "flags": {
+              "collapsed": true
+            },
+            "order": 0,
+            "mode": 0,
+            "inputs": [],
+            "outputs": [
+              {
+                "localized_name": "NOISE",
+                "name": "NOISE",
+                "type": "NOISE",
+                "links": [
+                  177
+                ]
+              }
+            ],
+            "title": "2단계 Noise",
+            "properties": {
+              "Node name for S&R": "RandomNoise"
+            },
+            "widgets_values": [
+              2,
+              "fixed"
+            ],
+            "widgets_values_named": {
+              "noise_seed": 2,
+              "control_after_generate": "fixed"
+            }
+          },
+          {
+            "id": 101,
+            "type": "ToobusyMiniMaxH3ImageLatent",
+            "pos": [
+              2730,
+              1830
+            ],
+            "size": [
+              325.759375,
+              82
+            ],
+            "flags": {
+              "collapsed": true
+            },
+            "order": 5,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "width",
+                "name": "width",
+                "type": "INT",
+                "widget": {
+                  "name": "width"
+                },
+                "link": 173
+              },
+              {
+                "localized_name": "height",
+                "name": "height",
+                "type": "INT",
+                "widget": {
+                  "name": "height"
+                },
+                "link": 174
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "LATENT",
+                "name": "LATENT",
+                "type": "LATENT",
+                "links": [
+                  181
+                ]
+              }
+            ],
+            "title": "2단계 Image Latent",
+            "properties": {
+              "Node name for S&R": "ToobusyMiniMaxH3ImageLatent"
+            },
+            "widgets_values": [
+              1344,
+              768
+            ],
+            "widgets_values_named": {
+              "width": 1344,
+              "height": 768
+            }
+          },
+          {
+            "id": 102,
+            "type": "BasicGuider",
+            "pos": [
+              3080,
+              1830
+            ],
+            "size": [
+              159.568359375,
+              46
+            ],
+            "flags": {
+              "collapsed": true
+            },
+            "order": 6,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "model",
+                "name": "model",
+                "type": "MODEL",
+                "link": 175
+              },
+              {
+                "localized_name": "conditioning",
+                "name": "conditioning",
+                "type": "CONDITIONING",
+                "link": 176
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "GUIDER",
+                "name": "GUIDER",
+                "type": "GUIDER",
+                "links": [
+                  178
+                ]
+              }
+            ],
+            "title": "2단계 Guider",
+            "properties": {
+              "Node name for S&R": "BasicGuider"
+            }
+          },
+          {
+            "id": 103,
+            "type": "SamplerCustomAdvanced",
+            "pos": [
+              3260,
+              1830
+            ],
+            "size": [
+              212.3638671875,
+              106
+            ],
+            "flags": {
+              "collapsed": true
+            },
+            "order": 7,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "noise",
+                "name": "noise",
+                "type": "NOISE",
+                "link": 177
+              },
+              {
+                "localized_name": "guider",
+                "name": "guider",
+                "type": "GUIDER",
+                "link": 178
+              },
+              {
+                "localized_name": "sampler",
+                "name": "sampler",
+                "type": "SAMPLER",
+                "link": 179
+              },
+              {
+                "localized_name": "sigmas",
+                "name": "sigmas",
+                "type": "SIGMAS",
+                "link": 180
+              },
+              {
+                "localized_name": "latent_image",
+                "name": "latent_image",
+                "type": "LATENT",
+                "link": 181
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "output",
+                "name": "output",
+                "type": "LATENT",
+                "links": [
+                  182
+                ]
+              },
+              {
+                "localized_name": "denoised_output",
+                "name": "denoised_output",
+                "type": "LATENT",
+                "links": null
+              }
+            ],
+            "title": "2단계 Sampler",
+            "properties": {
+              "Node name for S&R": "SamplerCustomAdvanced"
+            }
+          },
+          {
+            "id": 104,
+            "type": "VAEDecode",
+            "pos": [
+              3500,
+              1830
+            ],
+            "size": [
+              140,
+              46
+            ],
+            "flags": {
+              "collapsed": true
+            },
+            "order": 8,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "samples",
+                "name": "samples",
+                "type": "LATENT",
+                "link": 182
+              },
+              {
+                "localized_name": "vae",
+                "name": "vae",
+                "type": "VAE",
+                "link": 183
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "IMAGE",
+                "name": "IMAGE",
+                "type": "IMAGE",
+                "links": [
+                  186,
+                  188,
+                  236
+                ]
+              }
+            ],
+            "title": "2단계 Decode",
+            "properties": {
+              "Node name for S&R": "VAEDecode"
+            }
+          },
+          {
+            "id": 105,
+            "type": "PreviewAny",
+            "pos": [
+              2450,
+              1360
+            ],
+            "size": [
+              420,
+              220
+            ],
+            "flags": {},
+            "order": 9,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "source",
+                "name": "source",
+                "type": "*",
+                "link": 184
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "STRING",
+                "name": "STRING",
+                "type": "STRING",
+                "links": null
+              }
+            ],
+            "title": "2단계 완성 프롬프트 확인",
+            "properties": {
+              "Node name for S&R": "PreviewAny"
+            },
+            "widgets_values": [],
+            "widgets_values_named": {}
+          },
+          {
+            "id": 107,
+            "type": "SaveImage",
+            "pos": [
+              2940,
+              100
+            ],
+            "size": [
+              420,
+              300
+            ],
+            "flags": {},
+            "order": 10,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "images",
+                "name": "images",
+                "type": "IMAGE",
+                "link": 186
+              },
+              {
+                "localized_name": "filename_prefix",
+                "name": "filename_prefix",
+                "type": "STRING",
+                "widget": {
+                  "name": "filename_prefix"
+                },
+                "link": 203
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "images",
+                "name": "images",
+                "type": "IMAGE",
+                "links": null
+              }
+            ],
+            "title": "2단계 3+1 저장",
+            "properties": {},
+            "widgets_values": [
+              "charsheet/H3_2STAGE_SELECTED_PANELS"
+            ],
+            "widgets_values_named": {
+              "filename_prefix": "charsheet/H3_2STAGE_SELECTED_PANELS"
+            }
+          },
+          {
+            "id": 108,
+            "type": "ImageConcanate",
+            "pos": [
+              3420,
+              180
+            ],
+            "size": [
+              270,
+              102
+            ],
+            "flags": {},
+            "order": 11,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "image1",
+                "name": "image1",
+                "type": "IMAGE,MASK",
+                "link": 187
+              },
+              {
+                "localized_name": "image2",
+                "name": "image2",
+                "type": "IMAGE,MASK",
+                "link": 188
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "output",
+                "name": "output",
+                "type": "IMAGE",
+                "links": [
+                  212
+                ]
+              }
+            ],
+            "title": "최종 합성 · 1단계 왼쪽 + 2단계 오른쪽",
+            "properties": {
+              "Node name for S&R": "ImageConcanate"
+            },
+            "widgets_values": [
+              "right",
+              true
+            ],
+            "widgets_values_named": {
+              "direction": "right",
+              "match_image_size": true
+            }
+          },
+          {
+            "id": 14,
+            "type": "SaveImage",
+            "pos": [
+              5320,
+              80
+            ],
+            "size": [
+              720,
+              520
+            ],
+            "flags": {},
+            "order": 1,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "images",
+                "name": "images",
+                "type": "IMAGE",
+                "link": 215
+              },
+              {
+                "localized_name": "filename_prefix",
+                "name": "filename_prefix",
+                "type": "STRING",
+                "widget": {
+                  "name": "filename_prefix"
+                },
+                "link": 204
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "images",
+                "name": "images",
+                "type": "IMAGE",
+                "links": null
+              }
+            ],
+            "title": "최종 2단계 캐릭터 시트 저장",
+            "properties": {
+              "Node name for S&R": "SaveImage"
+            },
+            "widgets_values": [
+              "charsheet/H3_2STAGE_CHARACTER_SHEET_FINAL"
+            ],
+            "widgets_values_named": {
+              "filename_prefix": "charsheet/H3_2STAGE_CHARACTER_SHEET_FINAL"
+            },
+            "color": "#2d704f",
+            "bgcolor": "#1b402f"
+          },
+          {
+            "id": 117,
+            "type": "MathExpression|pysssss",
+            "pos": [
+              4530,
+              320
+            ],
+            "size": [
+              400,
+              200
+            ],
+            "flags": {
+              "collapsed": true
+            },
+            "order": 12,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "a",
+                "name": "a",
+                "shape": 7,
+                "type": "INT,FLOAT,IMAGE,LATENT",
+                "link": 211
+              },
+              {
+                "localized_name": "b",
+                "name": "b",
+                "shape": 7,
+                "type": "INT,FLOAT,IMAGE,LATENT",
+                "link": null
+              },
+              {
+                "localized_name": "c",
+                "name": "c",
+                "shape": 7,
+                "type": "INT,FLOAT,IMAGE,LATENT",
+                "link": null
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "INT",
+                "name": "INT",
+                "type": "INT",
+                "links": [
+                  213,
+                  214
+                ]
+              },
+              {
+                "localized_name": "FLOAT",
+                "name": "FLOAT",
+                "type": "FLOAT",
+                "links": null
+              }
+            ],
+            "title": "16:9 여백 · 높이 ÷ 16",
+            "properties": {},
+            "widgets_values": [
+              "floor(a / 16)"
+            ],
+            "widgets_values_named": {
+              "expression": "floor(a / 16)"
+            }
+          },
+          {
+            "id": 118,
+            "type": "ImagePadForOutpaint",
+            "pos": [
+              4990,
+              80
+            ],
+            "size": [
+              272.780859375,
+              174
+            ],
+            "flags": {},
+            "order": 13,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "image",
+                "name": "image",
+                "type": "IMAGE",
+                "link": 212
+              },
+              {
+                "localized_name": "top",
+                "name": "top",
+                "type": "INT",
+                "widget": {
+                  "name": "top"
+                },
+                "link": 213
+              },
+              {
+                "localized_name": "bottom",
+                "name": "bottom",
+                "type": "INT",
+                "widget": {
+                  "name": "bottom"
+                },
+                "link": 214
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "IMAGE",
+                "name": "IMAGE",
+                "type": "IMAGE",
+                "links": [
+                  215,
+                  237
+                ]
+              },
+              {
+                "localized_name": "MASK",
+                "name": "MASK",
+                "type": "MASK",
+                "links": null
+              }
+            ],
+            "title": "최종 16:9 캔버스 여백",
+            "properties": {
+              "Node name for S&R": "ImagePadForOutpaint"
+            },
+            "widgets_values": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "widgets_values_named": {
+              "left": 0,
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "feathering": 0
+            }
+          }
+        ],
+        "groups": [],
+        "links": [
+          {
+            "id": 161,
+            "origin_id": 98,
+            "origin_slot": 0,
+            "target_id": 97,
+            "target_slot": 1,
+            "type": "INT"
+          },
+          {
+            "id": 166,
+            "origin_id": 97,
+            "origin_slot": 0,
+            "target_id": 99,
+            "target_slot": 3,
+            "type": "IMAGE"
+          },
+          {
+            "id": 176,
+            "origin_id": 99,
+            "origin_slot": 0,
+            "target_id": 102,
+            "target_slot": 1,
+            "type": "CONDITIONING"
+          },
+          {
+            "id": 177,
+            "origin_id": 100,
+            "origin_slot": 0,
+            "target_id": 103,
+            "target_slot": 0,
+            "type": "NOISE"
+          },
+          {
+            "id": 178,
+            "origin_id": 102,
+            "origin_slot": 0,
+            "target_id": 103,
+            "target_slot": 1,
+            "type": "GUIDER"
+          },
+          {
+            "id": 181,
+            "origin_id": 101,
+            "origin_slot": 0,
+            "target_id": 103,
+            "target_slot": 4,
+            "type": "LATENT"
+          },
+          {
+            "id": 182,
+            "origin_id": 103,
+            "origin_slot": 0,
+            "target_id": 104,
+            "target_slot": 0,
+            "type": "LATENT"
+          },
+          {
+            "id": 186,
+            "origin_id": 104,
+            "origin_slot": 0,
+            "target_id": 107,
+            "target_slot": 0,
+            "type": "IMAGE"
+          },
+          {
+            "id": 188,
+            "origin_id": 104,
+            "origin_slot": 0,
+            "target_id": 108,
+            "target_slot": 1,
+            "type": "IMAGE"
+          },
+          {
+            "id": 160,
+            "origin_id": -10,
+            "origin_slot": 0,
+            "target_id": 97,
+            "target_slot": 0,
+            "type": "IMAGE"
+          },
+          {
+            "id": 187,
+            "origin_id": -10,
+            "origin_slot": 0,
+            "target_id": 108,
+            "target_slot": 0,
+            "type": "IMAGE"
+          },
+          {
+            "id": 162,
+            "origin_id": -10,
+            "origin_slot": 1,
+            "target_id": 97,
+            "target_slot": 2,
+            "type": "INT"
+          },
+          {
+            "id": 169,
+            "origin_id": -10,
+            "origin_slot": 1,
+            "target_id": 99,
+            "target_slot": 14,
+            "type": "INT"
+          },
+          {
+            "id": 174,
+            "origin_id": -10,
+            "origin_slot": 1,
+            "target_id": 101,
+            "target_slot": 1,
+            "type": "INT"
+          },
+          {
+            "id": 159,
+            "origin_id": -10,
+            "origin_slot": 2,
+            "target_id": 98,
+            "target_slot": 0,
+            "type": "INT"
+          },
+          {
+            "id": 168,
+            "origin_id": -10,
+            "origin_slot": 2,
+            "target_id": 99,
+            "target_slot": 13,
+            "type": "INT"
+          },
+          {
+            "id": 173,
+            "origin_id": -10,
+            "origin_slot": 2,
+            "target_id": 101,
+            "target_slot": 0,
+            "type": "INT"
+          },
+          {
+            "id": 163,
+            "origin_id": -10,
+            "origin_slot": 3,
+            "target_id": 99,
+            "target_slot": 0,
+            "type": "CLIP"
+          },
+          {
+            "id": 164,
+            "origin_id": -10,
+            "origin_slot": 4,
+            "target_id": 99,
+            "target_slot": 1,
+            "type": "VAE"
+          },
+          {
+            "id": 183,
+            "origin_id": -10,
+            "origin_slot": 4,
+            "target_id": 104,
+            "target_slot": 1,
+            "type": "VAE"
+          },
+          {
+            "id": 165,
+            "origin_id": -10,
+            "origin_slot": 5,
+            "target_id": 99,
+            "target_slot": 2,
+            "type": "VAE"
+          },
+          {
+            "id": 170,
+            "origin_id": -10,
+            "origin_slot": 6,
+            "target_id": 99,
+            "target_slot": 4,
+            "type": "IMAGE"
+          },
+          {
+            "id": 171,
+            "origin_id": -10,
+            "origin_slot": 7,
+            "target_id": 99,
+            "target_slot": 5,
+            "type": "IMAGE"
+          },
+          {
+            "id": 172,
+            "origin_id": -10,
+            "origin_slot": 8,
+            "target_id": 99,
+            "target_slot": 6,
+            "type": "IMAGE"
+          },
+          {
+            "id": 167,
+            "origin_id": -10,
+            "origin_slot": 9,
+            "target_id": 99,
+            "target_slot": 12,
+            "type": "STRING"
+          },
+          {
+            "id": 184,
+            "origin_id": -10,
+            "origin_slot": 9,
+            "target_id": 105,
+            "target_slot": 0,
+            "type": "STRING"
+          },
+          {
+            "id": 175,
+            "origin_id": -10,
+            "origin_slot": 10,
+            "target_id": 102,
+            "target_slot": 0,
+            "type": "MODEL"
+          },
+          {
+            "id": 179,
+            "origin_id": -10,
+            "origin_slot": 11,
+            "target_id": 103,
+            "target_slot": 2,
+            "type": "SAMPLER"
+          },
+          {
+            "id": 180,
+            "origin_id": -10,
+            "origin_slot": 12,
+            "target_id": 103,
+            "target_slot": 3,
+            "type": "SIGMAS"
+          },
+          {
+            "id": 203,
+            "origin_id": -10,
+            "origin_slot": 13,
+            "target_id": 107,
+            "target_slot": 1,
+            "type": "STRING"
+          },
+          {
+            "id": 204,
+            "origin_id": -10,
+            "origin_slot": 14,
+            "target_id": 14,
+            "target_slot": 1,
+            "type": "STRING"
+          },
+          {
+            "id": 211,
+            "origin_id": -10,
+            "origin_slot": 1,
+            "target_id": 117,
+            "target_slot": 0,
+            "type": "INT,FLOAT,IMAGE,LATENT"
+          },
+          {
+            "id": 212,
+            "origin_id": 108,
+            "origin_slot": 0,
+            "target_id": 118,
+            "target_slot": 0,
+            "type": "IMAGE"
+          },
+          {
+            "id": 213,
+            "origin_id": 117,
+            "origin_slot": 0,
+            "target_id": 118,
+            "target_slot": 1,
+            "type": "INT"
+          },
+          {
+            "id": 214,
+            "origin_id": 117,
+            "origin_slot": 0,
+            "target_id": 118,
+            "target_slot": 2,
+            "type": "INT"
+          },
+          {
+            "id": 215,
+            "origin_id": 118,
+            "origin_slot": 0,
+            "target_id": 14,
+            "target_slot": 0,
+            "type": "IMAGE"
+          },
+          {
+            "id": 219,
+            "origin_id": -10,
+            "origin_slot": 15,
+            "target_id": 99,
+            "target_slot": 7,
+            "type": "IMAGE"
+          },
+          {
+            "id": 236,
+            "origin_id": 104,
+            "origin_slot": 0,
+            "target_id": -20,
+            "target_slot": 0,
+            "type": "IMAGE"
+          },
+          {
+            "id": 237,
+            "origin_id": 118,
+            "origin_slot": 0,
+            "target_id": -20,
+            "target_slot": 1,
+            "type": "IMAGE"
+          }
+        ],
+        "extra": {}
+      }
+    ]
+  },
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.3558410273836767,
+      "offset": [
+        1317.7528311490523,
+        274.23545873279244
+      ]
+    },
+    "comfyui_mcp": {
+      "workflow_uuid": "0378e65b-ba67-44e4-b97e-60c181f58822",
+      "workflow_path": "2BZ_H3_캐릭터시트_3+3_v1.json"
+    },
+    "toobusy_layout_contract": {
+      "effective_height": "collapsed ? 30 : size[1] + 30",
+      "group_side_padding": 40,
+      "group_title_padding": 80,
+      "group_bottom_padding": 40,
+      "minimum_group_gutter": 80,
+      "group_overlap_count": 0,
+      "node_overlap_count": 0,
+      "group_title_visual_clearance": 20
+    },
+    "2bz_workflow": {
+      "title": "H3 캐릭터시트 간편제작기 3+3",
+      "author": "너무바쁜베짱이 (2BZ)",
+      "youtube": "https://www.youtube.com/@toobusyAI",
+      "version": "1.0",
+      "ai_collaboration": "OpenAI Codex"
+    },
+    "frontendVersion": "1.49.6",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
