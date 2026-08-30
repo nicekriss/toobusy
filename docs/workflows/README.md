@@ -31,7 +31,7 @@
   만드는 2단계 워크플로우. 1단계는 얼굴 사진 1장 + 의상 이미지 1장으로 전면·측면·후면 3뷰를 만들고,
   2단계(기본 OFF)는 포즈·소품·배경 패널 1~4장을 더해 최종 16:9 시트로 합성합니다.
   `toobusy MiniMax H3 Image Latent`(T=1 이미지 VAE)와 `toobusy MiniMax H3 Semantic Reference`를 사용하며
-  2BZ v0.4.9 이상과 rgthree가 필요합니다. RTX 3090 24GB에서 1단계 약 100~125초, 2단계 약 105초.
+  커스텀 노드 `toobusy` v0.4.9 이상(ComfyUI Manager에서 `toobusy` 검색)과 `rgthree`가 필요합니다. RTX 3090 24GB에서 1단계 약 100~125초, 2단계 약 105초.
   `_EN` 은 노드/그룹/노트를 전부 영어로 옮기고 한국어 자동번역 단계를 뺀 해외 배포용입니다.
   원본 아이디어: [r/StableDiffusion 게시글](https://www.reddit.com/r/StableDiffusion/comments/1vr1i18/minimax_h3_as_image_editor_6_edits_in_one_shot_at/)
 
