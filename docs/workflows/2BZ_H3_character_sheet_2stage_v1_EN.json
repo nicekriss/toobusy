@@ -454,7 +454,7 @@
           ]
         }
       ],
-      "title": "Stage 1 Prompt · Identity / Build / Outfit Separation",
+      "title": "Stage 1 Prompt · Identity / Body / Outfit Roles",
       "properties": {
         "Node name for S&R": "StringConcatenate"
       },
@@ -870,7 +870,7 @@
       "title": "How to Use · Image Roles",
       "properties": {},
       "widgets_values": [
-        "# Stage 1 Image Roles\n\n- **Face image:** identity, age, gender presentation, hair, and the basic impression of build\n- **Outfit image:** costume design, colors, materials, footwear, and wearable accessories only\n\nH3 will happily carry the *build* over from the outfit photo too. A mannequin shot, a flat-lay, or any outfit image that shows less of a body is the most reliable choice.\n\nTo change the body type, write it in field ③.\nExample: `slim adult female build, narrow shoulders, slender limbs`\n\nThat text is appended to the Stage 1 prompt as a top-priority instruction."
+        "# Stage 1 Image Roles\n\n- **Picture 1 — Face / Identity:** identity, age, gender presentation, hairstyle, and baseline body impression.\n- **Picture 2 — Outfit Only:** costume design, colors, materials, footwear, and wearable items.\n\nH3 can inherit the outfit donor's physique. For the most reliable result, use a mannequin, flat-lay, isolated garment image, or an outfit reference with less visible body shape.\n\nTo change the physique, type an English request in group **③**.\nExample: `slender adult feminine build, narrower shoulders, slim torso and limbs`\n\nThe Stage 1 direction is applied at highest priority while Picture 1 remains the identity source and Picture 2 remains the outfit source. Do not add pose, prop, or environment references to Stage 1."
       ],
       "widgets_values_named": {
         "text": "# Stage 1 Image Roles\n\n- **Face / Identity Image:** the character's facial identity.\n- **Hair + Full Outfit Image:** hairstyle, outfit construction, materials, and color design.\n- Stage 1 combines only these two references into one neutral studio turnaround sheet.\n- Do not add pose, prop, or environment references to Stage 1.\n- Output: front, side, and back views of the same character."
@@ -2034,7 +2034,7 @@
           ]
         }
       ],
-      "title": "Stage 1 Extra Direction · Body Type",
+      "title": "Stage 1 Body / Direction · Optional English Input",
       "properties": {
         "Node name for S&R": "PrimitiveStringMultiline"
       },
