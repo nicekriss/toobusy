@@ -2,6 +2,16 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [0.4.9] - 2026-08-30
+
+### Added
+- Added lazy MiniMax H3 optional-reference routing so disabled image branches are not evaluated.
+- Added MiniMax H3 semantic-reference and compact manifest nodes that keep Gemma descriptions while forwarding only references explicitly classified as visually safe.
+- Added the two-stage H3 character-sheet workflow: identity and outfit are fused into a three-view sheet before a separate utility-panel pass.
+
+### Changed
+- CI now compiles all MiniMax H3 node packages.
+
 ## [0.4.8] - 2026-08-19
 
 ### Added

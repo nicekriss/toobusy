@@ -5,7 +5,7 @@
 
 > **Fold the graph.** — toobusy folds tedious multi-step ComfyUI workflows into single production nodes.
 
-현재 문서는 **v0.4.8** 기준입니다.
+현재 문서는 **v0.4.9** 기준입니다.
 
 ## Quick Start
 
@@ -42,6 +42,16 @@ width / height
 - 이 노드는 batch 1, 단일 프레임 전용입니다. 영상 생성에는 공식 `Empty MiniMax H3 AV Latent`를 사용하세요.
 - 일반 `Empty Latent Image`는 H3가 요구하는 영상+오디오 `NestedTensor`가 아니므로 호환되지 않습니다.
 - 검증 예제: [`minimax_h3_single_image_6edit.json`](docs/workflows/minimax_h3_single_image_6edit.json)
+
+### MiniMax H3 Character-Sheet References
+
+캐릭터시트 워크플로우는 얼굴과 의상을 먼저 3-view 캐릭터로 확정한 뒤,
+그 결과를 두 번째 H3 패스의 포즈·소품 패널 기준으로 사용합니다.
+
+- `toobusy MiniMax H3 Optional Reference`: 꺼진 선택 레퍼런스의 이미지 브랜치를 실행하지 않습니다.
+- `toobusy MiniMax H3 Semantic Reference`: Gemma 분석의 의미 설명은 유지하면서 안전하다고 판정된 이미지만 H3에 전달합니다.
+- `toobusy MiniMax H3 Reference Manifest`: 실제로 전달된 이미지에 맞춰 `<Picture N>` 번호와 역할 문장을 압축합니다.
+- 예제: [`2BZ_H3_character_sheet_2stage_v1.json`](docs/workflows/2BZ_H3_character_sheet_2stage_v1.json)
 
 ### Wan Animate 2 Long Sampler
 
@@ -130,6 +140,8 @@ python -m pip install -r custom_nodes/toobusy/requirements_flashvsr.txt
 | 토킹헤드 | `toobusy DreamID-Omni Loader/Talker` | 설치된 DreamID-Omni 노드에 위임하는 토킹헤드 골격(선택 의존성). |
 | 이미지 | `toobusy Z-Image Turbo` | Z-Image Turbo t2i/img2img/latent-in 그래프를 1노드로 접습니다. |
 | 이미지 | `toobusy MiniMax H3 Image Latent` | H3 Ref2V를 T=1 이미지 VAE와 사용하는 네이티브 AV latent를 만듭니다. |
+| 레퍼런스 | `toobusy MiniMax H3 Optional Reference` | 꺼진 선택 레퍼런스 브랜치를 lazy하게 건너뜁니다. |
+| 레퍼런스 | `toobusy MiniMax H3 Semantic Reference` / `Reference Manifest` | Gemma 설명과 직접 이미지 전달을 분리하고 실제 Picture 번호를 정리합니다. |
 | 보정 루프 | `toobusy Hires Upscale` | 업스케일 + 리샘플 + VAE Encode를 하이레즈 픽스용 1노드로 접습니다. |
 | 컨트롤 | `toobusy ZIT ControlNet` | Z-Image Turbo 앞에 depth/canny/pose 컨트롤을 모듈처럼 붙입니다. |
 | 기획 | `toobusy Keyframe Maker` | 아이디어와 참조 이미지를 샷 비트/키프레임 프롬프트로 정리합니다. |

@@ -27,6 +27,9 @@ jobs:
             keyframe_maker_node \
             layout_text_overlay_node \
             ltx23_compact_sampler_node \
+            minimax_h3_image_latent_node \
+            minimax_h3_optional_reference_node \
+            minimax_h3_semantic_reference_node \
             paint_canvas_node \
             storyboard_board_node \
             wan_animate2_long_sampler_node \
