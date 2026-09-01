@@ -1,6 +1,5 @@
 # Install the Block-Sparse Attention wheel that exactly matches Python, PyTorch, and CUDA.
 # Tested: Python 3.13, PyTorch 2.12.1+cu130, CUDA 13.0 on Windows.
-diffusers
 einops
 numpy
 pillow

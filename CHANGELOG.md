@@ -2,6 +2,13 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [0.4.10] - 2026-09-01
+
+### Fixed
+- Stopped the optional FlashVSR `diffusers` dependency from aborting the entire
+  package import, so unrelated nodes such as the MiniMax H3 helpers still load
+  on a clean ComfyUI installation.
+
 ## [0.4.9] - 2026-08-30
 
 ### Added
