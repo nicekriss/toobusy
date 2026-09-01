@@ -5,7 +5,7 @@
 
 > **Fold the graph.** — toobusy folds tedious multi-step ComfyUI workflows into single production nodes.
 
-현재 문서는 **v0.4.9** 기준입니다.
+현재 문서는 **v0.4.10** 기준입니다.
 
 ## Quick Start
 

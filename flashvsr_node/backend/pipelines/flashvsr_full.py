@@ -17,7 +17,6 @@ from ..models.wan_video_dit import WanModel, RMSNorm, sinusoidal_embedding_1d
 from ..models.wan_video_vae import WanVideoVAE, RMS_norm, CausalConv3d, Upsample
 from ..schedulers.flow_match import FlowMatchScheduler
 from .base import BasePipeline
-from diffusers import AutoencoderKLWan
 from safetensors.torch import load_file
 # -----------------------------
 # 基础工具：ADAIN 所需的统计量（保留以备需要；管线默认用 wavelet）
@@ -328,7 +327,7 @@ class FlashVSRFullPipeline(BasePipeline):
 
                 frames=self.VAE.decode(latents.squeeze(0))
         else:
-            if isinstance(self.vae,AutoencoderKLWan) :
+            if self.vae.__class__.__name__ == "AutoencoderKLWan":
                 latents_mean = (
                 torch.tensor(self.vae.config.latents_mean)
                     .view(1, self.vae.config.z_dim, 1, 1, 1)
