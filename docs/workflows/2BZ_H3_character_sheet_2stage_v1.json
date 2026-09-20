@@ -1,8 +1,8 @@
 {
   "id": "d636b22b-d4a4-4ec2-8cf0-b854c502c933",
   "revision": 4,
-  "last_node_id": 139,
-  "last_link_id": 260,
+  "last_node_id": 147,
+  "last_link_id": 274,
   "nodes": [
     {
       "id": 6,
@@ -2228,7 +2228,7 @@
           "widget": {
             "name": "prompt"
           },
-          "link": 218
+          "link": 274
         },
         {
           "name": "model",
@@ -2552,7 +2552,7 @@
           "widget": {
             "name": "string_b"
           },
-          "link": 209
+          "link": 263
         }
       ],
       "outputs": [
@@ -2620,7 +2620,7 @@
           "name": "STRING",
           "type": "STRING",
           "links": [
-            218
+            272
           ]
         }
       ],
@@ -2798,7 +2798,9 @@
           "name": "STRING",
           "type": "STRING",
           "links": [
-            240
+            240,
+            265,
+            270
           ]
         },
         {
@@ -3198,7 +3200,8 @@
           "name": "BOOLEAN",
           "type": "BOOLEAN",
           "links": [
-            104
+            104,
+            262
           ]
         }
       ],
@@ -3207,10 +3210,10 @@
         "Node name for S&R": "PrimitiveBoolean"
       },
       "widgets_values": [
-        true
+        false
       ],
       "widgets_values_named": {
-        "value": true
+        "value": false
       }
     },
     {
@@ -3279,10 +3282,10 @@
         "Node name for S&R": "PrimitiveStringMultiline"
       },
       "widgets_values": [
-        "패널3 : 당황한표정, 입을 벌리고, 땀을 흘리고있는 클로즈업 상반신"
+        ""
       ],
       "widgets_values_named": {
-        "value": "패널3 : 당황한표정, 입을 벌리고, 땀을 흘리고있는 클로즈업 상반신"
+        "value": ""
       },
       "color": "#287069",
       "bgcolor": "#193f3b"
@@ -3454,7 +3457,7 @@
           "widget": {
             "name": "string_b"
           },
-          "link": 250
+          "link": 267
         }
       ],
       "outputs": [
@@ -3733,6 +3736,424 @@
       "widgets_values_named": {},
       "color": "#432",
       "bgcolor": "#653"
+    },
+    {
+      "id": 140,
+      "type": "PrimitiveString",
+      "pos": [
+        1160,
+        3300
+      ],
+      "size": [
+        260,
+        58
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            261,
+            264,
+            268
+          ]
+        }
+      ],
+      "title": "자동 문구 · 빈칸 (게이트 OFF용)",
+      "properties": {
+        "Node name for S&R": "PrimitiveString"
+      },
+      "widgets_values": [
+        ""
+      ],
+      "widgets_values_named": {
+        "value": ""
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 141,
+      "type": "ComfySwitchNode",
+      "pos": [
+        2060,
+        3300
+      ],
+      "size": [
+        220,
+        78
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "on_false",
+          "type": "STRING",
+          "link": 261
+        },
+        {
+          "name": "on_true",
+          "type": "STRING",
+          "link": 209
+        },
+        {
+          "name": "switch",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "switch"
+          },
+          "link": 262
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "STRING",
+          "links": [
+            263
+          ]
+        }
+      ],
+      "title": "소품 문구 게이트 · 소품 OFF면 제외",
+      "properties": {
+        "Node name for S&R": "ComfySwitchNode"
+      },
+      "widgets_values": [
+        false
+      ],
+      "widgets_values_named": {
+        "switch": false
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 142,
+      "type": "StringCompare",
+      "pos": [
+        1440,
+        3300
+      ],
+      "size": [
+        300,
+        150
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_a",
+          "type": "STRING",
+          "widget": {
+            "name": "string_a"
+          },
+          "link": 265
+        }
+      ],
+      "outputs": [
+        {
+          "name": "BOOLEAN",
+          "type": "BOOLEAN",
+          "links": [
+            266
+          ]
+        }
+      ],
+      "title": "3패널인지 판정",
+      "properties": {
+        "Node name for S&R": "StringCompare"
+      },
+      "widgets_values": [
+        "",
+        "3 panels",
+        "Equal",
+        true
+      ],
+      "widgets_values_named": {
+        "string_a": "",
+        "string_b": "3 panels",
+        "mode": "Equal",
+        "case_sensitive": true
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 143,
+      "type": "ComfySwitchNode",
+      "pos": [
+        1800,
+        3300
+      ],
+      "size": [
+        220,
+        78
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "on_false",
+          "type": "STRING",
+          "link": 264
+        },
+        {
+          "name": "on_true",
+          "type": "STRING",
+          "link": 250
+        },
+        {
+          "name": "switch",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "switch"
+          },
+          "link": 266
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "STRING",
+          "links": [
+            267
+          ]
+        }
+      ],
+      "title": "3패널 문구 게이트 · 3패널일 때만",
+      "properties": {
+        "Node name for S&R": "ComfySwitchNode"
+      },
+      "widgets_values": [
+        false
+      ],
+      "widgets_values_named": {
+        "switch": false
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 144,
+      "type": "PrimitiveString",
+      "pos": [
+        1160,
+        3480
+      ],
+      "size": [
+        260,
+        58
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            269
+          ]
+        }
+      ],
+      "title": "자동 문구 · 1패널 단일 이미지 강제",
+      "properties": {
+        "Node name for S&R": "PrimitiveString"
+      },
+      "widgets_values": [
+        "SINGLE-PANEL OVERRIDE — the selected panel count is 1, so this output is NOT a contact sheet. Render exactly ONE full-frame image of the character. No grid, no cells, no panel borders, no split halves, no duplicated or mirrored copy of the character, and no second figure. Ignore every contact-sheet, panel-layout, and multi-cell instruction above."
+      ],
+      "widgets_values_named": {
+        "value": "SINGLE-PANEL OVERRIDE — the selected panel count is 1, so this output is NOT a contact sheet. Render exactly ONE full-frame image of the character. No grid, no cells, no panel borders, no split halves, no duplicated or mirrored copy of the character, and no second figure. Ignore every contact-sheet, panel-layout, and multi-cell instruction above."
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 145,
+      "type": "StringCompare",
+      "pos": [
+        1440,
+        3480
+      ],
+      "size": [
+        300,
+        150
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_a",
+          "type": "STRING",
+          "widget": {
+            "name": "string_a"
+          },
+          "link": 270
+        }
+      ],
+      "outputs": [
+        {
+          "name": "BOOLEAN",
+          "type": "BOOLEAN",
+          "links": [
+            271
+          ]
+        }
+      ],
+      "title": "1패널인지 판정",
+      "properties": {
+        "Node name for S&R": "StringCompare"
+      },
+      "widgets_values": [
+        "",
+        "1 panel",
+        "Equal",
+        true
+      ],
+      "widgets_values_named": {
+        "string_a": "",
+        "string_b": "1 panel",
+        "mode": "Equal",
+        "case_sensitive": true
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 146,
+      "type": "ComfySwitchNode",
+      "pos": [
+        1800,
+        3480
+      ],
+      "size": [
+        220,
+        78
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "on_false",
+          "type": "STRING",
+          "link": 268
+        },
+        {
+          "name": "on_true",
+          "type": "STRING",
+          "link": 269
+        },
+        {
+          "name": "switch",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "switch"
+          },
+          "link": 271
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "STRING",
+          "links": [
+            273
+          ]
+        }
+      ],
+      "title": "1패널 문구 게이트 · 1패널일 때만",
+      "properties": {
+        "Node name for S&R": "ComfySwitchNode"
+      },
+      "widgets_values": [
+        false
+      ],
+      "widgets_values_named": {
+        "switch": false
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
+    },
+    {
+      "id": 147,
+      "type": "StringConcatenate",
+      "pos": [
+        2060,
+        3480
+      ],
+      "size": [
+        260,
+        70
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_a",
+          "type": "STRING",
+          "widget": {
+            "name": "string_a"
+          },
+          "link": 272
+        },
+        {
+          "name": "string_b",
+          "type": "STRING",
+          "widget": {
+            "name": "string_b"
+          },
+          "link": 273
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            274
+          ]
+        }
+      ],
+      "title": "2단계 프롬프트 + 1패널 강제",
+      "properties": {
+        "Node name for S&R": "StringConcatenate"
+      },
+      "widgets_values": [
+        "",
+        "",
+        "\n\n"
+      ],
+      "widgets_values_named": {
+        "string_a": "",
+        "string_b": "",
+        "delimiter": "\n\n"
+      },
+      "color": "#343b48",
+      "bgcolor": "#202631"
     }
   ],
   "links": [
@@ -4188,7 +4609,7 @@
       209,
       115,
       0,
-      116,
+      141,
       1,
       "STRING"
     ],
@@ -4206,14 +4627,6 @@
       0,
       119,
       0,
-      "STRING"
-    ],
-    [
-      218,
-      119,
-      0,
-      109,
-      9,
       "STRING"
     ],
     [
@@ -4364,7 +4777,7 @@
       250,
       134,
       0,
-      135,
+      143,
       1,
       "STRING"
     ],
@@ -4447,6 +4860,118 @@
       139,
       0,
       "STRING"
+    ],
+    [
+      261,
+      140,
+      0,
+      141,
+      0,
+      "STRING"
+    ],
+    [
+      262,
+      85,
+      0,
+      141,
+      2,
+      "BOOLEAN"
+    ],
+    [
+      263,
+      141,
+      0,
+      116,
+      1,
+      "STRING"
+    ],
+    [
+      264,
+      140,
+      0,
+      143,
+      0,
+      "STRING"
+    ],
+    [
+      265,
+      127,
+      0,
+      142,
+      0,
+      "STRING"
+    ],
+    [
+      266,
+      142,
+      0,
+      143,
+      2,
+      "BOOLEAN"
+    ],
+    [
+      267,
+      143,
+      0,
+      135,
+      1,
+      "STRING"
+    ],
+    [
+      268,
+      140,
+      0,
+      146,
+      0,
+      "STRING"
+    ],
+    [
+      271,
+      145,
+      0,
+      146,
+      2,
+      "BOOLEAN"
+    ],
+    [
+      270,
+      127,
+      0,
+      145,
+      0,
+      "STRING"
+    ],
+    [
+      273,
+      146,
+      0,
+      147,
+      1,
+      "STRING"
+    ],
+    [
+      274,
+      147,
+      0,
+      109,
+      9,
+      "STRING"
+    ],
+    [
+      269,
+      144,
+      0,
+      146,
+      1,
+      "STRING"
+    ],
+    [
+      272,
+      119,
+      0,
+      147,
+      0,
+      "STRING"
     ]
   ],
   "groups": [
@@ -4493,7 +5018,7 @@
         1120,
         2400,
         1320,
-        900
+        1180
       ],
       "color": "#665080",
       "flags": {}
