@@ -554,10 +554,10 @@
       "title": "2단계 입력 설명 · 패널 수/3패널 배치/소품",
       "properties": {},
       "widgets_values": [
-        "# 2단계 입력과 3패널 배치\n\n1. **패널 수**에서 1~4장을 선택합니다.\n2. 3장을 선택했다면 **3패널 배치**를 고릅니다.\n   - OFF: 왼쪽 세로 1칸 + 오른쪽 위·아래 2칸\n   - ON: 위 가로 1칸 + 아래 왼쪽·오른쪽 2칸\n3. 포즈 이미지는 Panel 1의 동작 분석에 사용합니다.\n4. 소품 방식 OFF는 Panel 2에 소품만 표시합니다.\n5. 소품 방식 ON은 Panel 1·2에서 캐릭터가 서로 다른 자세로 소품을 사용합니다.\n6. 추가 내용은 ⑧ 그룹에 한국어로 적습니다."
+        "# 2단계 입력과 3패널 배치\n\n1. **패널 수**에서 2~4장을 선택합니다.\n2. 3장을 선택했다면 **3패널 배치**를 고릅니다.\n   - OFF: 왼쪽 세로 1칸 + 오른쪽 위·아래 2칸\n   - ON: 위 가로 1칸 + 아래 왼쪽·오른쪽 2칸\n3. 포즈 이미지는 Panel 1의 동작 분석에 사용합니다.\n4. 소품 방식 OFF는 Panel 2에 소품만 표시합니다.\n5. 소품 방식 ON은 Panel 1·2에서 캐릭터가 서로 다른 자세로 소품을 사용합니다.\n6. 추가 내용은 ⑧ 그룹에 한국어로 적습니다."
       ],
       "widgets_values_named": {
-        "text": "# 2단계 입력과 3패널 배치\n\n1. **패널 수**에서 1~4장을 선택합니다.\n2. 3장을 선택했다면 **3패널 배치**를 고릅니다.\n   - OFF: 왼쪽 세로 1칸 + 오른쪽 위·아래 2칸\n   - ON: 위 가로 1칸 + 아래 왼쪽·오른쪽 2칸\n3. 포즈 이미지는 Panel 1의 동작 분석에 사용합니다.\n4. 소품 방식 OFF는 Panel 2에 소품만 표시합니다.\n5. 소품 방식 ON은 Panel 1·2에서 캐릭터가 서로 다른 자세로 소품을 사용합니다.\n6. 추가 내용은 ⑧ 그룹에 한국어로 적습니다."
+        "text": "# 2단계 입력과 3패널 배치\n\n1. **패널 수**에서 2~4장을 선택합니다.\n2. 3장을 선택했다면 **3패널 배치**를 고릅니다.\n   - OFF: 왼쪽 세로 1칸 + 오른쪽 위·아래 2칸\n   - ON: 위 가로 1칸 + 아래 왼쪽·오른쪽 2칸\n3. 포즈 이미지는 Panel 1의 동작 분석에 사용합니다.\n4. 소품 방식 OFF는 Panel 2에 소품만 표시합니다.\n5. 소품 방식 ON은 Panel 1·2에서 캐릭터가 서로 다른 자세로 소품을 사용합니다.\n6. 추가 내용은 ⑧ 그룹에 한국어로 적습니다."
       },
       "color": "#24324a",
       "bgcolor": "#35496b"
@@ -602,12 +602,12 @@
         "Node name for S&R": "StringConcatenate"
       },
       "widgets_values": [
-        "Create one static high-resolution character contact sheet of the same adult character from Picture 1.\n\nThe SELECTED PANEL COUNT appended below is mandatory. Create exactly that many panels and no more:\n- 1 panel: one full-canvas image.\n- 2 panels: two equal side-by-side images.\n- 3 panels: follow the selected THREE-PANEL LAYOUT PRESET appended below. Use exactly three cells; they are intentionally asymmetrical and do not need equal dimensions.\n- 4 panels: a clean 2x2 grid.\n\nPicture 1 is the fused Stage 1 character reference. Preserve its face, hair, costume, colors, materials, and body proportions in every character panel. Additional enabled pictures contribute only their named prop, accessory, or environment.\n\nDefault panel plan:\nPanel 1: reproduce the analyzed action pose below as closely as possible, full body visible.\nPanel 2: follow the selected PROP USAGE MODE below.\nPanel 3: chest-up identity and costume-detail close-up, calm posture.\nPanel 4: a clearly different cinematic or environment pose, or another user-requested utility view.\n\nUse only Panels 1 through the selected count and ignore the unused higher-numbered defaults. Every active character panel must use a visibly different body arrangement and camera framing. Use a neutral light-grey studio background unless an enabled environment specifies otherwise. No duplicate or mirrored panel, no merged cell, no pasted source image, no extra person, and no text.",
+        "Create one static high-resolution character contact sheet of the same adult character from Picture 1.\n\nThe SELECTED PANEL COUNT appended below is mandatory. Create exactly that many panels and no more:\n- 2 panels: two equal side-by-side images.\n- 3 panels: follow the selected THREE-PANEL LAYOUT PRESET appended below. Use exactly three cells; they are intentionally asymmetrical and do not need equal dimensions.\n- 4 panels: a clean 2x2 grid.\n\nPicture 1 is the fused Stage 1 character reference. Preserve its face, hair, costume, colors, materials, and body proportions in every character panel. Additional enabled pictures contribute only their named prop, accessory, or environment.\n\nDefault panel plan:\nPanel 1: reproduce the analyzed action pose below as closely as possible, full body visible.\nPanel 2: follow the selected PROP USAGE MODE below.\nPanel 3: chest-up identity and costume-detail close-up, calm posture.\nPanel 4: a clearly different cinematic or environment pose, or another user-requested utility view.\n\nUse only Panels 1 through the selected count and ignore the unused higher-numbered defaults. Every active character panel must use a visibly different body arrangement and camera framing. Use a neutral light-grey studio background unless an enabled environment specifies otherwise. No duplicate or mirrored panel, no merged cell, no pasted source image, no extra person, and no text.",
         "3 panels",
         "\n\nSELECTED PANEL COUNT: "
       ],
       "widgets_values_named": {
-        "string_a": "Create one static high-resolution character contact sheet of the same adult character from Picture 1.\n\nThe SELECTED PANEL COUNT appended below is mandatory. Create exactly that many panels and no more:\n- 1 panel: one full-canvas image.\n- 2 panels: two equal side-by-side images.\n- 3 panels: follow the selected THREE-PANEL LAYOUT PRESET appended below. Use exactly three cells; they are intentionally asymmetrical and do not need equal dimensions.\n- 4 panels: a clean 2x2 grid.\n\nPicture 1 is the fused Stage 1 character reference. Preserve its face, hair, costume, colors, materials, and body proportions in every character panel. Additional enabled pictures contribute only their named prop, accessory, or environment.\n\nDefault panel plan:\nPanel 1: reproduce the analyzed action pose below as closely as possible, full body visible.\nPanel 2: follow the selected PROP USAGE MODE below.\nPanel 3: chest-up identity and costume-detail close-up, calm posture.\nPanel 4: a clearly different cinematic or environment pose, or another user-requested utility view.\n\nUse only Panels 1 through the selected count and ignore the unused higher-numbered defaults. Every active character panel must use a visibly different body arrangement and camera framing. Use a neutral light-grey studio background unless an enabled environment specifies otherwise. No duplicate or mirrored panel, no merged cell, no pasted source image, no extra person, and no text.",
+        "string_a": "Create one static high-resolution character contact sheet of the same adult character from Picture 1.\n\nThe SELECTED PANEL COUNT appended below is mandatory. Create exactly that many panels and no more:\n- 2 panels: two equal side-by-side images.\n- 3 panels: follow the selected THREE-PANEL LAYOUT PRESET appended below. Use exactly three cells; they are intentionally asymmetrical and do not need equal dimensions.\n- 4 panels: a clean 2x2 grid.\n\nPicture 1 is the fused Stage 1 character reference. Preserve its face, hair, costume, colors, materials, and body proportions in every character panel. Additional enabled pictures contribute only their named prop, accessory, or environment.\n\nDefault panel plan:\nPanel 1: reproduce the analyzed action pose below as closely as possible, full body visible.\nPanel 2: follow the selected PROP USAGE MODE below.\nPanel 3: chest-up identity and costume-detail close-up, calm posture.\nPanel 4: a clearly different cinematic or environment pose, or another user-requested utility view.\n\nUse only Panels 1 through the selected count and ignore the unused higher-numbered defaults. Every active character panel must use a visibly different body arrangement and camera framing. Use a neutral light-grey studio background unless an enabled environment specifies otherwise. No duplicate or mirrored panel, no merged cell, no pasted source image, no extra person, and no text.",
         "string_b": "3 panels",
         "delimiter": "\n\nSELECTED PANEL COUNT: "
       },
@@ -2228,7 +2228,7 @@
           "widget": {
             "name": "prompt"
           },
-          "link": 274
+          "link": 275
         },
         {
           "name": "model",
@@ -2620,7 +2620,7 @@
           "name": "STRING",
           "type": "STRING",
           "links": [
-            272
+            275
           ]
         }
       ],
@@ -2799,8 +2799,7 @@
           "type": "STRING",
           "links": [
             240,
-            265,
-            270
+            265
           ]
         },
         {
@@ -2815,20 +2814,20 @@
       },
       "widgets_values": [
         "3 panels",
-        2,
-        "1 panel",
+        1,
         "2 panels",
         "3 panels",
         "4 panels",
+        "",
         ""
       ],
       "widgets_values_named": {
         "choice": "3 panels",
-        "index": 2,
-        "option1": "1 panel",
-        "option2": "2 panels",
-        "option3": "3 panels",
-        "option4": "4 panels",
+        "index": 1,
+        "option1": "2 panels",
+        "option2": "3 panels",
+        "option3": "4 panels",
+        "option4": "",
         "option5": ""
       },
       "color": "#323",
@@ -3760,8 +3759,7 @@
           "type": "STRING",
           "links": [
             261,
-            264,
-            268
+            264
           ]
         }
       ],
@@ -3942,215 +3940,6 @@
       ],
       "widgets_values_named": {
         "switch": false
-      },
-      "color": "#343b48",
-      "bgcolor": "#202631"
-    },
-    {
-      "id": 144,
-      "type": "PrimitiveString",
-      "pos": [
-        1160,
-        3480
-      ],
-      "size": [
-        260,
-        58
-      ],
-      "flags": {
-        "collapsed": true
-      },
-      "order": 0,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "STRING",
-          "type": "STRING",
-          "links": [
-            269
-          ]
-        }
-      ],
-      "title": "자동 문구 · 1패널 단일 이미지 강제",
-      "properties": {
-        "Node name for S&R": "PrimitiveString"
-      },
-      "widgets_values": [
-        "SINGLE-PANEL OVERRIDE — the selected panel count is 1, so this output is NOT a contact sheet. Render exactly ONE full-frame image of the character. No grid, no cells, no panel borders, no split halves, no duplicated or mirrored copy of the character, and no second figure. Ignore every contact-sheet, panel-layout, and multi-cell instruction above."
-      ],
-      "widgets_values_named": {
-        "value": "SINGLE-PANEL OVERRIDE — the selected panel count is 1, so this output is NOT a contact sheet. Render exactly ONE full-frame image of the character. No grid, no cells, no panel borders, no split halves, no duplicated or mirrored copy of the character, and no second figure. Ignore every contact-sheet, panel-layout, and multi-cell instruction above."
-      },
-      "color": "#343b48",
-      "bgcolor": "#202631"
-    },
-    {
-      "id": 145,
-      "type": "StringCompare",
-      "pos": [
-        1440,
-        3480
-      ],
-      "size": [
-        300,
-        150
-      ],
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "string_a",
-          "type": "STRING",
-          "widget": {
-            "name": "string_a"
-          },
-          "link": 270
-        }
-      ],
-      "outputs": [
-        {
-          "name": "BOOLEAN",
-          "type": "BOOLEAN",
-          "links": [
-            271
-          ]
-        }
-      ],
-      "title": "1패널인지 판정",
-      "properties": {
-        "Node name for S&R": "StringCompare"
-      },
-      "widgets_values": [
-        "",
-        "1 panel",
-        "Equal",
-        true
-      ],
-      "widgets_values_named": {
-        "string_a": "",
-        "string_b": "1 panel",
-        "mode": "Equal",
-        "case_sensitive": true
-      },
-      "color": "#343b48",
-      "bgcolor": "#202631"
-    },
-    {
-      "id": 146,
-      "type": "ComfySwitchNode",
-      "pos": [
-        1800,
-        3480
-      ],
-      "size": [
-        220,
-        78
-      ],
-      "flags": {
-        "collapsed": true
-      },
-      "order": 0,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "on_false",
-          "type": "STRING",
-          "link": 268
-        },
-        {
-          "name": "on_true",
-          "type": "STRING",
-          "link": 269
-        },
-        {
-          "name": "switch",
-          "type": "BOOLEAN",
-          "widget": {
-            "name": "switch"
-          },
-          "link": 271
-        }
-      ],
-      "outputs": [
-        {
-          "name": "output",
-          "type": "STRING",
-          "links": [
-            273
-          ]
-        }
-      ],
-      "title": "1패널 문구 게이트 · 1패널일 때만",
-      "properties": {
-        "Node name for S&R": "ComfySwitchNode"
-      },
-      "widgets_values": [
-        false
-      ],
-      "widgets_values_named": {
-        "switch": false
-      },
-      "color": "#343b48",
-      "bgcolor": "#202631"
-    },
-    {
-      "id": 147,
-      "type": "StringConcatenate",
-      "pos": [
-        2060,
-        3480
-      ],
-      "size": [
-        260,
-        70
-      ],
-      "flags": {
-        "collapsed": true
-      },
-      "order": 0,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "string_a",
-          "type": "STRING",
-          "widget": {
-            "name": "string_a"
-          },
-          "link": 272
-        },
-        {
-          "name": "string_b",
-          "type": "STRING",
-          "widget": {
-            "name": "string_b"
-          },
-          "link": 273
-        }
-      ],
-      "outputs": [
-        {
-          "name": "STRING",
-          "type": "STRING",
-          "links": [
-            274
-          ]
-        }
-      ],
-      "title": "2단계 프롬프트 + 1패널 강제",
-      "properties": {
-        "Node name for S&R": "StringConcatenate"
-      },
-      "widgets_values": [
-        "",
-        "",
-        "\n\n"
-      ],
-      "widgets_values_named": {
-        "string_a": "",
-        "string_b": "",
-        "delimiter": "\n\n"
       },
       "color": "#343b48",
       "bgcolor": "#202631"
@@ -4918,59 +4707,11 @@
       "STRING"
     ],
     [
-      268,
-      140,
-      0,
-      146,
-      0,
-      "STRING"
-    ],
-    [
-      271,
-      145,
-      0,
-      146,
-      2,
-      "BOOLEAN"
-    ],
-    [
-      270,
-      127,
-      0,
-      145,
-      0,
-      "STRING"
-    ],
-    [
-      273,
-      146,
-      0,
-      147,
-      1,
-      "STRING"
-    ],
-    [
-      274,
-      147,
+      275,
+      119,
       0,
       109,
       9,
-      "STRING"
-    ],
-    [
-      269,
-      144,
-      0,
-      146,
-      1,
-      "STRING"
-    ],
-    [
-      272,
-      119,
-      0,
-      147,
-      0,
       "STRING"
     ]
   ],
@@ -5018,7 +4759,7 @@
         1120,
         2400,
         1320,
-        1180
+        1060
       ],
       "color": "#665080",
       "flags": {}
