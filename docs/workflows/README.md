@@ -39,6 +39,17 @@
   `_EN` 은 노드/그룹/노트를 전부 영어로 옮기고 한국어 자동번역 단계를 뺀 해외 배포용입니다.
   원본 아이디어: [r/StableDiffusion 게시글](https://www.reddit.com/r/StableDiffusion/comments/1vr1i18/minimax_h3_as_image_editor_6_edits_in_one_shot_at/)
 
+- [x] **`2BZ_H3_ref2video_longform_2stage_v1.json`** — MiniMax H3 Ref2Video로 여러 씬을 이어 붙여 긴 영상을 만드는
+  롱폼 워크플로우. 공통 프롬프트 + 씬별 프롬프트를 한글로 적으면 Gemma 4가 H3용 영문으로 바꿔 주고,
+  앞 씬의 끝 프레임을 다음 씬에 넘기면서 한 씬씩 생성한 뒤 하나의 영상으로 합칩니다. 씬마다 확인·재시도,
+  중단 후 체크포인트에서 이어가기, 끝난 작업에서 특정 씬부터 다시 뽑기를 지원합니다.
+  생성은 2스테이지(0.2MP 생성 → 잠재공간 업스케일 → 1MP 3스텝 정밀화)입니다.
+  필요한 커스텀 노드: `ComfyUI-MiniMaxH3-Contex-Loop`, `Comfyui_Minimax_h3_latent_Upscaler`, `zhihui_nodes_comfyui`,
+  `ComfyUI-KJNodes`(2026-09-13 이후 버전 — 이전 버전은 H3 샘플링 미리보기가 안 뜹니다). `toobusy` 노드는 필요 없습니다.
+  모델 다운로드 링크·저장 경로·사용 순서는 캔버스 왼쪽 위 「먼저 읽기」에 있습니다.
+  받은 직후 레퍼런스 이미지는 `example.png`로 비워져 있으니 본인 이미지로 바꾸세요.
+  RTX 3090 24GB에서 5초 씬 하나에 약 4분(1MP). 12GB·16GB는 미검증.
+
 ## 권장 목록 (추가로 만들면 좋은 것)
 
 - [ ] `ltx_compact_av_sampler.json` — 샘플링 블록 8노드 → 1노드
