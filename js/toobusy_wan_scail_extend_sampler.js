@@ -1,4 +1,5 @@
 import { app } from "../../scripts/app.js";
+import { parseScailWidgetValues, SCAIL_VALUE_WIDGETS } from "./toobusy_scail_widget_layout.js";
 
 const MAX_EXTEND_SEGMENTS = 8;
 // Auto mode plans internally, not from slots — mirror the Python sanity cap.
@@ -385,6 +386,27 @@ function applyMode(node) {
     }
 }
 
+// The frontend restores widgets_values by position, which lands values on the
+// wrong widgets for graphs saved by an older layout (see
+// toobusy_scail_widget_layout.js). Re-apply them by name from the raw array.
+function restoreWidgetValuesByName(node, info) {
+    const named = parseScailWidgetValues(info?.widgets_values);
+    if (!named) return;
+    let repaired = 0;
+    for (const name of SCAIL_VALUE_WIDGETS) {
+        const widget = findWidget(node, name);
+        // Not saved by that older layout -> back to the default captured at
+        // node creation, not the shifted value the positional restore left.
+        const value = name in named ? named[name] : widget?._toobusyDefault;
+        if (!widget || value === undefined || widget.value === value) continue;
+        widget.value = value;
+        repaired += 1;
+    }
+    if (repaired) {
+        console.warn(`[toobusy] Wan SCAIL Extend Sampler #${node.id}: realigned ${repaired} widget value(s) saved by an older layout.`);
+    }
+}
+
 function applyAdvanced(node) {
     const advanced = isAdvanced(node);
     for (const name of ADVANCED_WIDGETS) {
@@ -406,6 +428,11 @@ app.registerExtension({
         const onNodeCreated = nodeType.prototype.onNodeCreated;
         nodeType.prototype.onNodeCreated = function () {
             onNodeCreated?.apply(this, arguments);
+
+            // Defaults for restoreWidgetValuesByName (configure runs later).
+            for (const widget of this.widgets || []) {
+                widget._toobusyDefault = widget.value;
+            }
 
             // Hidden counter: the +/- buttons drive it, like lora_slots.
             const segmentsWidget = findWidget(this, "extend_segments");
@@ -529,8 +556,9 @@ app.registerExtension({
         };
 
         const onConfigure = nodeType.prototype.onConfigure;
-        nodeType.prototype.onConfigure = function () {
+        nodeType.prototype.onConfigure = function (info) {
             onConfigure?.apply(this, arguments);
+            restoreWidgetValuesByName(this, info);
             applyAdvanced(this);
             updateFramesReadout(this);
         };

@@ -2,6 +2,30 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [0.5.3] - 2026-10-09
+
+### Fixed
+- **Wan SCAIL Extend Sampler: 옛 버전에서 저장한 워크플로를 열면 나던
+  `extend_N_frames … 값 remove를 변환할 수 없습니다` 에러를 고쳤습니다.**
+  ComfyUI 는 위젯 값을 이름이 아니라 *화면에 놓인 순서*대로 저장하는데, 이 노드는
+  v0.2.10~0.2.11 에서 `color_anchor`·`frame_mode`·`target_total_frames`·
+  `color_sample`·`color_match_strength` 를 화면 중간에 끼워 넣었습니다. 그래서
+  그 이전에 저장한 그래프는 값이 줄줄이 밀려 숨겨진 extend 칸에 `remove`
+  (삭제 버튼 값), `extend_segments` 에 `fixed`(seed 제어 값)가 들어갔고, target
+  total 모드에선 그 칸이 안 보여 손으로 고칠 수도 없었습니다. 이제 불러올 때 저장값을
+  값의 종류로 읽어 원래 위젯에 이름으로 되돌리고, 옛 파일에 없던 칸은 기본값으로
+  둡니다. 프레임 모드가 없던 시절 그래프는 원래대로 `manual segments` 로 열려
+  저장된 extend 개수가 그대로 돌아갑니다. 지금 버전으로 저장한 워크플로는 아무것도
+  바뀌지 않습니다.
+
+### Removed
+- 옛 구조로 저장돼 위 에러를 그대로 내던 `docs/workflows/Wan21_SCAIL2_Testing_neobabae.json`
+  을 뺐습니다. SCAIL 예제는 `docs/workflows/wan21_scail2.json` 하나입니다.
+
+### Changed
+- `docs/workflows` 의 H3 캐릭터 시트 2단계(한/영) 워크플로와 H3 Ref2Video 롱폼
+  2단계 워크플로가 v0.5.2 이후 갱신됐습니다 (#121~#123).
+
 ## [0.5.2] - 2026-09-12
 
 ### Removed
