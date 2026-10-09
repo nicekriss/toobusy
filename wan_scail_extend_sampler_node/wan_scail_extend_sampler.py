@@ -473,10 +473,12 @@ class ToobusyWanSCAILExtendSampler:
                 },
             )
 
-        # Appended AFTER the slots so saved-workflow widget value order (which
-        # ends with extend_N_frames) stays intact; the JS repositions them for
-        # display. 'target total' lets you type one goal frame count and let the
-        # node decide how many extends to run, instead of stacking slots.
+        # Appended AFTER the slots; the JS repositions them for display. Note
+        # the frontend saves widget values in DISPLAY order, so adding a widget
+        # still shifts older saved graphs — js/toobusy_scail_widget_layout.js
+        # re-maps them by value type on load (update it with any new widget).
+        # 'target total' lets you type one goal frame count and let the node
+        # decide how many extends to run, instead of stacking slots.
         base["required"]["frame_mode"] = (
             ["target total", "manual segments"],
             {
@@ -498,8 +500,8 @@ class ToobusyWanSCAILExtendSampler:
                 "tooltip": "Goal output frames in 'target total' mode. The readout shows the actual landed total (4k+1 grid means it may differ by a few frames).",
             },
         )
-        # Color-match tuning — appended last (like frame_mode) to keep saved
-        # widget-value order stable; the JS moves them next to color_anchor.
+        # Color-match tuning — appended last (like frame_mode); the JS moves
+        # them next to color_anchor (saved-order caveat: see frame_mode).
         base["required"]["color_sample"] = (
             ["whole chunk", "last frame"],
             {
