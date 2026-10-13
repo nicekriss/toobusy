@@ -2,6 +2,34 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [0.5.4] - 2026-10-13
+
+### Added
+- **2BZ SeedVR2 Tile Restore** — 아무 크기 이미지를 SeedVR2(코어 노드 경로)로 복원합니다.
+  `tile_megapixels`(기본 2) 크기 타일로 나눠 타일마다 **자기 조건**으로 1스텝 복원하고,
+  겹친 부분을 페더링해 이어 붙인 뒤 입력 크기로 돌려줍니다. SeedVR2 조건은 입력 latent
+  자체로 만들어져서 Ultimate SD Upscale 같은 범용 타일러(조건 하나를 모든 타일에 씀)로는
+  돌릴 수 없었습니다. `tile_megapixels` 가 VRAM 손잡이(8GB 1 / 12GB 1.5~2 / 16GB 2~3 /
+  24GB 3~4), `upscale_small_to`(기본 3MP)가 화질 손잡이 — 작은 이미지는 키워 복원 후 원래
+  크기로 되돌립니다(얼굴 질감은 2~3MP에서 포화, 실측). 타일은 개수를 먼저 정하고 가장 작은
+  덮는 크기를 써서 겹침 낭비가 없습니다. `info` 출력에 입력·작업 크기와 타일 배치가 나옵니다.
+- **2BZ Retouch Blend (skin-aware)** — 원본의 형태·음영(저주파)은 두고 복원본의 미세 질감
+  (고주파)만 입히는 주파수 합성을 한 노드로. 전체 `strength`, 마스크(피부) 안은
+  `skin_strength`, 마스크 키우기·페더까지 노드 안에서 해서 Impact Pack 마스크 블러가
+  필요 없습니다. 마스크는 아무 크기여도 됩니다(작게 줄인 이미지에서 SAM3로 찾아 VRAM 절약).
+  계산은 GPU 에서 해서 18MP 시트도 수 초.
+- **2BZ Frequency Detail Transfer** — 위 합성의 기본형(마스크 영역에만 적용). 따로 돌던
+  `toobusy-frequency-detail` 단독 노드를 팩에 넣었습니다. 노드 이름(클래스)은 그대로라
+  기존 워크플로가 그대로 열립니다 — **단독 폴더는 지우거나 `.disabled` 로 바꾸세요**(같은
+  이름이 두 번 등록됨).
+- **2BZ Crop Each BBox (list)** / **2BZ Paste Crops Back** — 검출 결과(SAM3 Detect, RT-DETR,
+  Create Bounding Boxes)의 박스를 **개체별 리스트**로 잘라 각각 원하는 메가픽셀(기본 4MP, 비율 유지)로
+  키우고, 뒤 노드들이 크롭 수만큼 자동 반복된 뒤, 결과를 박스 크기로 줄여 **페더링해 제자리에** 붙입니다.
+  코어 Crop By Bounding Boxes 는 한 프레임의 박스를 합집합 하나로 자르기 때문에 이 흐름이 안 됐습니다.
+  SAM3 텍스트 프롬프트는 `person:8` 처럼 `대상:최대개수` 로 적어야 여러 개가 잡힙니다(`:N` 없으면 1개).
+- 예제 워크플로: `docs/workflows/2BZ_SeedVR2_Retouch_AnySize.json`(아무 이미지 리터치, 결과 2장),
+  `docs/workflows/2BZ_Qwen21_04_AutoDetail.json`(Qwen-Image 2.1 캐릭터 시트 인물별 2K 디테일업).
+
 ## [0.5.3] - 2026-10-09
 
 ### Fixed
