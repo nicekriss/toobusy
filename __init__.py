@@ -324,6 +324,30 @@ else:
     NODE_DISPLAY_NAME_MAPPINGS.update(_NAMES)
     LOADED_NODE_PACKAGES.append("minimax_h3_semantic_reference_node")
 
+try:
+    from .bbox_detail_node import (
+        NODE_CLASS_MAPPINGS as _CLASSES,
+        NODE_DISPLAY_NAME_MAPPINGS as _NAMES,
+    )
+except Exception as exc:  # noqa: BLE001 - one broken package must not hide the rest
+    UNAVAILABLE_NODE_PACKAGES["bbox_detail_node"] = exc
+else:
+    NODE_CLASS_MAPPINGS.update(_CLASSES)
+    NODE_DISPLAY_NAME_MAPPINGS.update(_NAMES)
+    LOADED_NODE_PACKAGES.append("bbox_detail_node")
+
+try:
+    from .retouch_node import (
+        NODE_CLASS_MAPPINGS as _CLASSES,
+        NODE_DISPLAY_NAME_MAPPINGS as _NAMES,
+    )
+except Exception as exc:  # noqa: BLE001 - one broken package must not hide the rest
+    UNAVAILABLE_NODE_PACKAGES["retouch_node"] = exc
+else:
+    NODE_CLASS_MAPPINGS.update(_CLASSES)
+    NODE_DISPLAY_NAME_MAPPINGS.update(_NAMES)
+    LOADED_NODE_PACKAGES.append("retouch_node")
+
 if UNAVAILABLE_NODE_PACKAGES:
     for _package, _exc in sorted(UNAVAILABLE_NODE_PACKAGES.items()):
         logger.warning(

@@ -60,6 +60,35 @@ width / height
 - `toobusy MiniMax H3 Reference Manifest`: 실제로 전달된 이미지에 맞춰 `<Picture N>` 번호와 역할 문장을 압축합니다.
 - 예제: [`2BZ_H3_character_sheet_2stage_v1.json`](docs/workflows/2BZ_H3_character_sheet_2stage_v1.json)
 
+### SeedVR2 Retouch — 아무 이미지나, VRAM에 맞춰
+
+AI 이미지의 플라스틱 같은 피부·뭉개진 머리카락·옷감에 **미세 질감만** 입힙니다. 형태·얼굴·색은 원본 그대로이고 프롬프트가 없습니다.
+사진 한 장이든 18MP 캐릭터 시트든 그대로 넣으면 됩니다.
+
+```
+Load Image ─ 2BZ SeedVR2 Tile Restore ─┬─ 2BZ Retouch Blend (높음 1.25 / 피부 1.0) ─ Save
+           └ 2MP로 축소 ─ SAM3 Detect("skin:8") ─┴─ 2BZ Retouch Blend (낮음 1.0 / 피부 0.9) ─ Save
+```
+
+- `2BZ SeedVR2 Tile Restore`: 타일마다 자기 조건으로 SeedVR2 1스텝 복원 → 페더링해 이어 붙여 입력 크기로. `tile_megapixels`(기본 2)가 VRAM 손잡이 — 8GB 1 / 12GB 1.5~2 / 16GB 2~3 / 24GB 3~4. `upscale_small_to`(기본 3MP)보다 작은 이미지는 키워서 복원 후 원래 크기로.
+- `2BZ Retouch Blend (skin-aware)`: 주파수 합성(원본 저주파 + 복원 고주파×세기), 피부 마스크 안은 따로 약하게. 마스크 키우기·페더 포함.
+- 실측(RTX 3090, 3B int8, 결과 2장 포함): 2MP 사진 24초, 18MP 캐릭터 시트 79초(타일 15장), VRAM 최고치는 크기와 무관하게 약 7GB.
+- 모델: [seedvr2_3b_int8_convrot](https://huggingface.co/Comfy-Org/SeedVR2/resolve/main/diffusion_models/seedvr2_3b_int8_convrot.safetensors) → `diffusion_models`, [seedvr2_ema_vae_fp16](https://huggingface.co/Comfy-Org/SeedVR2/resolve/main/vae/seedvr2_ema_vae_fp16.safetensors) → `vae`, [sam3.1_multiplex_fp16](https://huggingface.co/Comfy-Org/sam3.1/resolve/main/checkpoints/sam3.1_multiplex_fp16.safetensors) → `checkpoints`. SeedVR2·SAM3 노드는 ComfyUI 코어.
+- 예제: [`2BZ_SeedVR2_Retouch_AnySize.json`](docs/workflows/2BZ_SeedVR2_Retouch_AnySize.json)
+
+### Detection → per-box detail pass (Qwen-Image 2.1 등)
+
+큰 이미지에서 **찾을 것을 텍스트로 검출 → 박스마다 따로 2K로 다시 그림 → 줄여서 제자리에 페더링 복귀.** 좌표 입력이 없습니다.
+
+```
+Load Image ─ SAM3 Detect("person:8") ─ 2BZ Crop Each BBox (list) ─ TextEncodeQwenImage21 / VAEEncode ─ KSampler ─ VAEDecode ─ 2BZ Paste Crops Back ─ Save
+```
+
+- `2BZ Crop Each BBox (list)`: 박스마다 리스트로 크롭, `target_megapixels`(기본 4.0)로 비율 유지 리사이즈, `padding_percent`, 정렬·개수 제한. 출력 `used_bboxes`를 되붙이기 노드에 그대로 연결.
+- `2BZ Paste Crops Back`: 처리된 크롭 리스트를 박스 크기로 줄여 `feather_px`(기본 24)로 경계를 섞어 원본에 합성.
+- SAM3 Detect 프롬프트는 `대상:최대개수` 문법(`person:8`, `face:4`, `person:6, rifle:2`). `:N`이 없으면 카테고리당 1개만 잡힙니다.
+- 예제: [`2BZ_Qwen21_04_AutoDetail.json`](docs/workflows/2BZ_Qwen21_04_AutoDetail.json) (SAM3 + Qwen-Image 2.1 int8 3종 필요).
+
 ### Wan Animate 2 Long Sampler
 
 `toobusy Wan Animate 2 Long Sampler`는 긴 드라이빙 영상을 Wan의 유효한
@@ -313,6 +342,7 @@ vae_name   : flux2-vae.safetensors
 - [`wan21_scail2.json`](docs/workflows/wan21_scail2.json) — **Wan 2.1 SCAIL-2 모션 트랜스퍼 예제(36노드).** 레퍼런스 이미지 + 댄스 영상 → `toobusy Wan SCAIL Extend Sampler` 중심 구성으로 베이스 생성 + 익스텐드 흐름을 확인합니다. 결과: [`wan21_scail2_sample.mp4`](docs/workflows/wan21_scail2_sample.mp4).
 - [`toobusy_flux2klein.json`](docs/workflows/toobusy_flux2klein.json) — **`toobusy Flux2 Klein` 한 노드로 레퍼런스 이미지 기반 생성 그래프를 접는 예제.** Load Image → Flux2 Klein → Save Image 구성입니다.
 - [`korean_scene_to_ideogram4.json`](docs/workflows/korean_scene_to_ideogram4.json) — **한국어 장면 → Prompt Polish → Layout Builder → Ideogram4 T2I.** 처음 사용자는 이 워크플로우를 먼저 열어 전체 흐름을 확인하는 것을 권장합니다.
+- [`2BZ_SeedVR2_Retouch_AnySize.json`](docs/workflows/2BZ_SeedVR2_Retouch_AnySize.json) — **아무 이미지 SeedVR2 리터치.** 이미지만 넣고 실행 → 높음/낮음 2장. VRAM은 `tile_megapixels` 하나로 조절.
 - [`z_image_turbo.json`](docs/workflows/z_image_turbo.json) — **`toobusy Z-Image Turbo` 한 노드로 t2i/img2img 기본 그래프를 접는 예제.** `image` 입력에 Load Image를 연결하면 자동으로 img2img로 전환됩니다.
 
 ## 추천 조합
