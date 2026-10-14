@@ -76,10 +76,10 @@ Load Image ─ 2BZ SeedVR2 Tile Restore ─┬─ 2BZ Retouch Blend (높음 1.25
 - 모델: [seedvr2_3b_int8_convrot](https://huggingface.co/Comfy-Org/SeedVR2/resolve/main/diffusion_models/seedvr2_3b_int8_convrot.safetensors) → `diffusion_models`, [seedvr2_ema_vae_fp16](https://huggingface.co/Comfy-Org/SeedVR2/resolve/main/vae/seedvr2_ema_vae_fp16.safetensors) → `vae`, [sam3.1_multiplex_fp16](https://huggingface.co/Comfy-Org/sam3.1/resolve/main/checkpoints/sam3.1_multiplex_fp16.safetensors) → `checkpoints`. SeedVR2·SAM3 노드는 ComfyUI 코어.
 - 예제: [`2BZ_SeedVR2_Retouch_AnySize.json`](docs/workflows/2BZ_SeedVR2_Retouch_AnySize.json)
 
-#### 캐릭터시트·단체컷용 — VOSR 2.0 엔진판 (얼굴이 작을 때)
+#### 더 자연스럽게 — VOSR 2.0 엔진판 (선택)
 
 같은 `2BZ Retouch Blend`에 복원 엔진만 [VOSR 2.0](https://github.com/cswry/VOSR)(1스텝 1.4B 초해상도, Apache 2.0)으로 바꾼 판입니다.
-**용도 구분:** 캐릭터 시트·단체컷처럼 얼굴이 작으면 SeedVR2가 얼굴 인상을 바꾸는 경우가 있어(폭 50~100px 얼굴 유사도 0.41~0.82) 이 판을 쓰고(VOSR2 0.94~0.99), **단독 인물·클로즈업은 위 SeedVR2판**이 피부를 더 좋게 만듭니다(눈으로 비교한 결과 — VOSR2는 얼굴이 큰 사진에서 질감을 거의 더하지 않음).
+**기본은 위 SeedVR2판**(피부까지 더 극적으로 좋아지고 3~4배 빠름). 이 판은 효과가 약한 대신 원본 느낌 그대로 자연스럽게 다듬고 싶을 때 — 특히 캐릭터 시트·4MP 키프레임에서 잘 맞습니다. 작은 얼굴 인상도 거의 그대로 둡니다(폭 50~100px 얼굴 유사도 0.94~0.99). 깨끗한 작은 사진(1MP 단독 인물)에는 효과가 거의 없습니다.
 
 ```
 Load Image ─ 작업 크기 4MP로 맞춤 ─ VOSR 2.0 Upscale ×2 ─┬─ 2BZ Retouch Blend (높음 1.6 / 피부 1.4) ─ Save
@@ -359,7 +359,7 @@ vae_name   : flux2-vae.safetensors
 - [`toobusy_flux2klein.json`](docs/workflows/toobusy_flux2klein.json) — **`toobusy Flux2 Klein` 한 노드로 레퍼런스 이미지 기반 생성 그래프를 접는 예제.** Load Image → Flux2 Klein → Save Image 구성입니다.
 - [`korean_scene_to_ideogram4.json`](docs/workflows/korean_scene_to_ideogram4.json) — **한국어 장면 → Prompt Polish → Layout Builder → Ideogram4 T2I.** 처음 사용자는 이 워크플로우를 먼저 열어 전체 흐름을 확인하는 것을 권장합니다.
 - [`2BZ_SeedVR2_Retouch_AnySize.json`](docs/workflows/2BZ_SeedVR2_Retouch_AnySize.json) — **아무 이미지 SeedVR2 리터치.** 이미지만 넣고 실행 → 높음/낮음 2장. VRAM은 `tile_megapixels` 하나로 조절.
-- [`2BZ_VOSR2_Retouch_AnySize.json`](docs/workflows/2BZ_VOSR2_Retouch_AnySize.json) — **캐릭터시트·단체컷용 리터치(엔진 VOSR 2.0).** 작은 얼굴이 안 바뀜. 단독 인물·클로즈업은 SeedVR2판. VOSR 2.0 노드(`comfyui-vosr2`)·toobusy 0.5.5 필요.
+- [`2BZ_VOSR2_Retouch_AnySize.json`](docs/workflows/2BZ_VOSR2_Retouch_AnySize.json) — **같은 리터치, 더 자연스럽게(엔진 VOSR 2.0, 선택).** 효과는 약하고 원본 느낌 그대로. 기본은 SeedVR2판. VOSR 2.0 노드(`comfyui-vosr2`)·toobusy 0.5.5 필요.
 - [`2BZ_VOSR2_Upscale.json`](docs/workflows/2BZ_VOSR2_Upscale.json) — **작은 이미지 크게 키우기(VOSR 2.0).** 배율만 고르면 입력 × 배율 크기로 저장. VOSR 2.0 노드 필요.
 - [`z_image_turbo.json`](docs/workflows/z_image_turbo.json) — **`toobusy Z-Image Turbo` 한 노드로 t2i/img2img 기본 그래프를 접는 예제.** `image` 입력에 Load Image를 연결하면 자동으로 img2img로 전환됩니다.
 
