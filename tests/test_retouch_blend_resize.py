@@ -8,9 +8,14 @@ amplified (stair-stepped hair and jaw lines). With antialias the stripes average
 import importlib.util
 import os
 
+import sys
+
 try:
     import torch
-except ImportError:  # CI without torch
+except ImportError:  # CI runs each test file as a script without torch
+    if __name__ == "__main__":
+        print("retouch blend resize tests skipped (torch not installed)")
+        sys.exit(0)
     import pytest
     pytest.skip("torch not installed", allow_module_level=True)
 
@@ -46,3 +51,10 @@ def test_same_size_and_enlarge_unchanged_path():
     assert fd._resize_image(original, 64, 64) is original
     up = fd._resize_image(original, 128, 128)
     assert up.shape == (1, 128, 128, 3)
+
+
+if __name__ == "__main__":
+    for name, fn in sorted(globals().items()):
+        if name.startswith("test_") and callable(fn):
+            fn()
+    print("retouch blend resize tests passed")
