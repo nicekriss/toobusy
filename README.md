@@ -90,6 +90,7 @@ Load Image ─ 작업 크기 4MP로 맞춤 ─ VOSR 2.0 Upscale ×2 ─┬─ 2B
 - 손잡이: 작업 크기(기본 4MP, 18MP 시트는 6), VRAM은 `vae_tile_size`(기본 512 → VOSR2 사용량 약 5.3GB).
 - 실측(RTX 3090, 모델 로딩 포함): 2MP 사진 74초(두 번째부터 57초), 18.7MP 시트 85초, VRAM 최고치 약 9GB(SAM3·대기 포함). SeedVR2판보다 약 3배 느립니다.
 - 예제: [`2BZ_VOSR2_Retouch_AnySize.json`](docs/workflows/2BZ_VOSR2_Retouch_AnySize.json)
+- **크게 키우는 게 목적이면** 업스케일판 [`2BZ_VOSR2_Upscale.json`](docs/workflows/2BZ_VOSR2_Upscale.json): Load Image → VOSR 2.0 Upscale(`upscale` = 배율, 기본 4) → Save. 리터치판과 달리 결과가 입력 × 배율 크기로 저장됩니다. 원본을 1/4로 줄였다가 ×4로 되돌린 실측에서 일반 확대보다 주름·수염이 확실히 살아남(선명도 0.31→0.56), 3090에서 1~2MP 출력 6~11초.
 
 ### Detection → per-box detail pass (Qwen-Image 2.1 등)
 
@@ -359,6 +360,7 @@ vae_name   : flux2-vae.safetensors
 - [`korean_scene_to_ideogram4.json`](docs/workflows/korean_scene_to_ideogram4.json) — **한국어 장면 → Prompt Polish → Layout Builder → Ideogram4 T2I.** 처음 사용자는 이 워크플로우를 먼저 열어 전체 흐름을 확인하는 것을 권장합니다.
 - [`2BZ_SeedVR2_Retouch_AnySize.json`](docs/workflows/2BZ_SeedVR2_Retouch_AnySize.json) — **아무 이미지 SeedVR2 리터치.** 이미지만 넣고 실행 → 높음/낮음 2장. VRAM은 `tile_megapixels` 하나로 조절.
 - [`2BZ_VOSR2_Retouch_AnySize.json`](docs/workflows/2BZ_VOSR2_Retouch_AnySize.json) — **같은 리터치, 엔진만 VOSR 2.0.** 시트·단체컷의 작은 얼굴까지 그대로. VOSR 2.0 노드(`comfyui-vosr2`) 필요.
+- [`2BZ_VOSR2_Upscale.json`](docs/workflows/2BZ_VOSR2_Upscale.json) — **작은 이미지 크게 키우기(VOSR 2.0).** 배율만 고르면 입력 × 배율 크기로 저장. VOSR 2.0 노드 필요.
 - [`z_image_turbo.json`](docs/workflows/z_image_turbo.json) — **`toobusy Z-Image Turbo` 한 노드로 t2i/img2img 기본 그래프를 접는 예제.** `image` 입력에 Load Image를 연결하면 자동으로 img2img로 전환됩니다.
 
 ## 추천 조합

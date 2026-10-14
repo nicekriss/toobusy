@@ -1,0 +1,282 @@
+{
+ "id": "2bz-vosr2-upscale",
+ "revision": 0,
+ "last_node_id": 90,
+ "last_link_id": 3,
+ "nodes": [
+  {
+   "id": 1,
+   "type": "LoadImage",
+   "pos": [
+    0,
+    0
+   ],
+   "size": [
+    360,
+    400
+   ],
+   "flags": {},
+   "order": 1,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "IMAGE",
+     "type": "IMAGE",
+     "links": [
+      2
+     ]
+    },
+    {
+     "name": "MASK",
+     "type": "MASK",
+     "links": []
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "LoadImage"
+   },
+   "widgets_values": [
+    "example.png",
+    "image"
+   ],
+   "title": "① 작은 이미지",
+   "color": "#232",
+   "bgcolor": "#353"
+  },
+  {
+   "id": 2,
+   "type": "VOSR2ModelLoader",
+   "pos": [
+    0,
+    540
+   ],
+   "size": [
+    360,
+    82
+   ],
+   "flags": {},
+   "order": 2,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "VOSR2_MODEL",
+     "type": "VOSR2_MODEL",
+     "links": [
+      1
+     ]
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "VOSR2ModelLoader"
+   },
+   "widgets_values": [
+    "VOSR2",
+    "bf16"
+   ],
+   "title": "VOSR 2.0 (models/vosr2/VOSR2)",
+   "color": "#223",
+   "bgcolor": "#335"
+  },
+  {
+   "id": 3,
+   "type": "VOSR2Upscale",
+   "pos": [
+    440,
+    0
+   ],
+   "size": [
+    400,
+    290
+   ],
+   "flags": {},
+   "order": 3,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "model",
+     "type": "VOSR2_MODEL",
+     "link": 1
+    },
+    {
+     "name": "image",
+     "type": "IMAGE",
+     "link": 2
+    }
+   ],
+   "outputs": [
+    {
+     "name": "IMAGE",
+     "type": "IMAGE",
+     "links": [
+      3
+     ]
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "VOSR2Upscale"
+   },
+   "widgets_values": [
+    4,
+    42,
+    "fixed",
+    "wavelet",
+    512,
+    64,
+    512,
+    64
+   ],
+   "title": "③ VOSR2 업스케일 (upscale = 배율)",
+   "color": "#322",
+   "bgcolor": "#533"
+  },
+  {
+   "id": 4,
+   "type": "SaveImage",
+   "pos": [
+    900,
+    0
+   ],
+   "size": [
+    420,
+    460
+   ],
+   "flags": {},
+   "order": 4,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "images",
+     "type": "IMAGE",
+     "link": 3
+    }
+   ],
+   "outputs": [],
+   "properties": {
+    "Node name for S&R": "SaveImage"
+   },
+   "widgets_values": [
+    "toobusy_upscale/vosr2"
+   ],
+   "title": "결과 저장 (입력 × 배율 크기)",
+   "color": "#232",
+   "bgcolor": "#353"
+  },
+  {
+   "id": 90,
+   "type": "MarkdownNote",
+   "pos": [
+    -760,
+    -60
+   ],
+   "size": [
+    720,
+    760
+   ],
+   "flags": {},
+   "order": 90,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [],
+   "properties": {
+    "Node name for S&R": "MarkdownNote"
+   },
+   "widgets_values": [
+    "## 작은 이미지 크게 키우기 — VOSR 2.0 업스케일 (2BZ)\n\n**① 에 이미지를 넣고 실행.** 프롬프트 없음. 결과는 **입력 크기 × 배율** 그대로 저장됩니다.\n(크기는 그대로 두고 피부 질감만 입히려면 → `2BZ_VOSR2_Retouch_AnySize` 를 쓰세요.)\n\n### 손잡이\n- **③ `upscale`** = 배율. 기본 4. 2 · 3 · 4 추천 — 모델은 16배까지 학습했지만 **4배 넘으면 화질 보장 없음**(노드 설명).\n- 출력 크기 감 잡기: 512px ×4 = 2048px · 1MP ×2 = 4MP · 1MP ×4 = 16MP. 이미 큰 이미지(2MP 이상)는 2배면 충분.\n- **`tile_size` 512 유지** — 모델이 512px로 학습돼서 출력이 512px을 넘으면 타일이 필수.\n- **VRAM**: `vae_tile_size` 512 기본(VOSR2 사용량 약 5.3GB 실측). 1024로 올리면 약 8.3GB, 속도는 거의 같음.\n- `color_alignment` wavelet = 원본 색에 맞춤(기본 추천).\n\n### 성격\nVOSR 2.0은 그림을 새로 지어내지 않고 **원본 구조를 지키는** 업스케일러입니다(이미지로만 학습, 텍스트→이미지 모델 개조형 아님). 얼굴·글자가 바뀌지 않는 대신, 정보가 거의 없는 아주 작은 이미지에서 없던 디테일을 화려하게 만들어 주지는 않습니다.\n\n### 필요한 것\n- **VOSR 2.0** 노드 (ComfyUI Manager에서 `VOSR` 검색 → comfyui-vosr2)\n- 모델 약 7GB는 첫 실행 때 자동으로 `models/vosr2/VOSR2/` 에 받아짐. 직접 받으려면 [CSWRY/VOSR](https://huggingface.co/CSWRY/VOSR/tree/main)\n- 라이선스: VOSR 2.0 코드·가중치 Apache 2.0 (PolyU · OPPO, CVPR 2026)\n\n### 실측 (RTX 3090 · 2026-10-14)\n| 입력 → 출력 | 시간 |\n|---|---|\n| 528×704 → ×2 (1056×1408) | 22초 (모델 로딩 포함) |\n| 264×352 → ×4 (1056×1408) | 6초 (모델 올라간 뒤) |\n| 360×360 → ×4 (1440×1440) | 11초 |\n\nVRAM 최고치 약 6.4~6.8GB(대기 2GB 포함). 정답 원본과 비교하면 ×4에서 일반 확대보다 주름·수염이 확실히 살아남(선명도 0.31→0.56, 얼굴 유사도 0.946→0.957). ×2에서는 차이가 작음.\n"
+   ],
+   "title": "⓪ 먼저 읽기"
+  }
+ ],
+ "links": [
+  [
+   1,
+   2,
+   0,
+   3,
+   0,
+   "VOSR2_MODEL"
+  ],
+  [
+   2,
+   1,
+   0,
+   3,
+   1,
+   "IMAGE"
+  ],
+  [
+   3,
+   3,
+   0,
+   4,
+   0,
+   "IMAGE"
+  ]
+ ],
+ "groups": [
+  {
+   "id": 1,
+   "title": "① 이미지 넣기",
+   "bounding": [
+    -20,
+    -60,
+    400,
+    520
+   ],
+   "color": "#3f5f3f",
+   "font_size": 24,
+   "flags": {}
+  },
+  {
+   "id": 2,
+   "title": "② 모델 (첫 실행 때 자동 다운로드)",
+   "bounding": [
+    -20,
+    480,
+    400,
+    180
+   ],
+   "color": "#3f3f5f",
+   "font_size": 24,
+   "flags": {}
+  },
+  {
+   "id": 3,
+   "title": "③ 업스케일 — upscale 이 배율",
+   "bounding": [
+    420,
+    -60,
+    440,
+    420
+   ],
+   "color": "#5f3f3f",
+   "font_size": 24,
+   "flags": {}
+  },
+  {
+   "id": 4,
+   "title": "④ 저장",
+   "bounding": [
+    880,
+    -60,
+    460,
+    560
+   ],
+   "color": "#3f5f5f",
+   "font_size": 24,
+   "flags": {}
+  }
+ ],
+ "config": {},
+ "extra": {
+  "ds": {
+   "scale": 0.7,
+   "offset": [
+    800,
+    160
+   ]
+  }
+ },
+ "version": 0.4
+}
