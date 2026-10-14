@@ -40,6 +40,18 @@ def _gaussian_blur(image, sigma):
     return t.permute(0, 2, 3, 1)
 
 
+def _resize_image(image, height, width):
+    """[B,H,W,C] -> [B,height,width,C]. Shrinking uses antialias: a VOSR2 result is 2.8x the
+    original's side on a 1 MP input, and plain bicubic there leaves stair-stepped hair and edges
+    that the high-pass then amplifies."""
+    if image.shape[1:3] == (height, width):
+        return image
+    shrink = height < image.shape[1] or width < image.shape[2]
+    t = F.interpolate(image.permute(0, 3, 1, 2), size=(height, width), mode="bicubic",
+                      align_corners=False, antialias=shrink)
+    return t.permute(0, 2, 3, 1)
+
+
 class ToobusyFrequencyDetailTransfer:
     """base_image의 형태·음영(저주파)은 유지하고 detail_image의 미세 질감(고주파)만 입힌다."""
 
@@ -67,9 +79,7 @@ class ToobusyFrequencyDetailTransfer:
     def transfer(self, base_image, detail_image, blur_sigma, detail_strength, mask=None):
         base = base_image.float()
         detail = detail_image.float().to(base.device)
-        if detail.shape[1:3] != base.shape[1:3]:
-            detail = F.interpolate(detail.permute(0, 3, 1, 2), size=base.shape[1:3], mode="bicubic",
-                                   align_corners=False).permute(0, 2, 3, 1)
+        detail = _resize_image(detail, base.shape[1], base.shape[2])
         if detail.shape[0] != base.shape[0]:
             detail = detail[:1].expand(base.shape[0], -1, -1, -1)
         detail = detail[..., : base.shape[-1]]
@@ -82,7 +92,7 @@ class ToobusyFrequencyDetailTransfer:
             if m.dim() == 2:
                 m = m.unsqueeze(0)
             if m.shape[1:] != base.shape[1:3]:
-                m = F.interpolate(m.unsqueeze(1), size=base.shape[1:3], mode="bilinear", align_corners=False).squeeze(1)
+                m = _resize_mask(m, base.shape[1], base.shape[2], m.shape[0], m.device)
             if m.shape[0] != base.shape[0]:
                 m = m[:1].expand(base.shape[0], -1, -1)
             m = m.unsqueeze(-1)
@@ -97,7 +107,8 @@ def _resize_mask(mask, height, width, batch, device):
     if m.dim() == 2:
         m = m.unsqueeze(0)
     if m.shape[1:] != (height, width):
-        m = F.interpolate(m.unsqueeze(1), size=(height, width), mode="bilinear", align_corners=False).squeeze(1)
+        shrink = height < m.shape[1] or width < m.shape[2]
+        m = F.interpolate(m.unsqueeze(1), size=(height, width), mode="bilinear", align_corners=False, antialias=shrink).squeeze(1)
     if m.shape[0] != batch:
         m = m[:1].expand(batch, -1, -1)
     return m.clamp(0.0, 1.0)
@@ -151,8 +162,7 @@ class ToobusyRetouchBlend:
         base = original[..., :3].float().to(dev)
         b, h, w, _ = base.shape
         detail = restored[..., :3].float().to(dev)
-        if detail.shape[1:3] != (h, w):
-            detail = F.interpolate(detail.permute(0, 3, 1, 2), size=(h, w), mode="bicubic", align_corners=False).permute(0, 2, 3, 1)
+        detail = _resize_image(detail, h, w)
         if detail.shape[0] != b:
             detail = detail[:1].expand(b, -1, -1, -1)
         low = _gaussian_blur(base, blur_sigma)

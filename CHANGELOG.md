@@ -2,6 +2,16 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [0.5.5] - 2026-10-14
+
+### Fixed
+- **2BZ Retouch Blend / 2BZ Frequency Detail Transfer** — 복원본이 원본보다 클 때(예: VOSR 2.0 결과는
+  1MP 입력에서 원본 한 변의 약 2.8배) 축소를 앤티에일리어싱 없는 bicubic 으로 해서 머리카락·턱선이
+  계단처럼 깨지고, 그걸 고주파 합성이 키워 결과가 지글지글하게 망가지던 문제. 이제 줄일 때는
+  앤티에일리어싱 bicubic(마스크는 bilinear)으로 줄입니다. 같은 크기·키울 때는 이전과 같습니다.
+  SeedVR2 Tile Restore 는 이미 원래 크기로 줄여서 넘겨주므로 SeedVR2판 결과는 바뀌지 않습니다.
+  (`tests/test_retouch_blend_resize.py`)
+
 ## [0.5.4] - 2026-10-13
 
 ### Added

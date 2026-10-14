@@ -86,7 +86,7 @@ Load Image ─ 작업 크기 4MP로 맞춤 ─ VOSR 2.0 Upscale ×2 ─┬─ 2B
            └ 2MP로 축소 ─ SAM3 Detect("skin:8") ───────┴─ 2BZ Retouch Blend (낮음 1.25 / 피부 1.0) ─ Save
 ```
 
-- 필요한 노드: **VOSR 2.0** (`comfyui-vosr2`, Manager에서 검색) + toobusy 0.5.4 이상. 모델(약 7GB)은 첫 실행 때 자동으로 받습니다.
+- 필요한 노드: **VOSR 2.0** (`comfyui-vosr2`, Manager에서 검색) + **toobusy 0.5.5 이상**(0.5.4는 큰 복원본을 줄일 때 계단 현상). 모델(약 7GB)은 첫 실행 때 자동으로 받습니다.
 - 손잡이: 작업 크기(기본 4MP, 18MP 시트는 6), VRAM은 `vae_tile_size`(기본 512 → VOSR2 사용량 약 5.3GB).
 - 실측(RTX 3090, 모델 로딩 포함): 2MP 사진 74초(두 번째부터 57초), 18.7MP 시트 85초, VRAM 최고치 약 9GB(SAM3·대기 포함). SeedVR2판보다 약 3배 느립니다.
 - 예제: [`2BZ_VOSR2_Retouch_AnySize.json`](docs/workflows/2BZ_VOSR2_Retouch_AnySize.json)
