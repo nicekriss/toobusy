@@ -12,6 +12,10 @@
   SeedVR2 Tile Restore 는 이미 원래 크기로 줄여서 넘겨주므로 SeedVR2판 결과는 바뀌지 않습니다.
   (`tests/test_retouch_blend_resize.py`)
 
+### Removed
+- 예제 `2BZ_VOSR2_Retouch_AnySize.json` — VOSR 2.0을 리터치 엔진으로 쓰는 판. 얼굴 유사도는 높았지만 눈으로 보면
+  피부가 좋아지지 않아 내림. 리터치는 `2BZ_SeedVR2_Retouch_AnySize`, 크게 키우기는 `2BZ_VOSR2_Upscale`.
+
 ## [0.5.4] - 2026-10-13
 
 ### Added

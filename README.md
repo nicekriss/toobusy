@@ -76,21 +76,14 @@ Load Image ─ 2BZ SeedVR2 Tile Restore ─┬─ 2BZ Retouch Blend (높음 1.25
 - 모델: [seedvr2_3b_int8_convrot](https://huggingface.co/Comfy-Org/SeedVR2/resolve/main/diffusion_models/seedvr2_3b_int8_convrot.safetensors) → `diffusion_models`, [seedvr2_ema_vae_fp16](https://huggingface.co/Comfy-Org/SeedVR2/resolve/main/vae/seedvr2_ema_vae_fp16.safetensors) → `vae`, [sam3.1_multiplex_fp16](https://huggingface.co/Comfy-Org/sam3.1/resolve/main/checkpoints/sam3.1_multiplex_fp16.safetensors) → `checkpoints`. SeedVR2·SAM3 노드는 ComfyUI 코어.
 - 예제: [`2BZ_SeedVR2_Retouch_AnySize.json`](docs/workflows/2BZ_SeedVR2_Retouch_AnySize.json)
 
-#### VOSR 2.0 엔진판 — 작은 얼굴까지 그대로 (권장)
+#### 작은 이미지를 크게 키울 때 — VOSR 2.0 업스케일
 
-같은 `2BZ Retouch Blend`에 복원 엔진만 [VOSR 2.0](https://github.com/cswry/VOSR)(1스텝 1.4B 초해상도, Apache 2.0)으로 바꾼 판입니다.
-캐릭터 시트·단체컷처럼 얼굴이 작을 때 SeedVR2는 얼굴 인상을 바꾸는 경우가 있는데(폭 50~100px 얼굴 유사도 0.41~0.82), VOSR2는 0.94~0.99로 유지합니다(2BZ 실측 7장면).
+리터치(크기 그대로 질감만)가 아니라 **크게 키우는 게 목적**이면 업스케일판 [`2BZ_VOSR2_Upscale.json`](docs/workflows/2BZ_VOSR2_Upscale.json):
+Load Image → [VOSR 2.0](https://github.com/cswry/VOSR) Upscale(`upscale` = 배율, 기본 4) → Save. 결과가 입력 × 배율 크기로 저장됩니다.
+원본을 1/4로 줄였다가 ×4로 되돌린 실측에서 일반 확대보다 주름·수염이 확실히 살아남(선명도 0.31→0.56), 3090에서 1~2MP 출력 6~11초.
+필요: **VOSR 2.0** 노드(`comfyui-vosr2`, Manager에서 검색), 모델 약 7GB는 첫 실행 때 자동 다운로드.
 
-```
-Load Image ─ 작업 크기 4MP로 맞춤 ─ VOSR 2.0 Upscale ×2 ─┬─ 2BZ Retouch Blend (높음 1.6 / 피부 1.4) ─ Save
-           └ 2MP로 축소 ─ SAM3 Detect("skin:8") ───────┴─ 2BZ Retouch Blend (낮음 1.25 / 피부 1.0) ─ Save
-```
-
-- 필요한 노드: **VOSR 2.0** (`comfyui-vosr2`, Manager에서 검색) + **toobusy 0.5.5 이상**(0.5.4는 큰 복원본을 줄일 때 계단 현상). 모델(약 7GB)은 첫 실행 때 자동으로 받습니다.
-- 손잡이: 작업 크기(기본 4MP, 18MP 시트는 6), VRAM은 `vae_tile_size`(기본 512 → VOSR2 사용량 약 5.3GB).
-- 실측(RTX 3090, 모델 로딩 포함): 2MP 사진 74초(두 번째부터 57초), 18.7MP 시트 85초, VRAM 최고치 약 9GB(SAM3·대기 포함). SeedVR2판보다 약 3배 느립니다.
-- 예제: [`2BZ_VOSR2_Retouch_AnySize.json`](docs/workflows/2BZ_VOSR2_Retouch_AnySize.json)
-- **크게 키우는 게 목적이면** 업스케일판 [`2BZ_VOSR2_Upscale.json`](docs/workflows/2BZ_VOSR2_Upscale.json): Load Image → VOSR 2.0 Upscale(`upscale` = 배율, 기본 4) → Save. 리터치판과 달리 결과가 입력 × 배율 크기로 저장됩니다. 원본을 1/4로 줄였다가 ×4로 되돌린 실측에서 일반 확대보다 주름·수염이 확실히 살아남(선명도 0.31→0.56), 3090에서 1~2MP 출력 6~11초.
+> VOSR 2.0을 리터치 엔진(SeedVR2 자리)으로 쓰는 판도 시험했지만, 얼굴은 덜 바뀌어도 눈으로 보면 피부가 좋아지지 않아 내렸습니다. 리터치는 SeedVR2판을 쓰세요.
 
 ### Detection → per-box detail pass (Qwen-Image 2.1 등)
 
@@ -359,7 +352,6 @@ vae_name   : flux2-vae.safetensors
 - [`toobusy_flux2klein.json`](docs/workflows/toobusy_flux2klein.json) — **`toobusy Flux2 Klein` 한 노드로 레퍼런스 이미지 기반 생성 그래프를 접는 예제.** Load Image → Flux2 Klein → Save Image 구성입니다.
 - [`korean_scene_to_ideogram4.json`](docs/workflows/korean_scene_to_ideogram4.json) — **한국어 장면 → Prompt Polish → Layout Builder → Ideogram4 T2I.** 처음 사용자는 이 워크플로우를 먼저 열어 전체 흐름을 확인하는 것을 권장합니다.
 - [`2BZ_SeedVR2_Retouch_AnySize.json`](docs/workflows/2BZ_SeedVR2_Retouch_AnySize.json) — **아무 이미지 SeedVR2 리터치.** 이미지만 넣고 실행 → 높음/낮음 2장. VRAM은 `tile_megapixels` 하나로 조절.
-- [`2BZ_VOSR2_Retouch_AnySize.json`](docs/workflows/2BZ_VOSR2_Retouch_AnySize.json) — **같은 리터치, 엔진만 VOSR 2.0.** 시트·단체컷의 작은 얼굴까지 그대로. VOSR 2.0 노드(`comfyui-vosr2`) 필요.
 - [`2BZ_VOSR2_Upscale.json`](docs/workflows/2BZ_VOSR2_Upscale.json) — **작은 이미지 크게 키우기(VOSR 2.0).** 배율만 고르면 입력 × 배율 크기로 저장. VOSR 2.0 노드 필요.
 - [`z_image_turbo.json`](docs/workflows/z_image_turbo.json) — **`toobusy Z-Image Turbo` 한 노드로 t2i/img2img 기본 그래프를 접는 예제.** `image` 입력에 Load Image를 연결하면 자동으로 img2img로 전환됩니다.
 
