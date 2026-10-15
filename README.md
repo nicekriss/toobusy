@@ -60,6 +60,23 @@ width / height
 - `toobusy MiniMax H3 Reference Manifest`: 실제로 전달된 이미지에 맞춰 `<Picture N>` 번호와 역할 문장을 압축합니다.
 - 예제: [`2BZ_H3_character_sheet_2stage_v1.json`](docs/workflows/2BZ_H3_character_sheet_2stage_v1.json)
 
+### 자동 크기 리터치 — 얼굴이 약 200px이 되게 키워서 (권장)
+
+리터치가 극적으로 먹는 조건은 **처리할 때 얼굴이 약 200px**인 것입니다(캐릭터 시트가 유난히 잘 되던 이유도 얼굴이 원래 그 크기라서).
+`2BZ Face-Size Scale Plan`이 SAM3로 찾은 얼굴을 재서 작업 크기를 정하고, VOSR 2.0이 그 크기까지 키운 뒤 SeedVR2가 질감을 입혀 **키운 크기 그대로** 저장합니다.
+
+```
+Load Image ─ SAM3 Detect("face:8") ─ 2BZ Face-Size Scale Plan(200px) ─┬─ VOSR 2.0 Upscale ×N ─┐
+                                                                       └─ 2BZ Use Upscaled If Needed ─ Image Scale(정확한 크기)
+   ─ 2BZ SeedVR2 Tile Restore ─ 2BZ Retouch Blend (높음/낮음) ─ Save
+```
+
+- 1MP 전신샷(얼굴 ~100px) → 약 2배, 단체컷·시트 → 가장 큰 얼굴 기준, 클로즈업·큰 시트(얼굴이 이미 200px 이상) → VOSR2를 건너뛰고 원래 크기 그대로, 얼굴이 없으면 4MP 근처.
+- `2BZ Use Upscaled If Needed`: 쓰는 쪽만 계산하는 선택 노드 — 키울 필요가 없으면 VOSR 2.0이 아예 돌지 않습니다.
+- 실측(RTX 3090): 1MP 전신 55초 · 1.6MP 단체 43초 · 클로즈업 15초 · 18.7MP 시트 65초, VRAM 최고 약 12GB(대기 포함).
+- 필요: toobusy 0.5.6+, **VOSR 2.0** 노드(`comfyui-vosr2`), SeedVR2·SAM3 모델(아래 SeedVR2 Retouch와 같음).
+- 예제: [`2BZ_Retouch_AutoSize.json`](docs/workflows/2BZ_Retouch_AutoSize.json)
+
 ### SeedVR2 Retouch — 아무 이미지나, VRAM에 맞춰
 
 AI 이미지의 플라스틱 같은 피부·뭉개진 머리카락·옷감에 **미세 질감만** 입힙니다. 형태·얼굴·색은 원본 그대로이고 프롬프트가 없습니다.

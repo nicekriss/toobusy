@@ -2,6 +2,18 @@
 
 이 프로젝트의 주요 변경 사항을 기록합니다. (Keep a Changelog 형식, 날짜는 YYYY-MM-DD)
 
+## [0.5.6] - 2026-10-15
+
+### Added
+- **2BZ Face-Size Scale Plan** — SAM3 얼굴 박스를 재서 "처리할 때 얼굴이 약 200px"이 되는 작업 크기를 정합니다
+  (2BZ 실측: 1MP 전신을 ×2 → 얼굴 200px이 가장 자연스럽게 극적, ×4 → 400px은 과선명). 가장 큰 얼굴 기준(largest/median/
+  smallest), 얼굴이 이미 크면 원본 크기 그대로(16배수 반올림 없이), 얼굴이 없으면 지정 MP 근처, VOSR 2.0용 정수 배율
+  (10% 이내 부족분은 정확한 크기 맞춤으로 처리 — 2.04배에 ×3을 돌리지 않음)과 `needs_upscale` 을 함께 냅니다.
+- **2BZ Use Upscaled If Needed** — 쓰는 쪽 입력만 계산하는 지연 선택 노드. 키울 필요가 없을 때 VOSR 2.0이 아예 돌지
+  않아 18.7MP 시트가 311초 → 65초, VRAM 18GB → 12GB.
+- 예제 `docs/workflows/2BZ_Retouch_AutoSize.json` (얼굴 감지 → 크기 결정 → VOSR 2.0 → SeedVR2 → 키운 크기 그대로 저장).
+  `tests/test_face_scale_plan.py`.
+
 ## [0.5.5] - 2026-10-14
 
 ### Fixed

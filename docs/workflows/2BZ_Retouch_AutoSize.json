@@ -1,0 +1,1384 @@
+{
+ "id": "2bz-retouch-autosize",
+ "revision": 0,
+ "last_node_id": 90,
+ "last_link_id": 34,
+ "nodes": [
+  {
+   "id": 1,
+   "type": "LoadImage",
+   "pos": [
+    0,
+    0
+   ],
+   "size": [
+    360,
+    400
+   ],
+   "flags": {},
+   "order": 1,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "IMAGE",
+     "type": "IMAGE",
+     "links": [
+      1,
+      6,
+      11,
+      15
+     ]
+    },
+    {
+     "name": "MASK",
+     "type": "MASK",
+     "links": []
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "LoadImage"
+   },
+   "widgets_values": [
+    "example.png",
+    "image"
+   ],
+   "title": "① 이미지",
+   "color": "#232",
+   "bgcolor": "#353"
+  },
+  {
+   "id": 50,
+   "type": "VOSR2ModelLoader",
+   "pos": [
+    0,
+    560
+   ],
+   "size": [
+    360,
+    82
+   ],
+   "flags": {},
+   "order": 50,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "VOSR2_MODEL",
+     "type": "VOSR2_MODEL",
+     "links": [
+      10
+     ]
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "VOSR2ModelLoader"
+   },
+   "widgets_values": [
+    "VOSR2",
+    "bf16"
+   ],
+   "title": "VOSR 2.0 (키우기)",
+   "color": "#223",
+   "bgcolor": "#335"
+  },
+  {
+   "id": 2,
+   "type": "UNETLoader",
+   "pos": [
+    0,
+    680
+   ],
+   "size": [
+    360,
+    82
+   ],
+   "flags": {},
+   "order": 2,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "MODEL",
+     "type": "MODEL",
+     "links": [
+      19
+     ]
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "UNETLoader"
+   },
+   "widgets_values": [
+    "seedvr2_3b_int8_convrot.safetensors",
+    "default"
+   ],
+   "title": "SeedVR2 3B (질감)",
+   "color": "#223",
+   "bgcolor": "#335"
+  },
+  {
+   "id": 3,
+   "type": "VAELoader",
+   "pos": [
+    0,
+    800
+   ],
+   "size": [
+    360,
+    58
+   ],
+   "flags": {},
+   "order": 3,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "VAE",
+     "type": "VAE",
+     "links": [
+      20
+     ]
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "VAELoader"
+   },
+   "widgets_values": [
+    "seedvr2_ema_vae_fp16.safetensors"
+   ],
+   "title": "SeedVR2 VAE",
+   "color": "#223",
+   "bgcolor": "#335"
+  },
+  {
+   "id": 20,
+   "type": "CheckpointLoaderSimple",
+   "pos": [
+    0,
+    900
+   ],
+   "size": [
+    360,
+    98
+   ],
+   "flags": {},
+   "order": 20,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "MODEL",
+     "type": "MODEL",
+     "links": [
+      3,
+      24
+     ]
+    },
+    {
+     "name": "CLIP",
+     "type": "CLIP",
+     "links": [
+      2,
+      23
+     ]
+    },
+    {
+     "name": "VAE",
+     "type": "VAE",
+     "links": []
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "CheckpointLoaderSimple"
+   },
+   "widgets_values": [
+    "sam3.1_multiplex_fp16.safetensors"
+   ],
+   "title": "SAM3 (얼굴·피부 찾기)",
+   "color": "#223",
+   "bgcolor": "#335"
+  },
+  {
+   "id": 40,
+   "type": "ImageScaleToTotalPixels",
+   "pos": [
+    440,
+    0
+   ],
+   "size": [
+    420,
+    106
+   ],
+   "flags": {},
+   "order": 40,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "image",
+     "type": "IMAGE",
+     "link": 1
+    }
+   ],
+   "outputs": [
+    {
+     "name": "IMAGE",
+     "type": "IMAGE",
+     "links": [
+      4,
+      8
+     ]
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "ImageScaleToTotalPixels"
+   },
+   "widgets_values": [
+    "area",
+    2.0,
+    1
+   ],
+   "title": "2MP로 줄여서 얼굴 찾기"
+  },
+  {
+   "id": 41,
+   "type": "CLIPTextEncode",
+   "pos": [
+    440,
+    140
+   ],
+   "size": [
+    420,
+    90
+   ],
+   "flags": {},
+   "order": 41,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "clip",
+     "type": "CLIP",
+     "link": 2
+    }
+   ],
+   "outputs": [
+    {
+     "name": "CONDITIONING",
+     "type": "CONDITIONING",
+     "links": [
+      5
+     ]
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "CLIPTextEncode"
+   },
+   "widgets_values": [
+    "face:8"
+   ],
+   "title": "찾을 대상 = 얼굴"
+  },
+  {
+   "id": 42,
+   "type": "SAM3_Detect",
+   "pos": [
+    440,
+    270
+   ],
+   "size": [
+    420,
+    150
+   ],
+   "flags": {},
+   "order": 42,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "model",
+     "type": "MODEL",
+     "link": 3
+    },
+    {
+     "name": "image",
+     "type": "IMAGE",
+     "link": 4
+    },
+    {
+     "name": "conditioning",
+     "type": "CONDITIONING",
+     "link": 5
+    }
+   ],
+   "outputs": [
+    {
+     "name": "masks",
+     "type": "MASK",
+     "links": []
+    },
+    {
+     "name": "bboxes",
+     "type": "BOUNDING_BOX",
+     "links": [
+      7
+     ]
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "SAM3_Detect"
+   },
+   "widgets_values": [
+    0.5,
+    2,
+    false
+   ],
+   "title": "SAM3 얼굴 검출"
+  },
+  {
+   "id": 43,
+   "type": "ToobusyFaceScalePlan",
+   "pos": [
+    440,
+    460
+   ],
+   "size": [
+    420,
+    250
+   ],
+   "flags": {},
+   "order": 43,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "image",
+     "type": "IMAGE",
+     "link": 6
+    },
+    {
+     "name": "bboxes",
+     "type": "BOUNDING_BOX",
+     "link": 7
+    },
+    {
+     "name": "detect_image",
+     "type": "IMAGE",
+     "link": 8
+    }
+   ],
+   "outputs": [
+    {
+     "name": "vosr2_upscale",
+     "type": "INT",
+     "links": [
+      12
+     ]
+    },
+    {
+     "name": "width",
+     "type": "INT",
+     "links": [
+      17
+     ]
+    },
+    {
+     "name": "height",
+     "type": "INT",
+     "links": [
+      18
+     ]
+    },
+    {
+     "name": "scale",
+     "type": "FLOAT",
+     "links": []
+    },
+    {
+     "name": "info",
+     "type": "STRING",
+     "links": [
+      9
+     ]
+    },
+    {
+     "name": "needs_upscale",
+     "type": "BOOLEAN",
+     "links": [
+      13
+     ]
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "ToobusyFaceScalePlan"
+   },
+   "widgets_values": [
+    200,
+    "largest",
+    4.0,
+    4.0,
+    false,
+    16
+   ],
+   "title": "③ 얼굴 크기 → 배율 (target_face_px)",
+   "color": "#432",
+   "bgcolor": "#653"
+  },
+  {
+   "id": 44,
+   "type": "PreviewAny",
+   "pos": [
+    440,
+    740
+   ],
+   "size": [
+    420,
+    120
+   ],
+   "flags": {},
+   "order": 44,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "source",
+     "type": "*",
+     "link": 9
+    }
+   ],
+   "outputs": [],
+   "properties": {
+    "Node name for S&R": "PreviewAny"
+   },
+   "widgets_values": [],
+   "title": "처리 계획 (얼굴 크기·배율·결과 크기)"
+  },
+  {
+   "id": 45,
+   "type": "VOSR2Upscale",
+   "pos": [
+    920,
+    0
+   ],
+   "size": [
+    400,
+    290
+   ],
+   "flags": {},
+   "order": 45,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "model",
+     "type": "VOSR2_MODEL",
+     "link": 10
+    },
+    {
+     "name": "image",
+     "type": "IMAGE",
+     "link": 11
+    },
+    {
+     "name": "upscale",
+     "type": "INT",
+     "link": 12,
+     "widget": {
+      "name": "upscale"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "name": "IMAGE",
+     "type": "IMAGE",
+     "links": [
+      14
+     ]
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "VOSR2Upscale"
+   },
+   "widgets_values": [
+    2,
+    42,
+    "fixed",
+    "wavelet",
+    512,
+    64,
+    512,
+    64
+   ],
+   "title": "VOSR2 키우기 (배율 자동)",
+   "color": "#323",
+   "bgcolor": "#535"
+  },
+  {
+   "id": 47,
+   "type": "ToobusyUseUpscaledIfNeeded",
+   "pos": [
+    920,
+    330
+   ],
+   "size": [
+    400,
+    100
+   ],
+   "flags": {},
+   "order": 47,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "use_upscaled",
+     "type": "BOOLEAN",
+     "link": 13
+    },
+    {
+     "name": "upscaled",
+     "type": "IMAGE",
+     "link": 14
+    },
+    {
+     "name": "original",
+     "type": "IMAGE",
+     "link": 15
+    }
+   ],
+   "outputs": [
+    {
+     "name": "image",
+     "type": "IMAGE",
+     "links": [
+      16
+     ]
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "ToobusyUseUpscaledIfNeeded"
+   },
+   "title": "키울 필요 없으면 VOSR2 건너뜀"
+  },
+  {
+   "id": 46,
+   "type": "ImageScale",
+   "pos": [
+    920,
+    470
+   ],
+   "size": [
+    400,
+    130
+   ],
+   "flags": {},
+   "order": 46,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "image",
+     "type": "IMAGE",
+     "link": 16
+    },
+    {
+     "name": "width",
+     "type": "INT",
+     "link": 17,
+     "widget": {
+      "name": "width"
+     }
+    },
+    {
+     "name": "height",
+     "type": "INT",
+     "link": 18,
+     "widget": {
+      "name": "height"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "name": "IMAGE",
+     "type": "IMAGE",
+     "links": [
+      21,
+      22,
+      27,
+      31
+     ]
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "ImageScale"
+   },
+   "widgets_values": [
+    "lanczos",
+    1024,
+    1024,
+    "disabled"
+   ],
+   "title": "계획한 크기로 맞추기"
+  },
+  {
+   "id": 4,
+   "type": "ToobusySeedVR2TileRestore",
+   "pos": [
+    1380,
+    0
+   ],
+   "size": [
+    400,
+    230
+   ],
+   "flags": {},
+   "order": 4,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "model",
+     "type": "MODEL",
+     "link": 19
+    },
+    {
+     "name": "vae",
+     "type": "VAE",
+     "link": 20
+    },
+    {
+     "name": "image",
+     "type": "IMAGE",
+     "link": 21
+    }
+   ],
+   "outputs": [
+    {
+     "name": "restored",
+     "type": "IMAGE",
+     "links": [
+      28,
+      32
+     ]
+    },
+    {
+     "name": "info",
+     "type": "STRING",
+     "links": []
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "ToobusySeedVR2TileRestore"
+   },
+   "widgets_values": [
+    2.0,
+    3.0,
+    128,
+    42,
+    "fixed",
+    "lab"
+   ],
+   "title": "SeedVR2 타일 복원",
+   "color": "#322",
+   "bgcolor": "#533"
+  },
+  {
+   "id": 21,
+   "type": "ImageScaleToTotalPixels",
+   "pos": [
+    1380,
+    280
+   ],
+   "size": [
+    400,
+    106
+   ],
+   "flags": {},
+   "order": 21,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "image",
+     "type": "IMAGE",
+     "link": 22
+    }
+   ],
+   "outputs": [
+    {
+     "name": "IMAGE",
+     "type": "IMAGE",
+     "links": [
+      25
+     ]
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "ImageScaleToTotalPixels"
+   },
+   "widgets_values": [
+    "area",
+    2.0,
+    1
+   ],
+   "title": "2MP로 줄여서 피부 찾기"
+  },
+  {
+   "id": 22,
+   "type": "CLIPTextEncode",
+   "pos": [
+    1380,
+    420
+   ],
+   "size": [
+    400,
+    90
+   ],
+   "flags": {},
+   "order": 22,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "clip",
+     "type": "CLIP",
+     "link": 23
+    }
+   ],
+   "outputs": [
+    {
+     "name": "CONDITIONING",
+     "type": "CONDITIONING",
+     "links": [
+      26
+     ]
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "CLIPTextEncode"
+   },
+   "widgets_values": [
+    "skin:8"
+   ],
+   "title": "찾을 대상 = 피부"
+  },
+  {
+   "id": 23,
+   "type": "SAM3_Detect",
+   "pos": [
+    1380,
+    550
+   ],
+   "size": [
+    400,
+    150
+   ],
+   "flags": {},
+   "order": 23,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "model",
+     "type": "MODEL",
+     "link": 24
+    },
+    {
+     "name": "image",
+     "type": "IMAGE",
+     "link": 25
+    },
+    {
+     "name": "conditioning",
+     "type": "CONDITIONING",
+     "link": 26
+    }
+   ],
+   "outputs": [
+    {
+     "name": "masks",
+     "type": "MASK",
+     "links": [
+      29,
+      33
+     ]
+    },
+    {
+     "name": "bboxes",
+     "type": "BOUNDING_BOX",
+     "links": []
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "SAM3_Detect"
+   },
+   "widgets_values": [
+    0.5,
+    2,
+    false
+   ],
+   "title": "SAM3 피부 검출"
+  },
+  {
+   "id": 30,
+   "type": "ToobusyRetouchBlend",
+   "pos": [
+    1840,
+    0
+   ],
+   "size": [
+    380,
+    230
+   ],
+   "flags": {},
+   "order": 30,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "original",
+     "type": "IMAGE",
+     "link": 27
+    },
+    {
+     "name": "restored",
+     "type": "IMAGE",
+     "link": 28
+    },
+    {
+     "name": "skin_mask",
+     "type": "MASK",
+     "link": 29
+    }
+   ],
+   "outputs": [
+    {
+     "name": "image",
+     "type": "IMAGE",
+     "links": [
+      30
+     ]
+    },
+    {
+     "name": "used_mask",
+     "type": "MASK",
+     "links": []
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "ToobusyRetouchBlend"
+   },
+   "widgets_values": [
+    1.25,
+    1.0,
+    3.0,
+    8,
+    8.0
+   ],
+   "title": "높음: 나머지 1.25 / 피부 1.0",
+   "color": "#322",
+   "bgcolor": "#533"
+  },
+  {
+   "id": 31,
+   "type": "SaveImage",
+   "pos": [
+    2250,
+    0
+   ],
+   "size": [
+    400,
+    440
+   ],
+   "flags": {},
+   "order": 31,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "images",
+     "type": "IMAGE",
+     "link": 30
+    }
+   ],
+   "outputs": [],
+   "properties": {
+    "Node name for S&R": "SaveImage"
+   },
+   "widgets_values": [
+    "toobusy_retouch/auto_high"
+   ],
+   "title": "높음 저장",
+   "color": "#232",
+   "bgcolor": "#353"
+  },
+  {
+   "id": 32,
+   "type": "ToobusyRetouchBlend",
+   "pos": [
+    1840,
+    500
+   ],
+   "size": [
+    380,
+    230
+   ],
+   "flags": {},
+   "order": 32,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "original",
+     "type": "IMAGE",
+     "link": 31
+    },
+    {
+     "name": "restored",
+     "type": "IMAGE",
+     "link": 32
+    },
+    {
+     "name": "skin_mask",
+     "type": "MASK",
+     "link": 33
+    }
+   ],
+   "outputs": [
+    {
+     "name": "image",
+     "type": "IMAGE",
+     "links": [
+      34
+     ]
+    },
+    {
+     "name": "used_mask",
+     "type": "MASK",
+     "links": []
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "ToobusyRetouchBlend"
+   },
+   "widgets_values": [
+    1.0,
+    0.9,
+    3.0,
+    8,
+    8.0
+   ],
+   "title": "낮음: 나머지 1.0 / 피부 0.9",
+   "color": "#223",
+   "bgcolor": "#335"
+  },
+  {
+   "id": 33,
+   "type": "SaveImage",
+   "pos": [
+    2250,
+    500
+   ],
+   "size": [
+    400,
+    440
+   ],
+   "flags": {},
+   "order": 33,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "images",
+     "type": "IMAGE",
+     "link": 34
+    }
+   ],
+   "outputs": [],
+   "properties": {
+    "Node name for S&R": "SaveImage"
+   },
+   "widgets_values": [
+    "toobusy_retouch/auto_low"
+   ],
+   "title": "낮음 저장 (자연스럽게)",
+   "color": "#232",
+   "bgcolor": "#353"
+  },
+  {
+   "id": 90,
+   "type": "MarkdownNote",
+   "pos": [
+    -760,
+    -60
+   ],
+   "size": [
+    720,
+    1080
+   ],
+   "flags": {},
+   "order": 90,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [],
+   "properties": {
+    "Node name for S&R": "MarkdownNote"
+   },
+   "widgets_values": [
+    "## 자동 크기 리터치 (2BZ · toobusy 0.5.6 + VOSR 2.0 + SeedVR2)\n\n**① 에 이미지를 넣고 실행만.** 프롬프트 없음.\n\n### 원리 — 크기가 답\n리터치가 극적으로 먹는 조건은 **처리할 때 얼굴이 약 200px**인 것. 캐릭터시트가 잘 됐던 것도 얼굴이 원래 그 크기라서.\n그래서 SAM3로 얼굴을 재서 → **VOSR 2.0이 그 크기까지 키우고**(구조 그대로 충실하게) → **SeedVR2가 질감**을 입혀 → **키운 크기 그대로** 저장합니다.\n- 1MP 전신샷(얼굴 ~100px) → 약 2배(4MP) · 시트·단체컷 → 가장 큰 얼굴 기준\n- 클로즈업·큰 시트(얼굴이 이미 200px 이상) → **VOSR2를 건너뛰고** 원래 크기 그대로 리터치 (클로즈업은 사실 리터치가 꼭 필요 없는 장면)\n- 얼굴이 없으면 → 4MP 근처로\n처리 계획 노드에 얼굴 크기·배율·결과 크기가 표시됩니다.\n\n### 손잡이\n- **③ `target_face_px`** 기본 200 — 올리면 더 쨍해지고, 너무 크면(약 400) 부자연스러움. 실측 적정선 200.\n- `pick` largest = 여러 얼굴 중 가장 큰 얼굴 기준(권장) · `max_scale` 4 = 한 변 최대 4배(면적 16배)\n- **VRAM**: ⑤ `tile_megapixels`(8GB 1 / 12GB 1.5~2 / 24GB 3~4), VOSR2는 `vae_tile_size` 512 기본(약 5.3GB)\n- 결과 2장: **높음**(나머지 1.25/피부 1.0) · **낮음**(1.0/0.9, 너무 쨍하면 이쪽)\n\n### 모델 (클릭하면 바로 다운로드)\n- [seedvr2_3b_int8_convrot.safetensors](https://huggingface.co/Comfy-Org/SeedVR2/resolve/main/diffusion_models/seedvr2_3b_int8_convrot.safetensors) → `models/diffusion_models/`\n- [seedvr2_ema_vae_fp16.safetensors](https://huggingface.co/Comfy-Org/SeedVR2/resolve/main/vae/seedvr2_ema_vae_fp16.safetensors) → `models/vae/`\n- [sam3.1_multiplex_fp16.safetensors](https://huggingface.co/Comfy-Org/sam3.1/resolve/main/checkpoints/sam3.1_multiplex_fp16.safetensors) → `models/checkpoints/`\n- VOSR 2.0 — 첫 실행 때 자동 다운로드(약 7GB) → `models/vosr2/VOSR2/`\n\n### 필요한 노드 (ComfyUI Manager에서 검색)\n- **toobusy 0.5.6 이상** (`toobusy`) · **VOSR 2.0** (`VOSR` → comfyui-vosr2) · SAM3·SeedVR2는 ComfyUI 코어\n\n### 실측 (RTX 3090 · 2026-10-15)\n| 입력 | 처리 계획 | 결과 | 시간 |\n|---|---|---|---|\n| 1MP 전신샷 (얼굴 98px) | ×2.04 | 1696×2512 | 55초 |\n| 1.6MP 스토리보드 (얼굴 6개, 가장 큰 113px) | ×1.78 | 2576×1936 | 43초 |\n| 1MP 클로즈업 (얼굴 728px) | VOSR2 건너뜀 | 원본 크기 그대로 | 15초 |\n| 18.7MP 캐릭터시트 | VOSR2 건너뜀 | 원본 크기 그대로 | 65초 |\n| 0.6MP 작은 얼굴 (54px) | ×3.73 | 2864×2864 | 59초 |\n\nVRAM 최고치 약 12GB(대기 2GB 포함 · VOSR2·SeedVR2·SAM3 합). 8GB 카드는 미검증 — ⑤ `tile_megapixels` 1, VOSR2 `vae_tile_size` 512 유지.\n"
+   ],
+   "title": "⓪ 먼저 읽기"
+  }
+ ],
+ "links": [
+  [
+   1,
+   1,
+   0,
+   40,
+   0,
+   "IMAGE"
+  ],
+  [
+   2,
+   20,
+   1,
+   41,
+   0,
+   "CLIP"
+  ],
+  [
+   3,
+   20,
+   0,
+   42,
+   0,
+   "MODEL"
+  ],
+  [
+   4,
+   40,
+   0,
+   42,
+   1,
+   "IMAGE"
+  ],
+  [
+   5,
+   41,
+   0,
+   42,
+   2,
+   "CONDITIONING"
+  ],
+  [
+   6,
+   1,
+   0,
+   43,
+   0,
+   "IMAGE"
+  ],
+  [
+   7,
+   42,
+   1,
+   43,
+   1,
+   "BOUNDING_BOX"
+  ],
+  [
+   8,
+   40,
+   0,
+   43,
+   2,
+   "IMAGE"
+  ],
+  [
+   9,
+   43,
+   4,
+   44,
+   0,
+   "STRING"
+  ],
+  [
+   10,
+   50,
+   0,
+   45,
+   0,
+   "VOSR2_MODEL"
+  ],
+  [
+   11,
+   1,
+   0,
+   45,
+   1,
+   "IMAGE"
+  ],
+  [
+   12,
+   43,
+   0,
+   45,
+   2,
+   "INT"
+  ],
+  [
+   13,
+   43,
+   5,
+   47,
+   0,
+   "BOOLEAN"
+  ],
+  [
+   14,
+   45,
+   0,
+   47,
+   1,
+   "IMAGE"
+  ],
+  [
+   15,
+   1,
+   0,
+   47,
+   2,
+   "IMAGE"
+  ],
+  [
+   16,
+   47,
+   0,
+   46,
+   0,
+   "IMAGE"
+  ],
+  [
+   17,
+   43,
+   1,
+   46,
+   1,
+   "INT"
+  ],
+  [
+   18,
+   43,
+   2,
+   46,
+   2,
+   "INT"
+  ],
+  [
+   19,
+   2,
+   0,
+   4,
+   0,
+   "MODEL"
+  ],
+  [
+   20,
+   3,
+   0,
+   4,
+   1,
+   "VAE"
+  ],
+  [
+   21,
+   46,
+   0,
+   4,
+   2,
+   "IMAGE"
+  ],
+  [
+   22,
+   46,
+   0,
+   21,
+   0,
+   "IMAGE"
+  ],
+  [
+   23,
+   20,
+   1,
+   22,
+   0,
+   "CLIP"
+  ],
+  [
+   24,
+   20,
+   0,
+   23,
+   0,
+   "MODEL"
+  ],
+  [
+   25,
+   21,
+   0,
+   23,
+   1,
+   "IMAGE"
+  ],
+  [
+   26,
+   22,
+   0,
+   23,
+   2,
+   "CONDITIONING"
+  ],
+  [
+   27,
+   46,
+   0,
+   30,
+   0,
+   "IMAGE"
+  ],
+  [
+   28,
+   4,
+   0,
+   30,
+   1,
+   "IMAGE"
+  ],
+  [
+   29,
+   23,
+   0,
+   30,
+   2,
+   "MASK"
+  ],
+  [
+   30,
+   30,
+   0,
+   31,
+   0,
+   "IMAGE"
+  ],
+  [
+   31,
+   46,
+   0,
+   32,
+   0,
+   "IMAGE"
+  ],
+  [
+   32,
+   4,
+   0,
+   32,
+   1,
+   "IMAGE"
+  ],
+  [
+   33,
+   23,
+   0,
+   32,
+   2,
+   "MASK"
+  ],
+  [
+   34,
+   32,
+   0,
+   33,
+   0,
+   "IMAGE"
+  ]
+ ],
+ "groups": [
+  {
+   "id": 1,
+   "title": "① 이미지 넣기 (아무 크기)",
+   "bounding": [
+    -20,
+    -60,
+    400,
+    540
+   ],
+   "color": "#3f5f3f",
+   "font_size": 24,
+   "flags": {}
+  },
+  {
+   "id": 2,
+   "title": "② 모델 (⓪ 메모 참고 · VOSR2는 첫 실행 때 자동 다운로드)",
+   "bounding": [
+    -20,
+    500,
+    400,
+    520
+   ],
+   "color": "#3f3f5f",
+   "font_size": 24,
+   "flags": {}
+  },
+  {
+   "id": 3,
+   "title": "③ 크기 자동 결정 — 얼굴이 약 200px이 되게",
+   "bounding": [
+    420,
+    -60,
+    460,
+    860
+   ],
+   "color": "#5f5f3f",
+   "font_size": 24,
+   "flags": {}
+  },
+  {
+   "id": 4,
+   "title": "④ VOSR 2.0으로 키우기 → 정확한 크기로",
+   "bounding": [
+    900,
+    -60,
+    440,
+    560
+   ],
+   "color": "#3f5f5f",
+   "font_size": 24,
+   "flags": {}
+  },
+  {
+   "id": 5,
+   "title": "⑤ SeedVR2 리터치 (VRAM은 tile_megapixels)",
+   "bounding": [
+    1360,
+    -60,
+    440,
+    1080
+   ],
+   "color": "#5f3f3f",
+   "font_size": 24,
+   "flags": {}
+  },
+  {
+   "id": 6,
+   "title": "⑥ 합성 · 저장 (키운 크기 그대로 · 높음/낮음 2장)",
+   "bounding": [
+    1820,
+    -60,
+    860,
+    1080
+   ],
+   "color": "#3f5f5f",
+   "font_size": 24,
+   "flags": {}
+  }
+ ],
+ "config": {},
+ "extra": {
+  "ds": {
+   "scale": 0.5,
+   "offset": [
+    800,
+    120
+   ]
+  }
+ },
+ "version": 0.4
+}
