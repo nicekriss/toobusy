@@ -1,0 +1,282 @@
+{
+  "id": "2bz-vosr2-upscale",
+  "revision": 0,
+  "last_node_id": 90,
+  "last_link_id": 3,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "LoadImage",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        360,
+        400
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            2
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "example.png",
+        "image"
+      ],
+      "title": "① Small image",
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 2,
+      "type": "VOSR2ModelLoader",
+      "pos": [
+        0,
+        540
+      ],
+      "size": [
+        360,
+        82
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VOSR2_MODEL",
+          "type": "VOSR2_MODEL",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VOSR2ModelLoader"
+      },
+      "widgets_values": [
+        "VOSR2",
+        "bf16"
+      ],
+      "title": "VOSR 2.0 (models/vosr2/VOSR2)",
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 3,
+      "type": "VOSR2Upscale",
+      "pos": [
+        440,
+        0
+      ],
+      "size": [
+        400,
+        290
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "VOSR2_MODEL",
+          "link": 1
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            3
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VOSR2Upscale"
+      },
+      "widgets_values": [
+        4,
+        42,
+        "fixed",
+        "wavelet",
+        512,
+        64,
+        512,
+        64
+      ],
+      "title": "③ VOSR2 upscale (upscale = scale factor)",
+      "color": "#322",
+      "bgcolor": "#533"
+    },
+    {
+      "id": 4,
+      "type": "SaveImage",
+      "pos": [
+        900,
+        0
+      ],
+      "size": [
+        420,
+        460
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 3
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "toobusy_upscale/vosr2"
+      ],
+      "title": "Save result (input × scale)",
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 90,
+      "type": "MarkdownNote",
+      "pos": [
+        -760,
+        -60
+      ],
+      "size": [
+        720,
+        760
+      ],
+      "flags": {},
+      "order": 90,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "MarkdownNote"
+      },
+      "widgets_values": [
+        "## Enlarge Small Images — VOSR 2.0 Upscale (2BZ)\n\n**Put an image in ① and run.** No prompt. Output is saved at **input size × scale**.\n(To keep the size and just add skin texture → use `2BZ_VOSR2_Retouch_AnySize`.)\n\n### Knobs\n- **③ `upscale`** = scale factor. Default 4. 2 · 3 · 4 recommended — the model was trained up to 16x but **quality isn't guaranteed above 4x** (per the node docs).\n- Output size guide: 512px ×4 = 2048px · 1MP ×2 = 4MP · 1MP ×4 = 16MP. For images already 2MP+, 2x is enough.\n- **Keep `tile_size` at 512** — the model was trained on 512px, so tiling is required once output exceeds 512px.\n- **VRAM**: `vae_tile_size` 512 default (~5.3GB measured for VOSR2). 1024 uses ~8.3GB at about the same speed.\n- `color_alignment` wavelet = match original colors (recommended).\n\n### Character\nVOSR 2.0 **preserves the original structure** instead of inventing new content (trained on images only, not a repurposed text-to-image model). Faces and text don't change, but it won't conjure lavish detail from tiny images with almost no information.\n\n### Requirements\n- **VOSR 2.0** node (search `VOSR` in ComfyUI Manager → comfyui-vosr2)\n- The ~7GB model auto-downloads on first run to `models/vosr2/VOSR2/`. Manual download: [CSWRY/VOSR](https://huggingface.co/CSWRY/VOSR/tree/main)\n- License: VOSR 2.0 code & weights Apache 2.0 (PolyU · OPPO, CVPR 2026)\n\n### Measured (RTX 3090 · 2026-10-14)\n| Input → Output | Time |\n|---|---|\n| 528×704 → ×2 (1056×1408) | 22s (incl. model loading) |\n| 264×352 → ×4 (1056×1408) | 6s (model already loaded) |\n| 360×360 → ×4 (1440×1440) | 11s |\n\nPeak VRAM about 6.4–6.8GB (incl. 2GB idle). Against ground-truth originals, ×4 clearly keeps wrinkles and beard better than plain resizing (sharpness 0.31→0.56, face similarity 0.946→0.957). At ×2 the difference is small.\n"
+      ],
+      "title": "⓪ Read me first"
+    }
+  ],
+  "links": [
+    [
+      1,
+      2,
+      0,
+      3,
+      0,
+      "VOSR2_MODEL"
+    ],
+    [
+      2,
+      1,
+      0,
+      3,
+      1,
+      "IMAGE"
+    ],
+    [
+      3,
+      3,
+      0,
+      4,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "① Load image",
+      "bounding": [
+        -20,
+        -60,
+        400,
+        520
+      ],
+      "color": "#3f5f3f",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 2,
+      "title": "② Model (auto-downloads on first run)",
+      "bounding": [
+        -20,
+        480,
+        400,
+        180
+      ],
+      "color": "#3f3f5f",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 3,
+      "title": "③ Upscale — `upscale` is the scale factor",
+      "bounding": [
+        420,
+        -60,
+        440,
+        420
+      ],
+      "color": "#5f3f3f",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 4,
+      "title": "④ Save",
+      "bounding": [
+        880,
+        -60,
+        460,
+        560
+      ],
+      "color": "#3f5f5f",
+      "font_size": 24,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.7,
+      "offset": [
+        800,
+        160
+      ]
+    }
+  },
+  "version": 0.4
+}

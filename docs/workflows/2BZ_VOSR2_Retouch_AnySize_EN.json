@@ -1,0 +1,856 @@
+{
+  "id": "2bz-vosr2-retouch-anysize",
+  "revision": 0,
+  "last_node_id": 90,
+  "last_link_id": 18,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "LoadImage",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        360,
+        400
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            1,
+            4,
+            9,
+            13
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "example.png",
+        "image"
+      ],
+      "title": "① Image",
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 2,
+      "type": "VOSR2ModelLoader",
+      "pos": [
+        0,
+        560
+      ],
+      "size": [
+        360,
+        82
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VOSR2_MODEL",
+          "type": "VOSR2_MODEL",
+          "links": [
+            2
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VOSR2ModelLoader"
+      },
+      "widgets_values": [
+        "VOSR2",
+        "bf16"
+      ],
+      "title": "VOSR 2.0 (models/vosr2/VOSR2)",
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 20,
+      "type": "CheckpointLoaderSimple",
+      "pos": [
+        0,
+        690
+      ],
+      "size": [
+        360,
+        98
+      ],
+      "flags": {},
+      "order": 20,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            6
+          ]
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            5
+          ]
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CheckpointLoaderSimple"
+      },
+      "widgets_values": [
+        "sam3.1_multiplex_fp16.safetensors"
+      ],
+      "title": "SAM3 (checkpoints)",
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 3,
+      "type": "ImageScaleToTotalPixels",
+      "pos": [
+        440,
+        0
+      ],
+      "size": [
+        400,
+        106
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            3
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageScaleToTotalPixels"
+      },
+      "widgets_values": [
+        "lanczos",
+        4.0,
+        16
+      ],
+      "title": "③ Work size (MP) — default 4 · 6 for 18MP sheets",
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 4,
+      "type": "VOSR2Upscale",
+      "pos": [
+        440,
+        150
+      ],
+      "size": [
+        400,
+        290
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "VOSR2_MODEL",
+          "link": 2
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 3
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            10,
+            14
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VOSR2Upscale"
+      },
+      "widgets_values": [
+        2,
+        42,
+        "fixed",
+        "wavelet",
+        512,
+        64,
+        512,
+        64
+      ],
+      "title": "③ VOSR2 restore (2x)",
+      "color": "#322",
+      "bgcolor": "#533"
+    },
+    {
+      "id": 21,
+      "type": "ImageScaleToTotalPixels",
+      "pos": [
+        440,
+        580
+      ],
+      "size": [
+        400,
+        106
+      ],
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 4
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            7
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageScaleToTotalPixels"
+      },
+      "widgets_values": [
+        "area",
+        2.0,
+        1
+      ],
+      "title": "Downscale to 2MP for detection"
+    },
+    {
+      "id": 22,
+      "type": "CLIPTextEncode",
+      "pos": [
+        440,
+        720
+      ],
+      "size": [
+        400,
+        100
+      ],
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            8
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "skin:8"
+      ],
+      "title": "Targets (target:max count)",
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 23,
+      "type": "SAM3_Detect",
+      "pos": [
+        440,
+        860
+      ],
+      "size": [
+        400,
+        150
+      ],
+      "flags": {},
+      "order": 23,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 6
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 7
+        },
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 8
+        }
+      ],
+      "outputs": [
+        {
+          "name": "masks",
+          "type": "MASK",
+          "links": [
+            11,
+            15
+          ]
+        },
+        {
+          "name": "bboxes",
+          "type": "BOUNDING_BOX",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SAM3_Detect"
+      },
+      "widgets_values": [
+        0.5,
+        2,
+        false
+      ],
+      "title": "SAM3 skin detection"
+    },
+    {
+      "id": 30,
+      "type": "ToobusyRetouchBlend",
+      "pos": [
+        900,
+        0
+      ],
+      "size": [
+        380,
+        230
+      ],
+      "flags": {},
+      "order": 30,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "original",
+          "type": "IMAGE",
+          "link": 9
+        },
+        {
+          "name": "restored",
+          "type": "IMAGE",
+          "link": 10
+        },
+        {
+          "name": "skin_mask",
+          "type": "MASK",
+          "link": 11
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            12
+          ]
+        },
+        {
+          "name": "used_mask",
+          "type": "MASK",
+          "links": [
+            17
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ToobusyRetouchBlend"
+      },
+      "widgets_values": [
+        1.6,
+        1.4,
+        3.0,
+        8,
+        8.0
+      ],
+      "title": "⑤ High: rest 1.6 / skin 1.4",
+      "color": "#322",
+      "bgcolor": "#533"
+    },
+    {
+      "id": 31,
+      "type": "SaveImage",
+      "pos": [
+        1320,
+        0
+      ],
+      "size": [
+        380,
+        440
+      ],
+      "flags": {},
+      "order": 31,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 12
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "toobusy_retouch/vosr2_high"
+      ],
+      "title": "Save High (crisp texture · recommended)",
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 32,
+      "type": "ToobusyRetouchBlend",
+      "pos": [
+        900,
+        500
+      ],
+      "size": [
+        380,
+        230
+      ],
+      "flags": {},
+      "order": 32,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "original",
+          "type": "IMAGE",
+          "link": 13
+        },
+        {
+          "name": "restored",
+          "type": "IMAGE",
+          "link": 14
+        },
+        {
+          "name": "skin_mask",
+          "type": "MASK",
+          "link": 15
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            16
+          ]
+        },
+        {
+          "name": "used_mask",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ToobusyRetouchBlend"
+      },
+      "widgets_values": [
+        1.25,
+        1.0,
+        3.0,
+        8,
+        8.0
+      ],
+      "title": "⑤ Low: rest 1.25 / skin 1.0",
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 33,
+      "type": "SaveImage",
+      "pos": [
+        1320,
+        500
+      ],
+      "size": [
+        380,
+        440
+      ],
+      "flags": {},
+      "order": 33,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 16
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "toobusy_retouch/vosr2_low"
+      ],
+      "title": "Save Low (natural)",
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 34,
+      "type": "MaskToImage",
+      "pos": [
+        1740,
+        0
+      ],
+      "size": [
+        320,
+        30
+      ],
+      "flags": {},
+      "order": 34,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 17
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            18
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaskToImage"
+      }
+    },
+    {
+      "id": 35,
+      "type": "PreviewImage",
+      "pos": [
+        1740,
+        80
+      ],
+      "size": [
+        340,
+        360
+      ],
+      "flags": {},
+      "order": 35,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 18
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "title": "Skin mask check (white = skin strength)"
+    },
+    {
+      "id": 90,
+      "type": "MarkdownNote",
+      "pos": [
+        -760,
+        -60
+      ],
+      "size": [
+        720,
+        1200
+      ],
+      "flags": {},
+      "order": 90,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "MarkdownNote"
+      },
+      "widgets_values": [
+        "## More Natural — VOSR2 Retouch (2BZ · toobusy 0.5.5 + VOSR 2.0)\n\n**The default is `2BZ_SeedVR2_Retouch_AnySize`** (more dramatic on skin, 3–4x faster). This one is a gentler alternative that keeps the original feel — good for character sheets and 4MP keyframes, and small faces keep their look. It does almost nothing on clean small photos (1MP single person).\n\n**Put an image in ① and just run.** No prompt. A 2MP or 18MP sheet, as is.\nShape, face and color stay as in the original; hair, fabric and edges get sharper.\n\n### Two outputs\n- **High** `vosr2_high` — rest 1.6 / skin 1.4 → recommended\n- **Low** `vosr2_low` — rest 1.25 / skin 1.0 → more natural\n\n### Two knobs\n- **③ Work size (MP)** default 4 — the image is resized to this, VOSR2 restores at 2x, and the result is blended back at original size. **For large 18MP character sheets raise it to 6** for more accurate small faces (measured face retention 0.967→0.982); 2–3 for a quick look. Running at original size (no 2x) changes faces on small images — not recommended.\n- **VRAM** — `vae_tile_size` on the ③ VOSR2 node, 512 default (~5.3GB for VOSR2). 1024 uses ~8.3GB at about the same speed. Keep `tile_size` at 512 (the model was trained at 512).\n\n### Skin not detected?\nChange `skin:8` in ④ to `face:4, hand:4, neck:4`. For sheets with many people use `skin:16`. Check the mask in the preview on the right.\n\n### Models\n- **VOSR 2.0** — auto-downloads on first run (~7GB) → `models/vosr2/VOSR2/`. To download manually: VOSR2 · Qwen-Image-vae-2d · dinov2 files from [CSWRY/VOSR](https://huggingface.co/CSWRY/VOSR/tree/main) (see the node README)\n- [sam3.1_multiplex_fp16.safetensors](https://huggingface.co/Comfy-Org/sam3.1/resolve/main/checkpoints/sam3.1_multiplex_fp16.safetensors) → `models/checkpoints/`\n\n### Required nodes (search & install in ComfyUI Manager)\n- **VOSR 2.0** (comfyui-vosr2, 0.4.2+)\n- **toobusy 0.5.5+** (search `toobusy` · 0.5.4 gives stair-stepped hair/edges when downscaling VOSR2 output)\n- SAM3 and the rest are **ComfyUI core nodes** (latest ComfyUI)\n\n### License\nVOSR 2.0 code & weights Apache 2.0 (PolyU · OPPO, CVPR 2026) · SAM 3.1 SAM License · toobusy MIT\n\n### Measured (RTX 3090 · 2026-10-14 · work size 4)\n| Input | Time (incl. model loading) |\n|---|---|\n| 0.5MP photo | 67s |\n| 2MP photo | 74s → 57s from the 2nd run |\n| Image without people | 75s (texture only) |\n| 8MP image | 74s |\n| 18.7MP character sheet | 85s (112s at work size 6) |\n\nPeak VRAM about 9.1GB (incl. SAM3 and 2GB idle; 9.8GB at work size 6). For a quick look use work size 2–3.\n"
+      ],
+      "title": "⓪ Read me first"
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      3,
+      0,
+      "IMAGE"
+    ],
+    [
+      2,
+      2,
+      0,
+      4,
+      0,
+      "VOSR2_MODEL"
+    ],
+    [
+      3,
+      3,
+      0,
+      4,
+      1,
+      "IMAGE"
+    ],
+    [
+      4,
+      1,
+      0,
+      21,
+      0,
+      "IMAGE"
+    ],
+    [
+      5,
+      20,
+      1,
+      22,
+      0,
+      "CLIP"
+    ],
+    [
+      6,
+      20,
+      0,
+      23,
+      0,
+      "MODEL"
+    ],
+    [
+      7,
+      21,
+      0,
+      23,
+      1,
+      "IMAGE"
+    ],
+    [
+      8,
+      22,
+      0,
+      23,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      9,
+      1,
+      0,
+      30,
+      0,
+      "IMAGE"
+    ],
+    [
+      10,
+      4,
+      0,
+      30,
+      1,
+      "IMAGE"
+    ],
+    [
+      11,
+      23,
+      0,
+      30,
+      2,
+      "MASK"
+    ],
+    [
+      12,
+      30,
+      0,
+      31,
+      0,
+      "IMAGE"
+    ],
+    [
+      13,
+      1,
+      0,
+      32,
+      0,
+      "IMAGE"
+    ],
+    [
+      14,
+      4,
+      0,
+      32,
+      1,
+      "IMAGE"
+    ],
+    [
+      15,
+      23,
+      0,
+      32,
+      2,
+      "MASK"
+    ],
+    [
+      16,
+      32,
+      0,
+      33,
+      0,
+      "IMAGE"
+    ],
+    [
+      17,
+      30,
+      1,
+      34,
+      0,
+      "MASK"
+    ],
+    [
+      18,
+      34,
+      0,
+      35,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "① Load image (any size, any image)",
+      "bounding": [
+        -20,
+        -60,
+        400,
+        540
+      ],
+      "color": "#3f5f3f",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 2,
+      "title": "② Models (VOSR2 auto-downloads on first run)",
+      "bounding": [
+        -20,
+        500,
+        400,
+        360
+      ],
+      "color": "#3f3f5f",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 3,
+      "title": "③ VOSR2 restore — work size for quality/speed, tiles for VRAM",
+      "bounding": [
+        420,
+        -60,
+        440,
+        560
+      ],
+      "color": "#5f3f3f",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 4,
+      "title": "④ Find skin (detects on a downscaled copy = saves VRAM)",
+      "bounding": [
+        420,
+        520,
+        440,
+        620
+      ],
+      "color": "#5f5f3f",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 5,
+      "title": "⑤ Blend · Save (2 images at once: High / Low)",
+      "bounding": [
+        880,
+        -60,
+        1220,
+        1200
+      ],
+      "color": "#3f5f5f",
+      "font_size": 24,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.6,
+      "offset": [
+        800,
+        120
+      ]
+    }
+  },
+  "version": 0.4
+}
